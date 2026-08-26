@@ -10,7 +10,11 @@ na to číslo.
 
 ## [Unreleased]
 
-_Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.0-alpha**._
+_Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.1-alpha**._
+
+## [0.1.1-alpha] - 2026-08-26
+
+_Prvá vydaná verzia. Všetko nižšie vzniklo pred ňou._
 
 ### Added
 - Kostra riešenia — `Core` s celou mechanikou, `Cli` ako bezhlavý front end, `App`
