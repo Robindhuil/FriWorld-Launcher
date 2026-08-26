@@ -132,6 +132,11 @@ _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.0-alpha**._
   nehýbe pod kurzorom.
 - Riadok verzie má pevnú výšku aj keď je prázdny — inak by pri prvom načítaní poskočilo logo.
 
+- Samotná výmena launchera je otestovaná na skutočných súboroch. `LauncherDeployment` robí
+  z cesty k spustiteľnému súboru a z tvaru nasadenia hodnotu, ktorá sa dá podstrčiť, takže
+  `Apply` sa dá vykonať naozaj — vrátane toho najnebezpečnejšieho okna, keď je starý súbor
+  premenovaný nabok a nový sa nedá presunúť. Doteraz boli pokryté len poistky okolo.
+
 ### Fixed
 - **`launcher.log` ticho zahadzoval riadky, keď mal súbor otvorený iný proces.** Zapisovalo sa
   cez `File.AppendAllText`, čo súbor zakaždým otvorí so `FileShare.Read` — stačilo, že ho čítal

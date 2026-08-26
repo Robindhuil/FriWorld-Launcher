@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Reflection;
 using FriWorld.Launcher.Core.Diagnostics;
 using FriWorld.Launcher.Core.Manifest;
 using FriWorld.Launcher.Core.Net;
@@ -18,15 +17,19 @@ namespace FriWorld.Launcher.Core.Update;
 /// renamed. So the running file is renamed aside, the new one is written to the original path,
 /// and the old one is deleted by the next start — not by this one, which is still running from it.
 /// </summary>
-public sealed class LauncherSelfUpdater(IContentClient content, ILauncherLog? log = null)
+public sealed class LauncherSelfUpdater(
+    IContentClient content,
+    ILauncherLog? log = null,
+    LauncherDeployment? deployment = null)
 {
     /// <summary>Suffix for the outgoing executable, cleaned up on the next start.</summary>
     public const string SupersededSuffix = ".superseded";
 
     private readonly ILauncherLog _log = log ?? NullLauncherLog.Instance;
+    private readonly LauncherDeployment _deployment = deployment ?? LauncherDeployment.Current;
 
     /// <summary>The file this process is running from, or null when that cannot be determined.</summary>
-    public static string? ExecutablePath => Environment.ProcessPath;
+    public string? ExecutablePath => _deployment.ExecutablePath;
 
     /// <summary>
     /// Whether the launcher is deployed as something it can swap in one move.
@@ -35,23 +38,8 @@ public sealed class LauncherSelfUpdater(IContentClient content, ILauncherLog? lo
     /// atomically, and a half-replaced launcher is worse than an old one, so those are told to
     /// download manually instead.
     /// </summary>
-    public static bool IsSelfContainedSingleFile
-    {
-        get
-        {
-            if (ExecutablePath is not { } path || !File.Exists(path))
-            {
-                return false;
-            }
-
-            // A single-file bundle reports no assembly location, because nothing was extracted
-            // to disk to have one. The analyser warns about reading Location in a single-file app;
-            // here the empty answer is exactly the signal being looked for.
-#pragma warning disable IL3000
-            return string.IsNullOrEmpty(Assembly.GetEntryAssembly()?.Location);
-#pragma warning restore IL3000
-        }
-    }
+    public bool IsSelfContainedSingleFile =>
+        _deployment.IsSingleFile && ExecutablePath is { } path && File.Exists(path);
 
     /// <summary>Why a self-update is not on offer, or null when it is.</summary>
     public string? BlockedReason()

@@ -120,7 +120,7 @@ public class SelfUpdateTests
     {
         // Tests run from a multi-file build, which is exactly the deployment that must refuse.
         // A half-replaced launcher is worse than an old one.
-        Assert.False(LauncherSelfUpdater.IsSelfContainedSingleFile);
+        Assert.False(Updater().IsSelfContainedSingleFile);
         Assert.NotNull(Updater().BlockedReason());
     }
 
