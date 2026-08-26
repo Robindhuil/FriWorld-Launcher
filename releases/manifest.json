@@ -1,6 +1,6 @@
 {
   "version": "0.1.1-alpha",
-  "released": "2026-08-26T20:04:21.2884114+00:00",
+  "released": "2026-08-26T20:42:24.7732944+00:00",
   "notes": "Prva alfa verzia virtualnej prehliadky FRI.",
   "platforms": {
     "win-x64": {
@@ -12,13 +12,14 @@
     }
   },
   "launcher": {
-    "version": "0.1.0-alpha",
+    "version": "0.1.1-alpha",
     "downloadUrl": "https://github.com/Robindhuil/FriWorld-Launcher/releases/latest",
+    "notes": "Odinstalovanie hry, otvorenie priecinka a oprava zapisu do logu.",
     "platforms": {
       "win-x64": {
-        "url": "https://github.com/Robindhuil/FriWorld-Launcher/releases/download/v0.1.0-alpha/FriWorldLauncher.exe",
-        "sha256": "3052df870870ecabe669c74cbd0c4086d4db8030ec4d8befd8830f65ef0bda4a",
-        "size": 52750405
+        "url": "https://github.com/Robindhuil/FriWorld-Launcher/releases/download/v0.1.1-alpha/FriWorldLauncher.exe",
+        "sha256": "2daa3614128690e0f23724eb8a8b66ea031ecbd2ca23495a39a46c898349aae6",
+        "size": 52755047
       }
     }
   }
