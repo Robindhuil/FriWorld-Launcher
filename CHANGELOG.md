@@ -60,6 +60,10 @@ _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.0-alpha**._
   žiaci škôl — hlavnou cestou web build, nie desktop.
   (`docs/decisions/2026-08-26-bez-podpisu-launcher-je-most-k-steamu.md`)
 
+- `tools/game-repo/BuildRelease.cs` — editor skript pre repo hry. Zbuildí desktop playery
+  do `Build/<bundleVersion>/<platformKey>/` a skončí. Balenie robí `launcher pack`.
+  Linux je prepínač v menu, predvolene vypnutý. Skript `bundleVersion` len číta.
+
 ### Fixed
 - Chyby v okne sa nikde nezapisovali. Launcher, ktorý padne na cudzom stroji, sa diagnostikuje
   z `launcher.log` alebo nijak, takže `Fail` teraz loguje aj s výnimkou.

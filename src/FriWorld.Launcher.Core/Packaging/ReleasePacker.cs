@@ -69,7 +69,10 @@ public static class ReleasePacker
                 $"{PlatformKey.WindowsX64}, {PlatformKey.LinuxX64}, {PlatformKey.MacArm64}, {PlatformKey.MacX64}.");
         }
 
-        Directory.CreateDirectory(options.OutputDirectory);
+        // Normalised once, so the paths printed back to the caller do not end up with a mix of
+        // separators when the folder was given with forward slashes on Windows.
+        var output = Path.GetFullPath(options.OutputDirectory);
+        Directory.CreateDirectory(output);
 
         var packages = new Dictionary<string, PlatformPackage>(StringComparer.OrdinalIgnoreCase);
         var packed = new List<PackedPlatform>();
@@ -86,7 +89,7 @@ public static class ReleasePacker
                 : ExecutableFinder.Find(playerDirectory, platformKey);
 
             var archiveName = ArchiveName(options.Version, platformKey, format);
-            var archivePath = Path.Combine(options.OutputDirectory, archiveName);
+            var archivePath = Path.Combine(output, archiveName);
 
             log?.Report($"{platformKey}: packing {exec} into {archiveName}");
 
@@ -127,7 +130,7 @@ public static class ReleasePacker
         // launcher would refuse to parse.
         manifest.Validate();
 
-        var manifestPath = Path.Combine(options.OutputDirectory, "manifest.json");
+        var manifestPath = Path.Combine(output, "manifest.json");
         await File.WriteAllTextAsync(manifestPath, ManifestJson.Write(manifest), ct).ConfigureAwait(false);
         ManifestJson.Parse(await File.ReadAllTextAsync(manifestPath, ct).ConfigureAwait(false));
 
