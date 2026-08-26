@@ -133,6 +133,18 @@ _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.0-alpha**._
 - Riadok verzie má pevnú výšku aj keď je prázdny — inak by pri prvom načítaní poskočilo logo.
 
 ### Fixed
+- **`launcher.log` ticho zahadzoval riadky, keď mal súbor otvorený iný proces.** Zapisovalo sa
+  cez `File.AppendAllText`, čo súbor zakaždým otvorí so `FileShare.Read` — stačilo, že ho čítal
+  antivírus alebo indexer, a zápis zlyhal. Výnimka sa prehltla, takže po sebe nenechal ani stopu.
+  Zmerané na tomto stroji: **200 z 200 riadkov stratených.** Nie časť, všetky.
+
+  Prejavilo sa to presne tam, kde to bolí najviac — celá inštalácia 745 MB neostala v logu ani
+  jedným riadkom, hoci prebehla správne. Log je pritom jediná diagnostika, ktorú máš, keď to
+  zlyhá u cudzieho človeka.
+
+  Handle sa teraz otvára raz a drží so `FileShare.ReadWrite`. Keď sa zápis aj tak nepodarí,
+  počíta sa a pri najbližšom úspešnom zápise log **sám prizná**, koľko riadkov chýba — log,
+  ktorý vyzerá úplný a nie je, je horší než ten, čo povie, kde má dieru.
 - **Self-update štartoval nový launcher, kým starý ešte držal zámok jednej inštancie.**
   Nový by ako prvú vec ohlásil, že beží iný launcher, a aktualizácia by vyzerala, že všetko
   rozbila. Zámok sa uvoľní pred štartom nástupcu a `TryAcquire` chvíľu počká.
