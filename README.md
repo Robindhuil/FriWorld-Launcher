@@ -1,7 +1,7 @@
 # FriWorld Launcher
 
 Samostatná aplikácia, ktorá si stiahne posledný desktop build hry FriWorld, overí ho,
-nainštaluje a spustí. Windows, Linux, macOS z jedného kódu.
+nainštaluje a spustí. Windows a Linux z jedného kódu; macOS je mimo rozsahu.
 
 Implementačný plán, z ktorého to vychádza, žije v repe hry:
 `docs/2026-08-25-launcher-implementacny-plan.md`.
@@ -49,6 +49,16 @@ dotnet run --project src/FriWorld.Launcher.Cli -- run --manifest mock/store/mani
 `--root` presmeruje inštaláciu mimo skutočného `%LOCALAPPDATA%`, takže sa pri vývoji
 nič ostré neprepíše.
 
+Keď už existujú skutočné Unity buildy, `pack` z nich spraví to isté, len naostro:
+
+```bash
+dotnet run --project src/FriWorld.Launcher.Cli -- pack --input "E:/UNITY/FriWorld/Build/0.1.1-alpha" --version 0.1.1-alpha
+```
+
+Očakáva jeden podpriečinok na platformu (`win-x64/`, `linux-x64/`) a vyrobí archívy
+v správnych formátoch, checksummy a manifest. Zadanie pre stranu hry je v
+[`docs/build-pipeline-spec.md`](docs/build-pipeline-spec.md).
+
 Ďalšie príkazy:
 
 ```bash
@@ -61,6 +71,7 @@ dotnet run --project src/FriWorld.Launcher.Cli -- help
 | `check` | stiahne manifest a povie, či treba aktualizovať |
 | `update` | stiahne, overí, rozbalí a vymení |
 | `run` | `update`, potom spustí hru |
+| `pack` | z Unity buildov spraví archívy, checksummy a manifest |
 | `mock-release` | vygeneruje falošný release |
 | `clean --yes` | zmaže celý inštalačný koreň |
 
@@ -207,4 +218,5 @@ Zámerne **nie je a nebude**:
 Zatiaľ chýba, ale patrí sem:
 
 - **Reálne úložisko.** Manifest sa dnes číta z lokálneho mocku.
-- **Build pipeline na strane hry**, ktorá archívy a manifest vyrobí.
+- **Editor skript v repe hry**, ktorý zbuildí playery. Zadanie je v
+  [`docs/build-pipeline-spec.md`](docs/build-pipeline-spec.md).

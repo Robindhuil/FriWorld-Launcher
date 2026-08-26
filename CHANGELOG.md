@@ -32,6 +32,15 @@ _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.0-alpha**._
   naraz archív v cache, rozbalený `game.new` a ešte neuprataný `game.old`.
 - Ochrana proti path traversal pri rozbaľovaní. Archívy chodia zo siete, takže položka
   menom `../../nieco` nie je teoretická.
+- `launcher pack` — z Unity výstupu vyrobí archívy, checksummy a manifest. Balenie je
+  na strane launchera zámerne: Unity beží na staršom .NET a tar writer nemá vôbec,
+  a `tar` vyrobený na Windows stratí execute bit, takže by sa linuxový build nespustil.
+  Hlavný dôvod je ale, že manifest je kontrakt medzi dvoma repami — takto ho píše aj
+  číta ten istý kód a nemôže sa rozísť. Zadanie pre repo hry je v `docs/build-pipeline-spec.md`.
+- Upozornenie na novšiu verziu launchera. Manifest smie niesť voliteľnú sekciu `launcher`;
+  keď sa verzia líši od bežiacej, okno aj `check` ponúknu odkaz na stiahnutie. Launcher
+  sa **nikdy nevymieňa sám** — je to najkrehkejšia časť a Steam ho aj tak nahradí.
+  Adresa z manifestu sa otvára len keď je `http` alebo `https`.
 
 ### Changed
 - Manifest sa číta ako **statický JSON súbor na pevnej URL**, nie cez GitHub Releases API.

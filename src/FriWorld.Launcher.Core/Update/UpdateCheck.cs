@@ -21,6 +21,15 @@ public sealed record UpdateCheck
     public string LatestVersion => Manifest.Version;
 
     public string? InstalledVersion => Installed?.Version;
+
+    /// <summary>
+    /// The newer launcher, when the manifest names one that is not the running version.
+    /// Null otherwise. Nothing acts on this automatically — it exists to be shown to a person.
+    /// </summary>
+    public LauncherRelease? LauncherUpdate =>
+        Manifest.Launcher is { IsUsable: true } launcher && LauncherVersion.DiffersFrom(launcher.Version)
+            ? launcher
+            : null;
 }
 
 /// <summary>

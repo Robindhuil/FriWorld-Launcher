@@ -1,6 +1,8 @@
 using FriWorld.Launcher.Core;
 using FriWorld.Launcher.Core.Install;
+using FriWorld.Launcher.Core.Manifest;
 using FriWorld.Launcher.Core.Mock;
+using FriWorld.Launcher.Core.Packaging;
 using FriWorld.Launcher.Core.Platform;
 using FriWorld.Launcher.Core.Update;
 
@@ -32,6 +34,7 @@ public static class CommandRunner
             return options.Command switch
             {
                 "where" => Where(options),
+                "pack" => await Pack(options, cancellation.Token),
                 "mock-release" => await MockRelease(options, cancellation.Token),
                 "check" => await Check(options, cancellation.Token),
                 "update" => await Update(options, cancellation.Token),
@@ -71,6 +74,7 @@ public static class CommandRunner
         var config = Configure(options);
         var paths = config.Paths;
 
+        Console.WriteLine($"launcher      {LauncherVersion.Current}");
         Console.WriteLine($"platform      {PlatformKey.Current}");
         Console.WriteLine($"manifest      {config.ManifestUrl}");
         Console.WriteLine($"root          {paths.Root}");
@@ -89,6 +93,92 @@ public static class CommandRunner
               $"{(installed.LaunchConfirmed ? "confirmed" : "not yet launched")}");
 
         return 0;
+    }
+
+    /// <summary>
+    /// Packs Unity's player output into a release. Run after the Unity build; this is the step
+    /// that produces the archives, the checksums and the manifest the launcher reads.
+    /// </summary>
+    private static async Task<int> Pack(CommandLineOptions options, CancellationToken ct)
+    {
+        var input = options.Value("input")
+            ?? throw new PackagingException("--input is required: the folder holding the platform subfolders.");
+        var version = options.Value("version")
+            ?? throw new PackagingException("--version is required: the game's bundleVersion.");
+
+        var result = await ReleasePacker.PackAsync(
+            new ReleasePacker.Options
+            {
+                InputDirectory = input,
+                OutputDirectory = options.Value("out", Path.Combine("dist", version)),
+                Version = version,
+                Notes = options.Value("notes"),
+                BaseUrl = options.Value("base-url"),
+                ExecOverrides = ParseExecOverrides(options),
+                Launcher = ParseLauncherRelease(options),
+            },
+            new Progress<string>(Console.WriteLine),
+            ct);
+
+        Console.WriteLine();
+        Console.WriteLine($"Wrote {result.ManifestPath}");
+
+        foreach (var platform in result.Platforms)
+        {
+            Console.WriteLine($"  {platform.PlatformKey,-12} {DiskSpace.Format(platform.Size),10}  {platform.Exec}");
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("Upload the archives and the manifest, then check it end to end with:");
+        Console.WriteLine($"  launcher check --manifest \"{result.ManifestPath}\"");
+
+        return 0;
+    }
+
+    /// <summary>Parses repeated <c>--exec &lt;platform&gt;=&lt;path&gt;</c> pairs.</summary>
+    private static Dictionary<string, string> ParseExecOverrides(CommandLineOptions options)
+    {
+        var overrides = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var pair in options.Values("exec"))
+        {
+            var split = pair.IndexOf('=');
+
+            if (split <= 0)
+            {
+                throw new PackagingException($"--exec expects <platform>=<path>, got '{pair}'.");
+            }
+
+            overrides[pair[..split]] = pair[(split + 1)..];
+        }
+
+        return overrides;
+    }
+
+    private static LauncherRelease? ParseLauncherRelease(CommandLineOptions options)
+    {
+        var version = options.Value("launcher-version");
+        var url = options.Value("launcher-url");
+
+        if (version is null && url is null)
+        {
+            return null;
+        }
+
+        var release = new LauncherRelease
+        {
+            Version = version ?? LauncherVersion.Current,
+            DownloadUrl = url ?? string.Empty,
+            Notes = options.Value("launcher-notes"),
+        };
+
+        if (!release.IsUsable)
+        {
+            throw new PackagingException(
+                "--launcher-url must be an absolute http or https address to a download page.");
+        }
+
+        return release;
     }
 
     private static async Task<int> MockRelease(CommandLineOptions options, CancellationToken ct)
@@ -140,6 +230,8 @@ public static class CommandRunner
             ? $"Update required: {check.Reason}."
             : "Up to date.");
 
+        ReportLauncherUpdate(check);
+
         return check.UpdateRequired ? 10 : 0;
     }
 
@@ -160,6 +252,8 @@ public static class CommandRunner
         Console.WriteLine(check.UpdateRequired
             ? $"Installed {check.LatestVersion}."
             : $"Nothing to do, {check.LatestVersion} is already installed.");
+
+        ReportLauncherUpdate(check);
 
         return 0;
     }
@@ -216,6 +310,30 @@ public static class CommandRunner
         return 0;
     }
 
+    /// <summary>
+    /// Mentions a newer launcher, without doing anything about it. Replacing a running executable
+    /// is the most fragile part of a launcher and the game is heading for a store anyway, so the
+    /// launcher never updates itself — it says so and points at the download page.
+    /// </summary>
+    private static void ReportLauncherUpdate(UpdateCheck check)
+    {
+        if (check.LauncherUpdate is not { } launcher)
+        {
+            return;
+        }
+
+        Console.WriteLine();
+        Console.WriteLine($"A newer launcher is available: {launcher.Version} " +
+                          $"(this one is {LauncherVersion.Current}).");
+
+        if (!string.IsNullOrWhiteSpace(launcher.Notes))
+        {
+            Console.WriteLine($"  {launcher.Notes}");
+        }
+
+        Console.WriteLine($"  {launcher.DownloadUrl}");
+    }
+
     private static int Unknown(string command)
     {
         Console.Error.WriteLine($"Unknown command '{command}'.");
@@ -234,6 +352,7 @@ public static class CommandRunner
               check                    Fetch the manifest and report whether an update is needed
               update                   Download, verify, unpack and swap in the latest build
               run                      update, then start the game
+              pack                     Turn Unity player output into a release plus manifest
               mock-release             Generate a fake release in a local folder
               clean --yes              Delete the entire install root
 
@@ -243,9 +362,21 @@ public static class CommandRunner
               --verbose                Mirror the log to stderr and print stack traces
               --wait                   run only: stay alive until the game exits
 
-              --out <path>             mock-release only: output folder (default mock/store)
-              --version <tag>          mock-release only: version to stamp
-              --payload-mb <n>         mock-release only: filler size per platform (default 8)
+            pack
+              --input <path>           Folder with one subfolder per platform key (required)
+              --version <tag>          The game's bundleVersion (required)
+              --out <path>             Output folder (default dist/<version>)
+              --notes <text>           Release note shown in the launcher
+              --base-url <url>         Prefix for archive urls; omit to write bare file names
+              --exec <platform>=<path> Override the detected executable; may repeat
+              --launcher-version <tag> Newest launcher, for the update notice
+              --launcher-url <url>     Download page for the newest launcher
+              --launcher-notes <text>  One-liner about the newest launcher
+
+            mock-release
+              --out <path>             Output folder (default mock/store)
+              --version <tag>          Version to stamp
+              --payload-mb <n>         Filler size per platform (default 8)
 
             Exit codes
               0 ok · 1 error · 2 another launcher is running · 10 update available (check) · 130 cancelled

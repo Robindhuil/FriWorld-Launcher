@@ -18,6 +18,12 @@ public sealed record ReleaseManifest
     public IReadOnlyDictionary<string, PlatformPackage> Platforms { get; init; } =
         new Dictionary<string, PlatformPackage>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Optional. Present when a newer launcher exists. Absent manifests are entirely normal —
+    /// the game's build pipeline does not have to know about launcher releases at all.
+    /// </summary>
+    public LauncherRelease? Launcher { get; init; }
+
     /// <summary>Returns the package for the first of <paramref name="platformKeys"/> the manifest carries.</summary>
     public bool TryGetPackage(IReadOnlyList<string> platformKeys, out string matchedKey, out PlatformPackage package)
     {

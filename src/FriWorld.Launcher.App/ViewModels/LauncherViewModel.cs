@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Avalonia.Threading;
 using FriWorld.Launcher.Core;
 using FriWorld.Launcher.Core.Install;
+using FriWorld.Launcher.Core.Launch;
 using FriWorld.Launcher.Core.Update;
 
 namespace FriWorld.Launcher.App.ViewModels;
@@ -31,6 +32,8 @@ public sealed class LauncherViewModel : ObservableObject
     private bool _busy;
     private bool _canPlay;
     private bool _failed;
+    private string _launcherUpdateNotice = string.Empty;
+    private string? _launcherUpdateUrl;
 
     public LauncherViewModel()
     {
@@ -40,11 +43,14 @@ public sealed class LauncherViewModel : ObservableObject
 
         PlayCommand = new RelayCommand(() => _ = PlayAsync(), () => CanPlay && !Busy);
         RetryCommand = new RelayCommand(() => _ = RefreshAsync(), () => !Busy);
+        OpenLauncherDownloadCommand = new RelayCommand(OpenLauncherDownload);
     }
 
     public RelayCommand PlayCommand { get; }
 
     public RelayCommand RetryCommand { get; }
+
+    public RelayCommand OpenLauncherDownloadCommand { get; }
 
     public string Title => "FriWorld";
 
@@ -95,6 +101,14 @@ public sealed class LauncherViewModel : ObservableObject
         get => _failed;
         private set => SetField(ref _failed, value);
     }
+
+    public string LauncherUpdateNotice
+    {
+        get => _launcherUpdateNotice;
+        private set => SetField(ref _launcherUpdateNotice, value);
+    }
+
+    public bool LauncherUpdateAvailable => _launcherUpdateUrl is not null;
 
     public bool Busy
     {
@@ -148,6 +162,8 @@ public sealed class LauncherViewModel : ObservableObject
             Detail = string.Empty;
             ProgressVisible = false;
             CanPlay = true;
+
+            ApplyLauncherUpdate(check);
         }
         catch (OperationCanceledException)
         {
@@ -200,6 +216,37 @@ public sealed class LauncherViewModel : ObservableObject
         Status = "Something went wrong";
         Detail = message;
         ProgressVisible = false;
+    }
+
+    /// <summary>
+    /// Surfaces a newer launcher as a link, never as an action. The launcher does not replace
+    /// itself: that is the most fragile thing a launcher can do, and the game is on its way to a
+    /// store that will make the launcher redundant anyway.
+    /// </summary>
+    private void ApplyLauncherUpdate(UpdateCheck check)
+    {
+        if (check.LauncherUpdate is not { } launcher)
+        {
+            _launcherUpdateUrl = null;
+            LauncherUpdateNotice = string.Empty;
+        }
+        else
+        {
+            _launcherUpdateUrl = launcher.DownloadUrl;
+            LauncherUpdateNotice = string.IsNullOrWhiteSpace(launcher.Notes)
+                ? $"Launcher {launcher.Version} is available."
+                : $"Launcher {launcher.Version} is available. {launcher.Notes}";
+        }
+
+        Raise(nameof(LauncherUpdateAvailable));
+    }
+
+    private void OpenLauncherDownload()
+    {
+        if (_launcherUpdateUrl is { } url && !SystemBrowser.TryOpen(url))
+        {
+            LauncherUpdateNotice = $"Could not open the browser. The download page is {url}";
+        }
     }
 
     private void Apply(UpdateStatus status)
