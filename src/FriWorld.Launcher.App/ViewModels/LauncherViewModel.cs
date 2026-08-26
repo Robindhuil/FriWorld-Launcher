@@ -28,8 +28,9 @@ public sealed class LauncherViewModel : ObservableObject
     private readonly UpdateOrchestrator _orchestrator;
     private readonly LauncherSelfUpdater _selfUpdater;
     private readonly ILauncherLog _log;
-    private readonly SingleInstanceLock? _instanceLock;
+    private readonly Lock _workGate = new();
 
+    private SingleInstanceLock? _instanceLock;
     private CancellationTokenSource? _work;
     private UpdateCheck? _check;
     private LauncherBinary? _launcherBinary;
@@ -92,8 +93,26 @@ public sealed class LauncherViewModel : ObservableObject
     public string Detail
     {
         get => _detail;
-        private set => SetField(ref _detail, value);
+        private set
+        {
+            if (SetField(ref _detail, value))
+            {
+                Raise(nameof(InfoVisible));
+            }
+        }
     }
+
+    /// <summary>
+    /// Whether the neutral detail line should show.
+    ///
+    /// Detail doubles as reassurance ("you can keep playing the version you have") and as the
+    /// body of a failure. Without this the reassuring cases were written and never rendered,
+    /// because the only two places showing Detail were the progress panel and the error panel.
+    /// </summary>
+    public bool InfoVisible => !Failed && !ProgressVisible && !string.IsNullOrEmpty(Detail);
+
+    /// <summary>Whether there is an installation worth repairing.</summary>
+    public bool IsInstalled => _orchestrator.State.Read() is not null;
 
     public string VersionLine
     {
@@ -134,13 +153,25 @@ public sealed class LauncherViewModel : ObservableObject
     public bool ProgressVisible
     {
         get => _progressVisible;
-        private set => SetField(ref _progressVisible, value);
+        private set
+        {
+            if (SetField(ref _progressVisible, value))
+            {
+                Raise(nameof(InfoVisible));
+            }
+        }
     }
 
     public bool Failed
     {
         get => _failed;
-        private set => SetField(ref _failed, value);
+        private set
+        {
+            if (SetField(ref _failed, value))
+            {
+                Raise(nameof(InfoVisible));
+            }
+        }
     }
 
     public bool LauncherUpdateAvailable => _launcherDownloadPage is not null;
@@ -372,6 +403,13 @@ public sealed class LauncherViewModel : ObservableObject
             staged = await Run(ct => _selfUpdater.StageAsync(_launcherBinary!, new UiDownloadProgress(this), ct));
 
             Status = "Restarting";
+
+            // Released before the successor starts. It takes the same lock as its first act, and
+            // this process is still alive at that moment — holding on would make the new launcher
+            // report that another one is running and look like the update had broken things.
+            _instanceLock?.Dispose();
+            _instanceLock = null;
+
             _selfUpdater.Apply(staged);
 
             // Apply started the replacement; this process must get out of its way.
@@ -405,14 +443,47 @@ public sealed class LauncherViewModel : ObservableObject
     private void Cancel()
     {
         Status = "Cancelling";
-        _work?.Cancel();
+
+        // Guarded because the work can finish between the button appearing and the click landing,
+        // and cancelling a disposed source throws — from a command handler, that ends the process.
+        lock (_workGate)
+        {
+            try
+            {
+                _work?.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+                // Already finished. Nothing to cancel.
+            }
+        }
     }
 
     private async Task<T> Run<T>(Func<CancellationToken, Task<T>> work)
     {
-        _work?.Dispose();
-        _work = new CancellationTokenSource();
-        return await work(_work.Token);
+        CancellationTokenSource source;
+
+        lock (_workGate)
+        {
+            _work?.Dispose();
+            _work = source = new CancellationTokenSource();
+        }
+
+        try
+        {
+            return await work(source.Token);
+        }
+        finally
+        {
+            lock (_workGate)
+            {
+                if (ReferenceEquals(_work, source))
+                {
+                    _work.Dispose();
+                    _work = null;
+                }
+            }
+        }
     }
 
     private void Reset()
@@ -556,6 +627,7 @@ public sealed class LauncherViewModel : ObservableObject
         RepairCommand.RaiseCanExecuteChanged();
         RetryCommand.RaiseCanExecuteChanged();
         UpdateLauncherCommand.RaiseCanExecuteChanged();
+        Raise(nameof(IsInstalled));
     }
 
     /// <summary>Marshals progress reports onto the UI thread.</summary>

@@ -42,6 +42,14 @@
                 </Grid>
             </StackPanel>
 
+            <!-- Neutral detail: the reassurance shown alongside an offered update, and the
+                 note left after a cancelled download. -->
+            <TextBlock Text="{Binding Detail}"
+                       IsVisible="{Binding InfoVisible}"
+                       TextWrapping="Wrap"
+                       FontSize="12"
+                       Opacity="0.7" />
+
             <!-- Failure detail and advice. Kept separate from the status line so the headline
                  stays short enough to read at a glance. -->
             <StackPanel Spacing="4" IsVisible="{Binding Failed}">
@@ -90,6 +98,7 @@
             <Button Grid.Column="1"
                     Content="Repair"
                     Padding="12,10"
+                    IsVisible="{Binding IsInstalled}"
                     Command="{Binding RepairCommand}"
                     ToolTip.Tip="Download and reinstall the current version, for when files are damaged." />
 

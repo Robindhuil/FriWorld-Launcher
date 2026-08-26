@@ -15,8 +15,35 @@ public sealed class SingleInstanceLock : IDisposable
 
     private SingleInstanceLock(FileStream stream) => _stream = stream;
 
-    /// <summary>Returns null when another launcher already holds the lock.</summary>
-    public static SingleInstanceLock? TryAcquire(LauncherPaths paths)
+    /// <summary>
+    /// Returns null when another launcher already holds the lock.
+    ///
+    /// Retries briefly rather than refusing immediately. A launcher that has just replaced itself
+    /// starts its successor and then exits, and the operating system does not always release the
+    /// handle in that order — without a moment's patience the new launcher would refuse to start
+    /// and the update would look like it had broken everything.
+    /// </summary>
+    public static SingleInstanceLock? TryAcquire(LauncherPaths paths, TimeSpan? waitFor = null)
+    {
+        var deadline = DateTime.UtcNow + (waitFor ?? TimeSpan.FromSeconds(3));
+
+        while (true)
+        {
+            if (TryOnce(paths) is { } acquired)
+            {
+                return acquired;
+            }
+
+            if (DateTime.UtcNow >= deadline)
+            {
+                return null;
+            }
+
+            Thread.Sleep(100);
+        }
+    }
+
+    private static SingleInstanceLock? TryOnce(LauncherPaths paths)
     {
         Directory.CreateDirectory(paths.Root);
 

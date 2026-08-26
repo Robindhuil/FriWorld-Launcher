@@ -57,6 +57,11 @@ public static class FailureMessages
             e.Message,
             false),
 
+        UpdateException e => new(
+            e.Message,
+            null,
+            true),
+
         HttpRequestException => new(
             "Could not reach the download server.",
             "Check the connection and try again.",

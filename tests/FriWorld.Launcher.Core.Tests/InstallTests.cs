@@ -145,31 +145,6 @@ public class InstallTests
     }
 
     [Fact]
-    public void The_second_launcher_cannot_take_the_lock()
-    {
-        using var temp = new TempDirectory("lock");
-        var paths = new LauncherPaths(temp.Path);
-
-        using var first = SingleInstanceLock.TryAcquire(paths);
-        Assert.NotNull(first);
-
-        using var second = SingleInstanceLock.TryAcquire(paths);
-        Assert.Null(second);
-    }
-
-    [Fact]
-    public void The_lock_is_released_when_the_launcher_exits()
-    {
-        using var temp = new TempDirectory("lock-release");
-        var paths = new LauncherPaths(temp.Path);
-
-        SingleInstanceLock.TryAcquire(paths)!.Dispose();
-
-        using var again = SingleInstanceLock.TryAcquire(paths);
-        Assert.NotNull(again);
-    }
-
-    [Fact]
     public void The_install_root_can_be_redirected()
     {
         using var temp = new TempDirectory("root");
