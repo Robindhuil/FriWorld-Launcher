@@ -65,6 +65,10 @@ _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.0-alpha**._
   Linux je prepínač v menu, predvolene vypnutý. Skript `bundleVersion` len číta.
 
 ### Fixed
+- Do releasu sa balil priečinok `FriWorld_BurstDebugInformation_DoNotShip`. Unity ho vyrába
+  vedľa hry a v názve sám hovorí, že sa nemá posielať — sú v ňom debug symboly a absolútne
+  cesty z build stroja. Balič ho aj `*_BackUpThisFolder_ButDontShipItWithYourGame` vynecháva
+  a vypíše, čo vynechal. Odhalilo sa to až na skutočnom Unity builde.
 - Chyby v okne sa nikde nezapisovali. Launcher, ktorý padne na cudzom stroji, sa diagnostikuje
   z `launcher.log` alebo nijak, takže `Fail` teraz loguje aj s výnimkou.
 - Riadok „Starting" v konzolovom výstupe sa neukončil a výstup hry sa naň nalepil.

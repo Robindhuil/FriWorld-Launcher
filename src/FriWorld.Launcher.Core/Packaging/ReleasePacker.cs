@@ -93,11 +93,16 @@ public static class ReleasePacker
 
             log?.Report($"{platformKey}: packing {exec} into {archiveName}");
 
+            foreach (var skipped in ArchiveBuilder.ExcludedEntries(playerDirectory))
+            {
+                log?.Report($"{platformKey}: leaving out {skipped} — Unity marks it as not for shipping");
+            }
+
             // Signing, when there is ever a certificate, belongs here — after the build and
             // before the archive, because signing changes the file and every checksum below
             // is taken from what the archive actually contains.
 
-            await ArchiveBuilder
+            var fileCount = await ArchiveBuilder
                 .CreateAsync(playerDirectory, archivePath, format, exec, ct)
                 .ConfigureAwait(false);
 
@@ -114,7 +119,7 @@ public static class ReleasePacker
             };
 
             packed.Add(new PackedPlatform(platformKey, archivePath, size, exec));
-            log?.Report($"{platformKey}: {size:N0} bytes, sha256 {sha[..16]}…");
+            log?.Report($"{platformKey}: {fileCount:N0} files, {size:N0} bytes, sha256 {sha[..16]}…");
         }
 
         var manifest = new ReleaseManifest

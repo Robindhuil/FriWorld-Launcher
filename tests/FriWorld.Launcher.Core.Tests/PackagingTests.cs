@@ -42,6 +42,64 @@ public class PackagingTests
         }
     }
 
+    [Theory]
+    [InlineData("FriWorld_BurstDebugInformation_DoNotShip")]
+    [InlineData("FriWorld_BackUpThisFolder_ButDontShipItWithYourGame")]
+    public async Task Folders_unity_marks_as_not_for_shipping_stay_out_of_the_archive(string folder)
+    {
+        using var temp = new TempDirectory("pack-donotship");
+        var input = temp.Combine("Build");
+        var player = Path.Combine(input, PlatformKey.WindowsX64);
+        FakePlayerOutput(player, PlatformKey.WindowsX64);
+
+        // Unity emits these beside the player and says so in the folder name, but it does not
+        // remove them. They hold debug symbols and absolute paths from the build machine.
+        var nested = Path.Combine(player, folder, "Data", "Plugins");
+        Directory.CreateDirectory(nested);
+        await File.WriteAllTextAsync(Path.Combine(nested, "symbols.txt"), "C:/build/agent/secret/path");
+
+        Assert.Contains(folder, ArchiveBuilder.ExcludedEntries(player));
+
+        var result = await ReleasePacker.PackAsync(new ReleasePacker.Options
+        {
+            InputDirectory = input,
+            OutputDirectory = temp.Combine("dist"),
+            Version = "1.0.0",
+        });
+
+        var extracted = temp.Combine("extracted");
+        await ArchiveExtractors.For(ArchiveFormat.Zip)
+            .ExtractAsync(result.Platforms.Single().ArchivePath, extracted, null, CancellationToken.None);
+
+        Assert.False(Directory.Exists(Path.Combine(extracted, folder)));
+        Assert.True(File.Exists(Path.Combine(extracted, "FriWorld.exe")));
+    }
+
+    [Fact]
+    public async Task The_same_exclusion_applies_to_tar_archives()
+    {
+        using var temp = new TempDirectory("pack-donotship-tar");
+        var input = temp.Combine("Build");
+        var player = Path.Combine(input, PlatformKey.LinuxX64);
+        FakePlayerOutput(player, PlatformKey.LinuxX64);
+
+        Directory.CreateDirectory(Path.Combine(player, "FriWorld_BurstDebugInformation_DoNotShip"));
+        await File.WriteAllTextAsync(
+            Path.Combine(player, "FriWorld_BurstDebugInformation_DoNotShip", "symbols.txt"), "x");
+
+        var result = await ReleasePacker.PackAsync(new ReleasePacker.Options
+        {
+            InputDirectory = input,
+            OutputDirectory = temp.Combine("dist"),
+            Version = "1.0.0",
+        });
+
+        var names = (await ReadTarModes(result.Platforms.Single().ArchivePath)).Keys;
+
+        Assert.DoesNotContain(names, n => n.Contains("DoNotShip", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains("FriWorld.x86_64", names);
+    }
+
     [Fact]
     public void Finds_the_windows_executable_and_ignores_the_crash_handler()
     {
