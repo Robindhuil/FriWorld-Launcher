@@ -45,8 +45,10 @@ _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.0-alpha**._
 
 - Rozsah je uzavretý: launcher je most k Steamu, nie produkt. Nepodpisuje sa nič,
   neplatí sa za nič, a nestavia sa self-update, delta patche, macOS ani CI buildy —
-  Steam ich aj tak nahradí. Hráčom, ktorým Smart App Control launcher zablokuje,
-  sa ponúkne web build.
+  Steam ich aj tak nahradí. Blokuje sa ale hra, nie launcher, a Steam podpis
+  nenahradí; certifikát je otvorená vec na doriešenie s fakultou, ktorá je
+  organizáciou a vie ho zaobstarať. Do tej doby je pre cieľovku tejto hry —
+  žiaci škôl — hlavnou cestou web build, nie desktop.
   (`docs/decisions/2026-08-26-bez-podpisu-launcher-je-most-k-steamu.md`)
 
 ### Fixed
