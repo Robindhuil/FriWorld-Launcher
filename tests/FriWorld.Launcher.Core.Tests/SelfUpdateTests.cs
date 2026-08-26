@@ -12,6 +12,9 @@ namespace FriWorld.Launcher.Core.Tests;
 /// <summary>
 /// The launcher replacing itself. This is the code most able to leave someone with nothing that
 /// runs, so the tests care less about the happy path than about what survives a failure.
+///
+/// The expected texts are Slovak because these are read by players. Developer-facing output,
+/// such as the CLI's help, stays English — the split is by audience, not by project.
 /// </summary>
 public class SelfUpdateTests
 {
@@ -152,8 +155,8 @@ public class SelfUpdateTests
         Updater().CleanUpSupersededExecutable();
 
     [Theory]
-    [InlineData(typeof(GameIsRunningException), "The game is already running.")]
-    [InlineData(typeof(LauncherTooOldException), "This launcher is too old for the current release.")]
+    [InlineData(typeof(GameIsRunningException), "Hra už beží.")]
+    [InlineData(typeof(LauncherTooOldException), "Tento launcher je príliš starý.")]
     public void Known_failures_are_described_in_words_a_player_can_act_on(Type type, string headline)
     {
         var exception = (Exception)Activator.CreateInstance(type, "raw technical text")!;
@@ -167,7 +170,7 @@ public class SelfUpdateTests
         var message = FailureMessages.Describe(new HashMismatchException("sha mismatch"));
 
         Assert.True(message.Recoverable);
-        Assert.Contains("damaged", message.Headline, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("poškoden", message.Headline, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -188,7 +191,7 @@ public class SelfUpdateTests
     {
         var message = FailureMessages.Describe(new InvalidOperationException("internal detail"));
 
-        Assert.Equal("Something went wrong.", message.Headline);
+        Assert.Equal("Niečo sa pokazilo.", message.Headline);
         Assert.Equal("internal detail", message.Advice);
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Media;
 using Avalonia.Threading;
 using FriWorld.Launcher.Core;
 using FriWorld.Launcher.Core.Diagnostics;
@@ -29,6 +30,10 @@ namespace FriWorld.Launcher.App.ViewModels;
 /// </summary>
 public sealed class LauncherViewModel : ObservableObject
 {
+    private static readonly IBrush AccentDot = SolidColorBrush.Parse("#FBB800");
+    private static readonly IBrush ErrorDot = SolidColorBrush.Parse("#FF7A6E");
+    private static readonly IBrush NeutralDot = SolidColorBrush.Parse("#73FFFFFF");
+
     private readonly UpdateOrchestrator _orchestrator;
     private readonly LauncherSelfUpdater _selfUpdater;
     private readonly ILauncherLog _log;
@@ -42,12 +47,16 @@ public sealed class LauncherViewModel : ObservableObject
     private string? _launcherDownloadPage;
 
     private LauncherAction _action = LauncherAction.None;
-    private string _status = "Starting";
+    private string _status = "Spúšťam";
+    private string _phaseName = string.Empty;
+    private string _percentText = string.Empty;
     private string _detail = string.Empty;
     private string _versionLine = string.Empty;
     private string _notes = string.Empty;
+    private string _failureHeadline = string.Empty;
     private string _failureAdvice = string.Empty;
-    private string _launcherUpdateNotice = string.Empty;
+    private string _launcherUpdateTitle = string.Empty;
+    private string _launcherUpdateNote = string.Empty;
     private double _progress;
     private bool _progressIndeterminate = true;
     private bool _progressVisible;
@@ -71,6 +80,8 @@ public sealed class LauncherViewModel : ObservableObject
         SecondaryCommand = new RelayCommand(RunSecondary, () => SecondaryVisible && !Busy);
         CancelCommand = new RelayCommand(Cancel, () => CanCancel);
         UpdateLauncherCommand = new RelayCommand(() => _ = UpdateLauncherAsync(), () => !Busy);
+        MinimiseCommand = new RelayCommand(() => MinimiseRequested?.Invoke(this, EventArgs.Empty));
+        CloseCommand = new RelayCommand(() => CloseRequested?.Invoke(this, EventArgs.Empty));
     }
 
     /// <summary>The one prominent button. What it does depends on <see cref="Action"/>.</summary>
@@ -83,10 +94,20 @@ public sealed class LauncherViewModel : ObservableObject
 
     public RelayCommand UpdateLauncherCommand { get; }
 
+    public RelayCommand MinimiseCommand { get; }
+
+    public RelayCommand CloseCommand { get; }
+
+    public event EventHandler? MinimiseRequested;
+
     /// <summary>Raised once the game is up and the launcher has nothing left to do.</summary>
     public event EventHandler? CloseRequested;
 
-    public string Title => "FriWorld";
+    /// <summary>
+    /// Whether to offer minimising. A download of several hundred megabytes takes long enough
+    /// that someone will reasonably want to do something else meanwhile.
+    /// </summary>
+    public bool ShowMinimise => true;
 
     public LauncherAction Action
     {
@@ -102,11 +123,11 @@ public sealed class LauncherViewModel : ObservableObject
 
     public string PrimaryLabel => Action switch
     {
-        LauncherAction.Install => "Install",
-        LauncherAction.Update => "Update",
-        LauncherAction.Play => "Play",
-        LauncherAction.Retry => "Retry",
-        _ => "Please wait",
+        LauncherAction.Install => "Inštalovať",
+        LauncherAction.Update => "Aktualizovať",
+        LauncherAction.Play => "Hrať",
+        LauncherAction.Retry => "Skúsiť znova",
+        _ => "Počkaj chvíľu",
     };
 
     public bool PrimaryEnabled => Action != LauncherAction.None && !Busy;
@@ -117,8 +138,8 @@ public sealed class LauncherViewModel : ObservableObject
     /// </summary>
     public string SecondaryLabel => Action switch
     {
-        LauncherAction.Update => $"Play {_check?.InstalledVersion}",
-        LauncherAction.Play => "Repair",
+        LauncherAction.Update => $"Hrať {_check?.InstalledVersion}",
+        LauncherAction.Play => "Opraviť",
         _ => string.Empty,
     };
 
@@ -130,6 +151,31 @@ public sealed class LauncherViewModel : ObservableObject
         private set => SetField(ref _status, value);
     }
 
+    /// <summary>Colour of the dot beside the status line: amber when ready, red on failure.</summary>
+    public IBrush StatusDot => Failed
+        ? ErrorDot
+        : Action == LauncherAction.Play ? AccentDot : NeutralDot;
+
+    public string PhaseName
+    {
+        get => _phaseName;
+        private set => SetField(ref _phaseName, value);
+    }
+
+    public string PercentText
+    {
+        get => _percentText;
+        private set
+        {
+            if (SetField(ref _percentText, value))
+            {
+                Raise(nameof(HasPercent));
+            }
+        }
+    }
+
+    public bool HasPercent => !string.IsNullOrEmpty(PercentText);
+
     public string Detail
     {
         get => _detail;
@@ -138,18 +184,16 @@ public sealed class LauncherViewModel : ObservableObject
             if (SetField(ref _detail, value))
             {
                 Raise(nameof(InfoVisible));
+                Raise(nameof(PlainTextVisible));
             }
         }
     }
 
-    /// <summary>
-    /// Whether the neutral detail line should show.
-    ///
-    /// Detail doubles as reassurance ("you can keep playing the version you have") and as the
-    /// body of a failure, so it needs somewhere to appear when neither the progress panel nor
-    /// the error panel is on screen.
-    /// </summary>
-    public bool InfoVisible => !Failed && !ProgressVisible && !string.IsNullOrEmpty(Detail);
+    /// <summary>The extra line under the release notes, such as the download size.</summary>
+    public bool InfoVisible => NotesVisible && !string.IsNullOrEmpty(Detail);
+
+    /// <summary>A bare sentence, for states with neither notes nor progress to show.</summary>
+    public bool PlainTextVisible => !Failed && !ProgressVisible && !NotesVisible && !string.IsNullOrEmpty(Detail);
 
     public string VersionLine
     {
@@ -160,20 +204,58 @@ public sealed class LauncherViewModel : ObservableObject
     public string Notes
     {
         get => _notes;
-        private set => SetField(ref _notes, value);
+        private set
+        {
+            if (SetField(ref _notes, value))
+            {
+                Raise(nameof(NotesVisible));
+                Raise(nameof(InfoVisible));
+                Raise(nameof(PlainTextVisible));
+            }
+        }
+    }
+
+    public bool NotesVisible => !Failed && !ProgressVisible && !string.IsNullOrEmpty(Notes);
+
+    public string FailureHeadline
+    {
+        get => _failureHeadline;
+        private set => SetField(ref _failureHeadline, value);
     }
 
     public string FailureAdvice
     {
         get => _failureAdvice;
-        private set => SetField(ref _failureAdvice, value);
+        private set
+        {
+            if (SetField(ref _failureAdvice, value))
+            {
+                Raise(nameof(HasFailureAdvice));
+            }
+        }
     }
 
-    public string LauncherUpdateNotice
+    public bool HasFailureAdvice => !string.IsNullOrEmpty(FailureAdvice);
+
+    public string LauncherUpdateTitle
     {
-        get => _launcherUpdateNotice;
-        private set => SetField(ref _launcherUpdateNotice, value);
+        get => _launcherUpdateTitle;
+        private set => SetField(ref _launcherUpdateTitle, value);
     }
+
+    public string LauncherUpdateNote
+    {
+        get => _launcherUpdateNote;
+        private set
+        {
+            if (SetField(ref _launcherUpdateNote, value))
+            {
+                Raise(nameof(HasLauncherUpdateNote));
+            }
+        }
+    }
+
+    public bool HasLauncherUpdateNote => !string.IsNullOrEmpty(LauncherUpdateNote);
 
     public double Progress
     {
@@ -195,6 +277,8 @@ public sealed class LauncherViewModel : ObservableObject
             if (SetField(ref _progressVisible, value))
             {
                 Raise(nameof(InfoVisible));
+                Raise(nameof(PlainTextVisible));
+                Raise(nameof(NotesVisible));
             }
         }
     }
@@ -207,6 +291,9 @@ public sealed class LauncherViewModel : ObservableObject
             if (SetField(ref _failed, value))
             {
                 Raise(nameof(InfoVisible));
+                Raise(nameof(PlainTextVisible));
+                Raise(nameof(NotesVisible));
+                Raise(nameof(StatusDot));
             }
         }
     }
@@ -216,7 +303,8 @@ public sealed class LauncherViewModel : ObservableObject
     /// <summary>Whether the newer launcher can be installed here, rather than only linked to.</summary>
     public bool LauncherUpdateIsAutomatic => _launcherBinary is not null && _selfUpdater.BlockedReason() is null;
 
-    public string LauncherUpdateAction => LauncherUpdateIsAutomatic ? "Update and restart" : "Open download page";
+    public string LauncherUpdateAction =>
+        LauncherUpdateIsAutomatic ? "Aktualizovať a reštartovať" : "Otvoriť stránku so stiahnutím";
 
     public bool Busy
     {
@@ -250,7 +338,7 @@ public sealed class LauncherViewModel : ObservableObject
     {
         if (_instanceLock is null)
         {
-            Fail(new UpdateException("Another launcher is already running."));
+            Fail(new UpdateException("Už beží iný launcher."));
             Action = LauncherAction.None;
             return;
         }
@@ -295,24 +383,28 @@ public sealed class LauncherViewModel : ObservableObject
         switch (Action)
         {
             case LauncherAction.Play:
-                VersionLine = $"Version {check.LatestVersion}";
-                Status = "Ready to play";
+                VersionLine = $"Verzia {check.LatestVersion}";
+                Status = "Pripravené";
                 Detail = string.Empty;
                 break;
 
             case LauncherAction.Update:
-                VersionLine = $"Version {check.InstalledVersion} installed · {check.LatestVersion} available";
-                Status = $"Update to {check.LatestVersion}?";
-                Detail = $"You can keep playing {check.InstalledVersion} for now.";
+                VersionLine = $"Verzia {check.InstalledVersion} nainštalovaná · " +
+                              $"{check.LatestVersion} k dispozícii";
+                Status = $"Aktualizovať na {check.LatestVersion}?";
+                Detail = $"Zatiaľ môžeš hrať {check.InstalledVersion}.";
                 break;
 
             case LauncherAction.Install:
-                VersionLine = $"Version {check.LatestVersion} available";
-                Status = "Not installed";
-                Detail = $"{DiskSpace.Format(check.Package.Size)} to download.";
+                VersionLine = $"Verzia {check.LatestVersion} k dispozícii";
+                Status = "Nenainštalované";
+                Detail = $"Na stiahnutie {Size(check.Package.Size)}.";
                 break;
         }
     }
+
+    /// <summary>Slovak writes a decimal comma; a dot reads as a thousands separator.</summary>
+    private static string Size(long bytes) => DiskSpace.Format(bytes).Replace('.', ',');
 
     private void RunPrimary()
     {
@@ -365,8 +457,8 @@ public sealed class LauncherViewModel : ObservableObject
             await Run(ct => _orchestrator.InstallAsync(check, new UiProgress(this), ct));
             _check = check with { Installed = _orchestrator.State.Read() };
 
-            VersionLine = $"Version {check.LatestVersion}";
-            Status = "Ready to play";
+            VersionLine = $"Verzia {check.LatestVersion}";
+            Status = "Pripravené";
             Detail = string.Empty;
             ProgressVisible = false;
             Action = LauncherAction.Play;
@@ -395,12 +487,12 @@ public sealed class LauncherViewModel : ObservableObject
 
         try
         {
-            Status = "Repairing the installation";
+            Status = "Opravujem inštaláciu";
             var installed = await Run(ct => _orchestrator.RepairAsync(new UiProgress(this), ct));
             _check = _check is null ? null : _check with { Installed = installed };
 
-            VersionLine = $"Version {installed.Version}";
-            Status = "Repaired and ready";
+            VersionLine = $"Verzia {installed.Version}";
+            Status = "Opravené a pripravené";
             Detail = string.Empty;
             ProgressVisible = false;
             Action = LauncherAction.Play;
@@ -427,7 +519,7 @@ public sealed class LauncherViewModel : ObservableObject
 
         try
         {
-            Status = "Starting the game";
+            Status = "Spúšťam hru";
 
             // LaunchAsync already waits out the grace period that confirms the build can start,
             // so by the time it returns the answer is known and the previous install is gone.
@@ -437,17 +529,17 @@ public sealed class LauncherViewModel : ObservableObject
             {
                 // The game stopped within seconds of starting. Staying open is the whole point
                 // here: this is the one moment when the launcher has something useful to say.
-                Failed = true;
-                Status = "The game closed straight away";
-                Detail = $"It exited with code {process.ExitCode} moments after starting.";
-                FailureAdvice = "Repairing the installation may help. The log has the details.";
-                ProgressVisible = false;
+                ShowFailure(
+                    "Hra sa hneď zavrela.",
+                    $"Skončila s kódom {process.ExitCode} pár sekúnd po spustení. " +
+                    "Môže pomôcť oprava inštalácie.");
+
                 Action = LauncherAction.Play;
                 _log.Warn($"The game exited with code {process.ExitCode} during the grace period.");
                 return;
             }
 
-            Status = "Running";
+            Status = "Beží";
             Action = LauncherAction.Play;
 
             if (!_keepOpenAfterLaunch)
@@ -475,7 +567,7 @@ public sealed class LauncherViewModel : ObservableObject
         {
             if (_launcherDownloadPage is { } page && !SystemBrowser.TryOpen(page))
             {
-                Detail = $"Could not open the browser. The download page is {page}";
+                Detail = $"Prehliadač sa nepodarilo otvoriť. Stránka je {page}";
             }
 
             return;
@@ -488,12 +580,12 @@ public sealed class LauncherViewModel : ObservableObject
 
         try
         {
-            Status = "Downloading the new launcher";
+            PhaseName = "Sťahujem nový launcher";
             ProgressVisible = true;
 
             staged = await Run(ct => _selfUpdater.StageAsync(_launcherBinary!, new UiDownloadProgress(this), ct));
 
-            Status = "Restarting";
+            Status = "Reštartujem";
 
             // Released before the successor starts. It takes the same lock as its first act, and
             // this process is still alive at that moment — holding on would make the new launcher
@@ -533,7 +625,7 @@ public sealed class LauncherViewModel : ObservableObject
 
     private void Cancel()
     {
-        Status = "Cancelling";
+        Status = "Ruším";
 
         // Guarded because the work can finish between the button appearing and the click landing,
         // and cancelling a disposed source throws — from a command handler, that ends the process.
@@ -580,24 +672,26 @@ public sealed class LauncherViewModel : ObservableObject
     private void Reset()
     {
         Failed = false;
+        FailureHeadline = string.Empty;
         FailureAdvice = string.Empty;
         Action = LauncherAction.None;
         CanCancel = false;
         ProgressVisible = true;
         ProgressIndeterminate = true;
-        Status = "Checking for updates";
-        Detail = string.Empty;
+        PhaseName = "Kontrolujem aktualizácie";
+        PercentText = string.Empty;
+        Status = "Kontrolujem aktualizácie";
+        Detail = "Zisťujem, čo je na serveri.";
     }
 
     private void ShowLauncherTooOld(UpdateCheck check)
     {
-        Failed = true;
-        Status = "This launcher is too old";
-        Detail = $"Release {check.LatestVersion} needs launcher {check.Manifest.MinLauncherVersion} or newer.";
-        FailureAdvice = LauncherUpdateAvailable
-            ? "Use the launcher update below."
-            : "Download a newer launcher from the FriWorld Hub.";
-        ProgressVisible = false;
+        ShowFailure(
+            "Tento launcher je príliš starý.",
+            $"Vydanie {check.LatestVersion} potrebuje launcher " +
+            $"{check.Manifest.MinLauncherVersion} alebo novší.");
+
+        Status = "Launcher je príliš starý";
 
         // Whatever is installed still runs; only updating the game is off the table.
         Action = LauncherActions.AfterCheck(check);
@@ -605,9 +699,11 @@ public sealed class LauncherViewModel : ObservableObject
 
     private void Cancelled()
     {
-        Status = "Cancelled";
-        Detail = "A partial download is kept and will continue next time.";
+        Failed = false;
+        Notes = string.Empty;
         ProgressVisible = false;
+        Status = "Zrušené";
+        Detail = "Čiastočne stiahnuté súbory sme nechali, nabudúce sa bude pokračovať tam, kde si prestal.";
         Action = LauncherActions.AfterInterruption(_check, _orchestrator.State.Read() is not null);
     }
 
@@ -622,12 +718,9 @@ public sealed class LauncherViewModel : ObservableObject
         _log.Error("Launcher operation failed.", exception);
 
         var message = FailureMessages.Describe(exception);
+        ShowFailure(message.Headline, message.Advice ?? string.Empty);
 
-        Failed = true;
         Status = message.Headline;
-        Detail = message.Advice ?? string.Empty;
-        FailureAdvice = string.Empty;
-        ProgressVisible = false;
 
         Action = message.Recoverable
             ? LauncherActions.AfterInterruption(_check, _orchestrator.State.Read() is not null)
@@ -635,8 +728,16 @@ public sealed class LauncherViewModel : ObservableObject
 
         if (_orchestrator.State.Read() is { } installed && string.IsNullOrEmpty(VersionLine))
         {
-            VersionLine = $"Version {installed.Version} installed";
+            VersionLine = $"Verzia {installed.Version} nainštalovaná";
         }
+    }
+
+    private void ShowFailure(string headline, string advice)
+    {
+        Failed = true;
+        FailureHeadline = headline;
+        FailureAdvice = advice;
+        ProgressVisible = false;
     }
 
     private void ApplyLauncherUpdate(UpdateCheck check)
@@ -645,16 +746,15 @@ public sealed class LauncherViewModel : ObservableObject
         {
             _launcherDownloadPage = null;
             _launcherBinary = null;
-            LauncherUpdateNotice = string.Empty;
+            LauncherUpdateTitle = string.Empty;
+            LauncherUpdateNote = string.Empty;
         }
         else
         {
             _launcherDownloadPage = launcher.DownloadUrl;
             _launcherBinary = check.LauncherBinary;
-
-            LauncherUpdateNotice = string.IsNullOrWhiteSpace(launcher.Notes)
-                ? $"Launcher {launcher.Version} is available."
-                : $"Launcher {launcher.Version} is available. {launcher.Notes}";
+            LauncherUpdateTitle = $"K dispozícii je launcher {launcher.Version}.";
+            LauncherUpdateNote = launcher.Notes ?? string.Empty;
         }
 
         Raise(nameof(LauncherUpdateAvailable));
@@ -664,16 +764,31 @@ public sealed class LauncherViewModel : ObservableObject
 
     private void Apply(UpdateStatus status)
     {
-        Status = status.Message;
+        PhaseName = status.Message;
+        Status = StatusLineFor(status);
+        PercentText = status.PercentText;
         ProgressIndeterminate = status.Fraction is null;
         Progress = (status.Fraction ?? 0) * 100;
         ProgressVisible = status.Stage is not (UpdateStage.UpToDate or UpdateStage.Ready);
+        Detail = status.DetailLine;
+    }
 
-        Detail = status.Download is { } download
-            ? $"{DiskSpace.Format(download.BytesReceived)} of " +
-              $"{(download.TotalBytes is { } total ? DiskSpace.Format(total) : "?")}" +
-              (download.Remaining is { } left ? $" · {left:mm\\:ss} left" : string.Empty)
-            : string.Empty;
+    /// <summary>
+    /// The action bar names the whole job; the progress row names the current phase. Both change,
+    /// but the bar changes less, which is what stops the window feeling like four screens.
+    /// </summary>
+    private string StatusLineFor(UpdateStatus status)
+    {
+        var version = _check?.LatestVersion;
+
+        return status.Stage switch
+        {
+            UpdateStage.Downloading => $"Sťahujem {version}",
+            UpdateStage.Verifying => "Overujem stiahnuté",
+            UpdateStage.Extracting or UpdateStage.Installing => $"Inštalujem {version}",
+            UpdateStage.Launching => "Spúšťam hru",
+            _ => status.Message,
+        };
     }
 
     private void ApplyDownload(DownloadProgress download)
@@ -681,8 +796,8 @@ public sealed class LauncherViewModel : ObservableObject
         ProgressIndeterminate = download.Fraction is null;
         Progress = (download.Fraction ?? 0) * 100;
         ProgressVisible = true;
-        Detail = $"{DiskSpace.Format(download.BytesReceived)} of " +
-                 $"{(download.TotalBytes is { } total ? DiskSpace.Format(total) : "?")}";
+        PercentText = download.Fraction is { } f ? $"{f * 100:0} %" : string.Empty;
+        Detail = new UpdateStatus(UpdateStage.Downloading, PhaseName, download.Fraction, download).DetailLine;
     }
 
     private void RaiseButtons()
@@ -691,6 +806,7 @@ public sealed class LauncherViewModel : ObservableObject
         Raise(nameof(PrimaryEnabled));
         Raise(nameof(SecondaryLabel));
         Raise(nameof(SecondaryVisible));
+        Raise(nameof(StatusDot));
 
         PrimaryCommand.RaiseCanExecuteChanged();
         SecondaryCommand.RaiseCanExecuteChanged();

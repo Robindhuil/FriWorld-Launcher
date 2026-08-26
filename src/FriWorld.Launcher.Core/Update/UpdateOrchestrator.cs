@@ -38,7 +38,7 @@ public sealed class UpdateOrchestrator(
         IProgress<UpdateStatus>? progress = null,
         CancellationToken ct = default)
     {
-        progress?.Report(UpdateStatus.Of(UpdateStage.CheckingForUpdate, "Checking for updates"));
+        progress?.Report(UpdateStatus.Of(UpdateStage.CheckingForUpdate, "Kontrolujem aktualizácie"));
         _log.Info($"Reading the manifest from {source.Description}");
 
         var manifest = await source.GetLatestAsync(ct).ConfigureAwait(false);
@@ -139,7 +139,7 @@ public sealed class UpdateOrchestrator(
         // The archive is only useful until the install succeeds; a gigabyte of cache is not.
         TryDelete(archivePath);
 
-        progress?.Report(UpdateStatus.Of(UpdateStage.Ready, $"Ready to play {installed.Version}"));
+        progress?.Report(UpdateStatus.Of(UpdateStage.Ready, "Pripravené"));
         _log.Info($"Installed {installed.Version} ({installed.Platform}).");
 
         return installed;
@@ -154,7 +154,7 @@ public sealed class UpdateOrchestrator(
         var downloadProgress = new Progress<DownloadProgress>(p => progress?.Report(
             new UpdateStatus(
                 UpdateStage.Downloading,
-                $"Downloading {check.Manifest.Version}",
+                "Sťahujem",
                 p.Fraction,
                 p)));
 
@@ -167,9 +167,9 @@ public sealed class UpdateOrchestrator(
         UpdateCheck check, string archivePath, IProgress<UpdateStatus>? progress, CancellationToken ct)
     {
         var verifyProgress = new Progress<double>(f => progress?.Report(
-            new UpdateStatus(UpdateStage.Verifying, "Verifying download", f)));
+            new UpdateStatus(UpdateStage.Verifying, "Overujem stiahnuté", f)));
 
-        progress?.Report(UpdateStatus.Of(UpdateStage.Verifying, "Verifying download"));
+        progress?.Report(UpdateStatus.Of(UpdateStage.Verifying, "Overujem stiahnuté"));
 
         await Sha256Verifier
             .VerifyOrDeleteAsync(archivePath, check.Package.Sha256, verifyProgress, ct)
@@ -180,14 +180,14 @@ public sealed class UpdateOrchestrator(
         UpdateCheck check, string archivePath, IProgress<UpdateStatus>? progress, CancellationToken ct)
     {
         var extractProgress = new Progress<double>(f => progress?.Report(
-            new UpdateStatus(UpdateStage.Extracting, "Unpacking", f)));
+            new UpdateStatus(UpdateStage.Extracting, "Rozbaľujem", f)));
 
-        progress?.Report(UpdateStatus.Of(UpdateStage.Extracting, "Unpacking"));
+        progress?.Report(UpdateStatus.Of(UpdateStage.Extracting, "Rozbaľujem"));
 
         var extractor = ArchiveExtractors.For(check.Package.ResolvedFormat);
         await extractor.ExtractAsync(archivePath, paths.GameNew, extractProgress, ct).ConfigureAwait(false);
 
-        progress?.Report(UpdateStatus.Of(UpdateStage.Installing, "Installing"));
+        progress?.Report(UpdateStatus.Of(UpdateStage.Installing, "Inštalujem"));
         _installer.Promote();
     }
 
@@ -200,7 +200,7 @@ public sealed class UpdateOrchestrator(
 
         if (!check.UpdateRequired)
         {
-            progress?.Report(UpdateStatus.Of(UpdateStage.UpToDate, $"Up to date on {check.LatestVersion}"));
+            progress?.Report(UpdateStatus.Of(UpdateStage.UpToDate, $"Máš najnovšiu verziu {check.LatestVersion}"));
             return check;
         }
 
@@ -244,7 +244,7 @@ public sealed class UpdateOrchestrator(
         var installed = _state.Read()
             ?? throw new UpdateException("Nothing is installed yet.");
 
-        progress?.Report(UpdateStatus.Of(UpdateStage.Launching, $"Starting {installed.Version}"));
+        progress?.Report(UpdateStatus.Of(UpdateStage.Launching, "Spúšťam hru"));
 
         var executable = _launcher.ResolveExecutable(paths.Game, installed.Exec);
         var process = _launcher.Start(executable);

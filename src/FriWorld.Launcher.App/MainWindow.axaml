@@ -7,112 +7,371 @@
         x:Class="FriWorld.Launcher.App.MainWindow"
         x:DataType="vm:LauncherViewModel"
         Title="FriWorld"
-        Width="560" Height="380"
-        MinWidth="480" MinHeight="340"
+        Icon="/Assets/icon.png"
+        Width="980" Height="720"
+        CanResize="False"
+        WindowDecorations="None"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent"
         WindowStartupLocation="CenterScreen">
 
-    <Grid RowDefinitions="Auto,*,Auto" Margin="28">
+    <Window.Resources>
+        <SolidColorBrush x:Key="Accent" Color="#FBB800" />
+        <SolidColorBrush x:Key="OnAccent" Color="#1A1400" />
+        <SolidColorBrush x:Key="TextPrimary" Color="#EBFFFFFF" />
+        <SolidColorBrush x:Key="TextSecondary" Color="#BDFFFFFF" />
+        <SolidColorBrush x:Key="TextTertiary" Color="#9EFFFFFF" />
+        <SolidColorBrush x:Key="TextMuted" Color="#7AFFFFFF" />
+        <SolidColorBrush x:Key="Hairline" Color="#24FFFFFF" />
+        <SolidColorBrush x:Key="OutlineIdle" Color="#42FFFFFF" />
+        <SolidColorBrush x:Key="HoverFill" Color="#1FFFFFFF" />
+        <SolidColorBrush x:Key="TrackFill" Color="#24FFFFFF" />
+        <SolidColorBrush x:Key="DisabledFill" Color="#1FFFFFFF" />
+        <SolidColorBrush x:Key="DisabledText" Color="#6BFFFFFF" />
+    </Window.Resources>
 
-        <StackPanel Grid.Row="0" Spacing="4">
-            <TextBlock Text="{Binding Title}" FontSize="30" FontWeight="SemiBold" />
-            <TextBlock Text="{Binding VersionLine}" Opacity="0.6" FontSize="13" />
-        </StackPanel>
+    <Window.Styles>
+        <!-- The window chrome buttons: minimise, and close with its red hover. -->
+        <Style Selector="Button.chrome">
+            <Setter Property="Width" Value="34" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Background" Value="#590A0B10" />
+            <Setter Property="Foreground" Value="#B8FFFFFF" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.chrome:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#29FFFFFF" />
+            <Setter Property="TextElement.Foreground" Value="White" />
+        </Style>
+        <Style Selector="Button.close:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#C0392B" />
+            <Setter Property="TextElement.Foreground" Value="White" />
+        </Style>
 
-        <StackPanel Grid.Row="1" VerticalAlignment="Center" Spacing="12">
+        <!-- The one prominent button. Carries the trademark colour; nothing else in the
+             window may, so that what to press is never in question. -->
+        <Style Selector="Button.primary">
+            <Setter Property="Height" Value="52" />
+            <Setter Property="MinWidth" Value="180" />
+            <Setter Property="Padding" Value="34,0" />
+            <Setter Property="CornerRadius" Value="7" />
+            <Setter Property="FontSize" Value="17" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Background" Value="{StaticResource Accent}" />
+            <Setter Property="Foreground" Value="{StaticResource OnAccent}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#FFC626" />
+            <Setter Property="TextElement.Foreground" Value="{StaticResource OnAccent}" />
+        </Style>
+        <Style Selector="Button.primary:disabled /template/ ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource DisabledFill}" />
+            <Setter Property="TextElement.Foreground" Value="{StaticResource DisabledText}" />
+        </Style>
 
-            <TextBlock Text="{Binding Notes}"
-                       TextWrapping="Wrap"
-                       Opacity="0.75"
-                       MaxLines="3"
-                       TextTrimming="CharacterEllipsis" />
+        <Style Selector="Button.secondary">
+            <Setter Property="Height" Value="52" />
+            <Setter Property="Padding" Value="22,0" />
+            <Setter Property="CornerRadius" Value="7" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#DBFFFFFF" />
+            <Setter Property="BorderBrush" Value="{StaticResource OutlineIdle}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.secondary:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource HoverFill}" />
+            <Setter Property="BorderBrush" Value="#6BFFFFFF" />
+            <Setter Property="TextElement.Foreground" Value="White" />
+        </Style>
 
-            <StackPanel Spacing="6" IsVisible="{Binding ProgressVisible}">
-                <ProgressBar Minimum="0" Maximum="100"
-                             Height="6"
-                             Value="{Binding Progress}"
-                             IsIndeterminate="{Binding ProgressIndeterminate}" />
-                <Grid ColumnDefinitions="*,Auto">
-                    <TextBlock Grid.Column="0" Text="{Binding Detail}" FontSize="12" Opacity="0.6" />
-                    <Button Grid.Column="1"
-                            Content="Cancel"
-                            Padding="10,2"
-                            FontSize="12"
-                            IsVisible="{Binding CanCancel}"
-                            Command="{Binding CancelCommand}" />
+        <!-- Deliberately quieter than the primary: a newer launcher is a note, not the task. -->
+        <Style Selector="Button.ghost">
+            <Setter Property="Padding" Value="16,9" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#DBFFFFFF" />
+            <Setter Property="BorderBrush" Value="#47FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="Button.ghost:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource HoverFill}" />
+            <Setter Property="TextElement.Foreground" Value="White" />
+        </Style>
+
+        <Style Selector="Button.link">
+            <Setter Property="Padding" Value="10,4" />
+            <Setter Property="CornerRadius" Value="5" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#ADFFFFFF" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+        <Style Selector="Button.link:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource HoverFill}" />
+            <Setter Property="TextElement.Foreground" Value="White" />
+        </Style>
+
+        <Style Selector="ProgressBar.slim">
+            <Setter Property="Height" Value="8" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Background" Value="{StaticResource TrackFill}" />
+            <Setter Property="Foreground" Value="{StaticResource Accent}" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+    </Window.Styles>
+
+    <!-- Rounded outer edge. The window itself is transparent so the corners are real. -->
+    <Border CornerRadius="10" ClipToBounds="True" Background="#0B0C11">
+        <Panel>
+
+            <!-- Layer 1: the render. Slightly desaturated and darkened so it stays a
+                 backdrop rather than competing with the text. -->
+            <Image Source="/Assets/fri-render.png"
+                   Stretch="UniformToFill"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center" />
+
+            <!-- Layer 2: the scrim. Bright sky at the top and dark paving at the bottom
+                 would otherwise swing text contrast wildly across the window. -->
+            <Panel>
+                <Panel.Background>
+                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                        <GradientStop Offset="0.00" Color="#CC08090E" />
+                        <GradientStop Offset="0.26" Color="#5208090E" />
+                        <GradientStop Offset="0.44" Color="#4708090E" />
+                        <GradientStop Offset="0.72" Color="#DB06070B" />
+                        <GradientStop Offset="1.00" Color="#F7050609" />
+                    </LinearGradientBrush>
+                </Panel.Background>
+            </Panel>
+
+            <!-- Hairline inside the rounded edge. -->
+            <Border CornerRadius="10" BorderThickness="1" BorderBrush="#1AFFFFFF" />
+
+            <!-- Layer 3: content. -->
+            <Grid RowDefinitions="Auto,*,Auto" Margin="44,38,44,0">
+
+                <!-- Header -->
+                <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+
+                    <StackPanel Grid.Column="0" Spacing="12">
+                        <!-- Placeholder for the logo artwork: two-tone wordmark until the
+                             image lands, then this becomes an Image. -->
+                        <StackPanel Orientation="Horizontal" x:Name="Logo">
+                            <TextBlock Text="Fri"
+                                       FontSize="30"
+                                       FontWeight="Bold"
+                                       LineHeight="30"
+                                       Foreground="{StaticResource Accent}" />
+                            <TextBlock Text="World"
+                                       FontSize="30"
+                                       FontWeight="Bold"
+                                       LineHeight="30"
+                                       Foreground="White" />
+                        </StackPanel>
+
+                        <!-- Fixed height so an empty version line does not move the logo. -->
+                        <TextBlock Text="{Binding VersionLine}"
+                                   Height="19"
+                                   MaxWidth="560"
+                                   HorizontalAlignment="Left"
+                                   FontSize="14"
+                                   FontWeight="Medium"
+                                   Foreground="{StaticResource TextSecondary}"
+                                   TextTrimming="CharacterEllipsis"
+                                   TextWrapping="NoWrap" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6"
+                                VerticalAlignment="Top">
+                        <Button Classes="chrome"
+                                Content="&#x2014;"
+                                IsVisible="{Binding ShowMinimise}"
+                                Command="{Binding MinimiseCommand}"
+                                ToolTip.Tip="Minimalizovať" />
+                        <Button Classes="chrome close"
+                                Content="&#x2715;"
+                                Command="{Binding CloseCommand}"
+                                ToolTip.Tip="Zavrieť" />
+                    </StackPanel>
+
                 </Grid>
-            </StackPanel>
 
-            <!-- Neutral detail: the download size before installing, the reassurance beside an
-                 offered update, the note left after a cancelled download. -->
-            <TextBlock Text="{Binding Detail}"
-                       IsVisible="{Binding InfoVisible}"
-                       TextWrapping="Wrap"
-                       FontSize="12"
-                       Opacity="0.7" />
+                <!-- Middle. Bottom-aligned so progress and errors grow upward and the
+                     action bar never shifts under the pointer. -->
+                <Grid Grid.Row="1" RowDefinitions="Auto,*" Margin="0,26,0,0">
 
-            <!-- Failure detail and advice. Kept separate from the status line so the headline
-                 stays short enough to read at a glance. -->
-            <StackPanel Spacing="4" IsVisible="{Binding Failed}">
-                <TextBlock Text="{Binding Detail}"
-                           TextWrapping="Wrap"
-                           FontSize="12"
-                           Foreground="#d9534f" />
-                <TextBlock Text="{Binding FailureAdvice}"
-                           TextWrapping="Wrap"
-                           FontSize="12"
-                           Opacity="0.7" />
-            </StackPanel>
+                    <!-- A newer launcher. Independent of the state below it. -->
+                    <Border Grid.Row="0"
+                            IsVisible="{Binding LauncherUpdateAvailable}"
+                            MaxWidth="660"
+                            HorizontalAlignment="Left"
+                            CornerRadius="8"
+                            Padding="18,14,16,14"
+                            Background="#990A0B10"
+                            BorderThickness="1"
+                            BorderBrush="#29FFFFFF">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
+                            <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding LauncherUpdateTitle}"
+                                           FontSize="14" FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextPrimary}" />
+                                <TextBlock Text="{Binding LauncherUpdateNote}"
+                                           IsVisible="{Binding HasLauncherUpdateNote}"
+                                           FontSize="13"
+                                           Foreground="{StaticResource TextTertiary}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                            <Button Grid.Column="1"
+                                    Classes="ghost"
+                                    Content="{Binding LauncherUpdateAction}"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding UpdateLauncherCommand}" />
+                        </Grid>
+                    </Border>
 
-            <!-- A newer launcher. Installed in place when the manifest carries a binary for this
-                 machine, otherwise offered as a link. -->
-            <Border IsVisible="{Binding LauncherUpdateAvailable}"
-                    Background="#14808080"
-                    CornerRadius="6"
-                    Padding="12,10">
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                    <TextBlock Grid.Column="0"
-                               Text="{Binding LauncherUpdateNotice}"
-                               VerticalAlignment="Center"
-                               TextWrapping="Wrap"
-                               FontSize="12"
-                               Opacity="0.8" />
-                    <Button Grid.Column="1"
-                            Content="{Binding LauncherUpdateAction}"
-                            Padding="12,5"
-                            FontSize="12"
-                            Command="{Binding UpdateLauncherCommand}" />
+                    <Grid Grid.Row="1" VerticalAlignment="Bottom" MaxWidth="660"
+                          HorizontalAlignment="Left" Margin="0,20,0,0">
+
+                        <!-- Release notes -->
+                        <StackPanel Spacing="10" IsVisible="{Binding NotesVisible}">
+                            <TextBlock Text="ČO JE NOVÉ"
+                                       FontSize="11" FontWeight="Bold"
+                                       Foreground="{StaticResource TextMuted}" />
+                            <TextBlock Text="{Binding Notes}"
+                                       FontSize="15" LineHeight="24"
+                                       MaxLines="3"
+                                       TextWrapping="Wrap"
+                                       TextTrimming="CharacterEllipsis"
+                                       Foreground="{StaticResource TextPrimary}" />
+                            <TextBlock Text="{Binding Detail}"
+                                       IsVisible="{Binding InfoVisible}"
+                                       FontSize="14"
+                                       TextWrapping="Wrap"
+                                       Foreground="{StaticResource TextTertiary}" />
+                        </StackPanel>
+
+                        <!-- Plain sentence, for states with nothing else to show. -->
+                        <TextBlock Text="{Binding Detail}"
+                                   IsVisible="{Binding PlainTextVisible}"
+                                   MaxWidth="520"
+                                   HorizontalAlignment="Left"
+                                   VerticalAlignment="Bottom"
+                                   FontSize="15" LineHeight="24"
+                                   TextWrapping="Wrap"
+                                   Foreground="{StaticResource TextSecondary}" />
+
+                        <!-- Failure. The word "CHYBA" carries the meaning, not the colour —
+                             colour alone excludes anyone who cannot see the difference. -->
+                        <Border IsVisible="{Binding Failed}"
+                                CornerRadius="8"
+                                Padding="18,16"
+                                Background="#9E3C0E0C"
+                                BorderThickness="1"
+                                BorderBrush="#6BF0786E">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
+                                <TextBlock Grid.Column="0" Text="CHYBA"
+                                           FontSize="11" FontWeight="Bold"
+                                           Foreground="#FF9A90"
+                                           VerticalAlignment="Top"
+                                           Margin="0,3,0,0" />
+                                <StackPanel Grid.Column="1" Spacing="5">
+                                    <TextBlock Text="{Binding FailureHeadline}"
+                                               FontSize="15" FontWeight="SemiBold"
+                                               TextWrapping="Wrap"
+                                               Foreground="#FFD9D4" />
+                                    <TextBlock Text="{Binding FailureAdvice}"
+                                               IsVisible="{Binding HasFailureAdvice}"
+                                               FontSize="14" LineHeight="22"
+                                               TextWrapping="Wrap"
+                                               Foreground="{StaticResource TextSecondary}" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Progress. One process with a changing phase name, not four screens. -->
+                        <StackPanel Spacing="10" MaxWidth="600" HorizontalAlignment="Left"
+                                    IsVisible="{Binding ProgressVisible}">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding PhaseName}"
+                                           FontSize="15" FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextPrimary}" />
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding PercentText}"
+                                           IsVisible="{Binding HasPercent}"
+                                           FontSize="15" FontWeight="SemiBold"
+                                           Foreground="{StaticResource Accent}" />
+                            </Grid>
+                            <ProgressBar Classes="slim"
+                                         Minimum="0" Maximum="100"
+                                         Value="{Binding Progress}"
+                                         IsIndeterminate="{Binding ProgressIndeterminate}" />
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding Detail}"
+                                           FontSize="13.5"
+                                           VerticalAlignment="Center"
+                                           Foreground="{StaticResource TextTertiary}" />
+                                <Button Grid.Column="1"
+                                        Classes="link"
+                                        Content="Zrušiť"
+                                        IsVisible="{Binding CanCancel}"
+                                        Command="{Binding CancelCommand}" />
+                            </Grid>
+                        </StackPanel>
+
+                    </Grid>
                 </Grid>
-            </Border>
 
-        </StackPanel>
+                <!-- Action bar -->
+                <Border Grid.Row="2" BorderThickness="0,1,0,0" BorderBrush="{StaticResource Hairline}"
+                        Margin="0,22,0,0" Padding="0,22,0,30">
+                    <Grid ColumnDefinitions="*,Auto">
 
-        <!-- One prominent button whose meaning follows the state — Install, Update, Play or Retry —
-             with a quieter one beside it for the alternative that makes sense at the time. -->
-        <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10"
+                                    VerticalAlignment="Center">
+                            <Ellipse Width="8" Height="8" Fill="{Binding StatusDot}"
+                                     VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Status}"
+                                       FontSize="15" FontWeight="SemiBold"
+                                       VerticalAlignment="Center"
+                                       TextWrapping="NoWrap"
+                                       TextTrimming="CharacterEllipsis"
+                                       Foreground="{StaticResource TextPrimary}" />
+                        </StackPanel>
 
-            <TextBlock Grid.Column="0"
-                       Text="{Binding Status}"
-                       VerticalAlignment="Center"
-                       TextWrapping="NoWrap"
-                       TextTrimming="CharacterEllipsis"
-                       Opacity="0.85" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
+                            <Button Classes="secondary"
+                                    Content="{Binding SecondaryLabel}"
+                                    IsVisible="{Binding SecondaryVisible}"
+                                    Command="{Binding SecondaryCommand}" />
+                            <Button Classes="primary"
+                                    Content="{Binding PrimaryLabel}"
+                                    IsEnabled="{Binding PrimaryEnabled}"
+                                    Command="{Binding PrimaryCommand}" />
+                        </StackPanel>
 
-            <Button Grid.Column="1"
-                    Content="{Binding SecondaryLabel}"
-                    Padding="14,10"
-                    IsVisible="{Binding SecondaryVisible}"
-                    Command="{Binding SecondaryCommand}" />
+                    </Grid>
+                </Border>
 
-            <Button Grid.Column="2"
-                    Content="{Binding PrimaryLabel}"
-                    MinWidth="128"
-                    Padding="18,10"
-                    FontWeight="SemiBold"
-                    IsEnabled="{Binding PrimaryEnabled}"
-                    Command="{Binding PrimaryCommand}" />
-
-        </Grid>
-
-    </Grid>
+            </Grid>
+        </Panel>
+    </Border>
 
 </Window>

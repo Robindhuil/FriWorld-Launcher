@@ -122,6 +122,16 @@ _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.0-alpha**._
   ktoré launcher zobrazuje, plus pravidlá, ktoré návrh nesmie obísť. Otvorené je v ňom
   jedno rozhodnutie: UI je po anglicky, ale cieľovka sú slovenskí žiaci.
 
+- Okno prekreslené podľa handoffu z Claude Designera: 980 × 720, bez systémového rámu,
+  vlastná hlavička s minimalizáciou a zatváraním, render FRI ako pozadie so scrimom,
+  vlastný kurzor, akcentová farba `#FBB800` len na logu, hlavnom tlačidle a pruhu priebehu.
+- **Texty pre hráča sú po slovensky.** Vývojárske výstupy (nápoveda CLI, `pack`) zostávajú
+  anglické — delenie je podľa publika, nie podľa projektu.
+- Chybový panel nesie slovo „CHYBA", nie iba farbu. Farba sama vylučuje toho, kto ju nerozlíši.
+- Stred okna je zarovnaný k spodku, takže chyby a priebeh rastú nahor a akčné pásmo sa
+  nehýbe pod kurzorom.
+- Riadok verzie má pevnú výšku aj keď je prázdny — inak by pri prvom načítaní poskočilo logo.
+
 ### Fixed
 - **Self-update štartoval nový launcher, kým starý ešte držal zámok jednej inštancie.**
   Nový by ako prvú vec ohlásil, že beží iný launcher, a aktualizácia by vyzerala, že všetko

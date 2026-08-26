@@ -17,43 +17,47 @@ public readonly record struct FailureMessage(string Headline, string? Advice, bo
 /// The raw message is fine for the log and useless in a window: "The remote name could not be
 /// resolved" tells a player nothing they can act on. This is the one place that translation
 /// happens, so the window and the console front end cannot describe the same failure differently.
+///
+/// The text is Slovak because it is read by players — schoolchildren, in this game's case.
+/// Developer-facing output such as the CLI's help stays English; the split is by audience,
+/// not by project.
 /// </summary>
 public static class FailureMessages
 {
     public static FailureMessage Describe(Exception exception) => exception switch
     {
         GameIsRunningException => new(
-            "The game is already running.",
-            "Close it and try again.",
+            "Hra už beží.",
+            "Zavri ju a skús to znova.",
             true),
 
         LauncherTooOldException e => new(
-            "This launcher is too old for the current release.",
-            e.Message + " Download a newer launcher.",
+            "Tento launcher je príliš starý.",
+            e.Message + " Stiahni si novší.",
             false),
 
         InsufficientDiskSpaceException e => new(
-            "Not enough free space.",
-            e.Message + " An update needs room for the download and the new files at the same time.",
+            "Nedostatok voľného miesta.",
+            e.Message + " Treba miesto na stiahnutie aj rozbalenie naraz.",
             true),
 
         HashMismatchException => new(
-            "The download was damaged.",
-            "The file did not match its checksum and was deleted. Trying again usually fixes it.",
+            "Stiahnutý súbor je poškodený.",
+            "Nesedel kontrolný súčet, tak sme ho zmazali. Zvyčajne pomôže skúsiť to znova.",
             true),
 
         ManifestException => new(
-            "The release information could not be read.",
-            "The server answered, but not with something this launcher understands.",
+            "Nepodarilo sa prečítať informácie o verzii.",
+            "Server odpovedal, ale niečím, čomu tento launcher nerozumie.",
             false),
 
         GameLaunchException e => new(
-            "The game could not be started.",
-            e.Message + " Repairing the installation may help.",
+            "Hru sa nepodarilo spustiť.",
+            e.Message + " Môže pomôcť oprava inštalácie.",
             true),
 
         LauncherUpdateException e => new(
-            "The launcher could not update itself.",
+            "Launcher sa nedokázal aktualizovať.",
             e.Message,
             false),
 
@@ -63,27 +67,27 @@ public static class FailureMessages
             true),
 
         HttpRequestException => new(
-            "Could not reach the download server.",
-            "Check the connection and try again.",
+            "Nepodarilo sa spojiť so serverom.",
+            "Skontroluj pripojenie a skús to znova.",
             true),
 
-        TaskCanceledException or OperationCanceledException => new(
-            "Cancelled.",
+        OperationCanceledException => new(
+            "Zrušené.",
             null,
             true),
 
         UnauthorizedAccessException => new(
-            "The launcher is not allowed to write where it installs.",
-            "Check the folder's permissions, or run the launcher from a different location.",
+            "Launcher nemá právo zapisovať tam, kam inštaluje.",
+            "Skontroluj práva k priečinku, alebo spusti launcher z iného miesta.",
             false),
 
         IOException e => new(
-            "A file could not be written.",
+            "Súbor sa nepodarilo zapísať.",
             e.Message,
             true),
 
         _ => new(
-            "Something went wrong.",
+            "Niečo sa pokazilo.",
             exception.Message,
             true),
     };
