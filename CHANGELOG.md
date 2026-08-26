@@ -107,6 +107,17 @@ _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.0-alpha**._
   predošlá inštalácia a okno sa nezavrelo. Nula je stále predvolená, takže sa dá vyvolať
   aj ten pád.
 
+- Okno má **jedno hlavné tlačidlo**, ktoré mení popis podľa stavu: Install, Update, Play,
+  Retry. Vedľa neho je tichšie tlačidlo pre alternatívu, ktorá vtedy dáva zmysel — hrať
+  nainštalovanú verziu namiesto aktualizácie, alebo opraviť inštaláciu.
+- **Launcher už nič neinštaluje sám.** Doteraz sa pri prázdnej inštalácii pustil do
+  sťahovania hneď po otvorení okna. Rozhodnutie stiahnuť stovky megabajtov nepatrí
+  launcheru len preto, že niekto otvoril okno.
+- Bez nainštalovanej hry nie je tlačidlo Play, ale Install. Zobrazí sa aj veľkosť
+  sťahovania, aby človek vedel, do čoho ide.
+- `LauncherActions` v `Core` — rozhodnutie, čo ponúknuť, je vec domény, nie okna. Vďaka tomu
+  sa dá otestovať bez UI, a testy naň sú.
+
 ### Fixed
 - **Self-update štartoval nový launcher, kým starý ešte držal zámok jednej inštancie.**
   Nový by ako prvú vec ohlásil, že beží iný launcher, a aktualizácia by vyzerala, že všetko

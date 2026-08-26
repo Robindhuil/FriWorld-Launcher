@@ -103,6 +103,27 @@ Bez toho by hráč mal rozbitú inštaláciu a launcher by tvrdil, že je všetk
 
 ---
 
+## Čo okno ponúka
+
+Jedno hlavné tlačidlo, ktoré mení význam podľa stavu — tak, ako to robí bežný herný launcher.
+Rozhodnutie robí `LauncherActions` v `Core`, nie okno: je to otázka o tom, čo je na disku
+a čo hovorí manifest, nie o tom, ako vyzerá UI.
+
+| stav | hlavné tlačidlo | vedľajšie |
+|---|---|---|
+| nič nainštalované | **Install** | — |
+| nainštalované a aktuálne | **Play** | Repair |
+| je novšia verzia | **Update** | Play *(stará verzia)* |
+| launcher je pristarý | **Play**, ak je čo hrať | — |
+| zlyhalo pred prvou kontrolou | **Retry** | — |
+| práve pracuje | zakázané | Cancel |
+
+**Nič veľké sa nedeje samo.** Otvorenie launchera skontroluje, čo je vonku, a potom čaká.
+Stiahnuť stovky megabajtov preto, že niekto otvoril okno, nie je rozhodnutie launchera —
+a to platí aj vtedy, keď je to jediná zmysluplná vec, ktorú by človek spravil.
+
+---
+
 ## Formát archívu je per platforma
 
 | platforma | formát | prečo |

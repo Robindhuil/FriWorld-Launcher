@@ -42,8 +42,8 @@
                 </Grid>
             </StackPanel>
 
-            <!-- Neutral detail: the reassurance shown alongside an offered update, and the
-                 note left after a cancelled download. -->
+            <!-- Neutral detail: the download size before installing, the reassurance beside an
+                 offered update, the note left after a cancelled download. -->
             <TextBlock Text="{Binding Detail}"
                        IsVisible="{Binding InfoVisible}"
                        TextWrapping="Wrap"
@@ -86,7 +86,9 @@
 
         </StackPanel>
 
-        <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
+        <!-- One prominent button whose meaning follows the state — Install, Update, Play or Retry —
+             with a quieter one beside it for the alternative that makes sense at the time. -->
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
 
             <TextBlock Grid.Column="0"
                        Text="{Binding Status}"
@@ -96,24 +98,18 @@
                        Opacity="0.85" />
 
             <Button Grid.Column="1"
-                    Content="Repair"
-                    Padding="12,10"
-                    IsVisible="{Binding IsInstalled}"
-                    Command="{Binding RepairCommand}"
-                    ToolTip.Tip="Download and reinstall the current version, for when files are damaged." />
+                    Content="{Binding SecondaryLabel}"
+                    Padding="14,10"
+                    IsVisible="{Binding SecondaryVisible}"
+                    Command="{Binding SecondaryCommand}" />
 
             <Button Grid.Column="2"
-                    Content="Update"
-                    Padding="16,10"
-                    IsVisible="{Binding CanUpdate}"
-                    Command="{Binding UpdateCommand}" />
-
-            <Button Grid.Column="3"
-                    Content="Play"
-                    MinWidth="112"
+                    Content="{Binding PrimaryLabel}"
+                    MinWidth="128"
                     Padding="18,10"
-                    IsEnabled="{Binding CanPlay}"
-                    Command="{Binding PlayCommand}" />
+                    FontWeight="SemiBold"
+                    IsEnabled="{Binding PrimaryEnabled}"
+                    Command="{Binding PrimaryCommand}" />
 
         </Grid>
 

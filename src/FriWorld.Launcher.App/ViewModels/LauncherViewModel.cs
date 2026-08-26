@@ -16,12 +16,16 @@ namespace FriWorld.Launcher.App.ViewModels;
 /// Drives the single launcher window.
 ///
 /// It owns no update logic of its own — everything is <see cref="UpdateOrchestrator"/>, the same
-/// code the headless front end runs. This class decides which buttons are live and turns progress
+/// code the headless front end runs. This class decides what the buttons say and turns progress
 /// and failures into sentences.
 ///
-/// The one rule shaping all of it: an installed game stays playable. A new release, an unreachable
-/// server and a failed download are all things that must not stand between a player and a game
-/// that is already on their disk.
+/// Two rules shape all of it.
+///
+/// Nothing large happens on its own. Opening the launcher checks what is available and then waits.
+/// Downloading hundreds of megabytes because someone opened a window is not the launcher's call.
+///
+/// An installed game stays playable. A new release, an unreachable server and a failed download
+/// are all things that must not stand between a player and a game already on their disk.
 /// </summary>
 public sealed class LauncherViewModel : ObservableObject
 {
@@ -29,7 +33,6 @@ public sealed class LauncherViewModel : ObservableObject
     private readonly LauncherSelfUpdater _selfUpdater;
     private readonly ILauncherLog _log;
     private readonly Lock _workGate = new();
-
     private readonly bool _keepOpenAfterLaunch;
 
     private SingleInstanceLock? _instanceLock;
@@ -38,6 +41,7 @@ public sealed class LauncherViewModel : ObservableObject
     private LauncherBinary? _launcherBinary;
     private string? _launcherDownloadPage;
 
+    private LauncherAction _action = LauncherAction.None;
     private string _status = "Starting";
     private string _detail = string.Empty;
     private string _versionLine = string.Empty;
@@ -48,8 +52,6 @@ public sealed class LauncherViewModel : ObservableObject
     private bool _progressIndeterminate = true;
     private bool _progressVisible;
     private bool _busy;
-    private bool _canPlay;
-    private bool _canUpdate;
     private bool _canCancel;
     private bool _failed;
 
@@ -65,33 +67,62 @@ public sealed class LauncherViewModel : ObservableObject
         // The second half of the rename trick from the last self-update, if there was one.
         _selfUpdater.CleanUpSupersededExecutable();
 
-        PlayCommand = new RelayCommand(() => _ = PlayAsync(), () => CanPlay && !Busy);
-        UpdateCommand = new RelayCommand(() => _ = InstallAsync(), () => CanUpdate && !Busy);
-        RepairCommand = new RelayCommand(() => _ = RepairAsync(), () => !Busy);
-        RetryCommand = new RelayCommand(() => _ = RefreshAsync(), () => !Busy);
+        PrimaryCommand = new RelayCommand(RunPrimary, () => PrimaryEnabled);
+        SecondaryCommand = new RelayCommand(RunSecondary, () => SecondaryVisible && !Busy);
         CancelCommand = new RelayCommand(Cancel, () => CanCancel);
         UpdateLauncherCommand = new RelayCommand(() => _ = UpdateLauncherAsync(), () => !Busy);
     }
 
-    public RelayCommand PlayCommand { get; }
+    /// <summary>The one prominent button. What it does depends on <see cref="Action"/>.</summary>
+    public RelayCommand PrimaryCommand { get; }
 
-    public RelayCommand UpdateCommand { get; }
-
-    public RelayCommand RepairCommand { get; }
-
-    public RelayCommand RetryCommand { get; }
+    /// <summary>The quieter button beside it: play the old build, or repair the current one.</summary>
+    public RelayCommand SecondaryCommand { get; }
 
     public RelayCommand CancelCommand { get; }
 
     public RelayCommand UpdateLauncherCommand { get; }
 
-    /// <summary>
-    /// Raised once the game is up and the launcher has nothing left to do. The window listens
-    /// and closes itself; the view model does not reach into the UI to do it.
-    /// </summary>
+    /// <summary>Raised once the game is up and the launcher has nothing left to do.</summary>
     public event EventHandler? CloseRequested;
 
     public string Title => "FriWorld";
+
+    public LauncherAction Action
+    {
+        get => _action;
+        private set
+        {
+            if (SetField(ref _action, value))
+            {
+                RaiseButtons();
+            }
+        }
+    }
+
+    public string PrimaryLabel => Action switch
+    {
+        LauncherAction.Install => "Install",
+        LauncherAction.Update => "Update",
+        LauncherAction.Play => "Play",
+        LauncherAction.Retry => "Retry",
+        _ => "Please wait",
+    };
+
+    public bool PrimaryEnabled => Action != LauncherAction.None && !Busy;
+
+    /// <summary>
+    /// The secondary button exists only where it has an obvious meaning: keeping the installed
+    /// build when an update is offered, and repairing when there is nothing else to do.
+    /// </summary>
+    public string SecondaryLabel => Action switch
+    {
+        LauncherAction.Update => $"Play {_check?.InstalledVersion}",
+        LauncherAction.Play => "Repair",
+        _ => string.Empty,
+    };
+
+    public bool SecondaryVisible => Action is LauncherAction.Update or LauncherAction.Play;
 
     public string Status
     {
@@ -115,13 +146,10 @@ public sealed class LauncherViewModel : ObservableObject
     /// Whether the neutral detail line should show.
     ///
     /// Detail doubles as reassurance ("you can keep playing the version you have") and as the
-    /// body of a failure. Without this the reassuring cases were written and never rendered,
-    /// because the only two places showing Detail were the progress panel and the error panel.
+    /// body of a failure, so it needs somewhere to appear when neither the progress panel nor
+    /// the error panel is on screen.
     /// </summary>
     public bool InfoVisible => !Failed && !ProgressVisible && !string.IsNullOrEmpty(Detail);
-
-    /// <summary>Whether there is an installation worth repairing.</summary>
-    public bool IsInstalled => _orchestrator.State.Read() is not null;
 
     public string VersionLine
     {
@@ -197,32 +225,7 @@ public sealed class LauncherViewModel : ObservableObject
         {
             if (SetField(ref _busy, value))
             {
-                RaiseAll();
-            }
-        }
-    }
-
-    public bool CanPlay
-    {
-        get => _canPlay;
-        private set
-        {
-            if (SetField(ref _canPlay, value))
-            {
-                RaiseAll();
-            }
-        }
-    }
-
-    /// <summary>An update is available and waiting for the player to say yes.</summary>
-    public bool CanUpdate
-    {
-        get => _canUpdate;
-        private set
-        {
-            if (SetField(ref _canUpdate, value))
-            {
-                RaiseAll();
+                RaiseButtons();
             }
         }
     }
@@ -240,16 +243,15 @@ public sealed class LauncherViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Looks for an update, and installs one only when there is nothing playable yet.
-    ///
-    /// A player who already has the game gets asked. Downloading hundreds of megabytes because
-    /// someone opened the launcher is not a decision the launcher gets to make for them.
+    /// Looks at what is available and decides what the button should offer. Installs nothing.
+    /// Called once when the window opens.
     /// </summary>
     public async Task RefreshAsync()
     {
         if (_instanceLock is null)
         {
             Fail(new UpdateException("Another launcher is already running."));
+            Action = LauncherAction.None;
             return;
         }
 
@@ -262,6 +264,7 @@ public sealed class LauncherViewModel : ObservableObject
 
             ApplyLauncherUpdate(_check);
             Notes = _check.Manifest.Notes ?? string.Empty;
+            ProgressVisible = false;
 
             if (_check.LauncherTooOld)
             {
@@ -269,20 +272,8 @@ public sealed class LauncherViewModel : ObservableObject
                 return;
             }
 
-            if (!_check.UpdateRequired)
-            {
-                Ready(_check.LatestVersion, "Ready to play");
-                return;
-            }
-
-            if (_check.CanPlayWithoutUpdating)
-            {
-                OfferChoice(_check);
-                return;
-            }
-
-            // Nothing playable is installed, so there is no choice to offer.
-            await InstallAsync();
+            Action = LauncherActions.AfterCheck(_check);
+            Describe(_check);
         }
         catch (OperationCanceledException)
         {
@@ -298,6 +289,64 @@ public sealed class LauncherViewModel : ObservableObject
         }
     }
 
+    /// <summary>Puts the state into words once the action has been decided.</summary>
+    private void Describe(UpdateCheck check)
+    {
+        switch (Action)
+        {
+            case LauncherAction.Play:
+                VersionLine = $"Version {check.LatestVersion}";
+                Status = "Ready to play";
+                Detail = string.Empty;
+                break;
+
+            case LauncherAction.Update:
+                VersionLine = $"Version {check.InstalledVersion} installed · {check.LatestVersion} available";
+                Status = $"Update to {check.LatestVersion}?";
+                Detail = $"You can keep playing {check.InstalledVersion} for now.";
+                break;
+
+            case LauncherAction.Install:
+                VersionLine = $"Version {check.LatestVersion} available";
+                Status = "Not installed";
+                Detail = $"{DiskSpace.Format(check.Package.Size)} to download.";
+                break;
+        }
+    }
+
+    private void RunPrimary()
+    {
+        switch (Action)
+        {
+            case LauncherAction.Install:
+            case LauncherAction.Update:
+                _ = InstallAsync();
+                break;
+
+            case LauncherAction.Play:
+                _ = PlayAsync();
+                break;
+
+            case LauncherAction.Retry:
+                _ = RefreshAsync();
+                break;
+        }
+    }
+
+    private void RunSecondary()
+    {
+        switch (Action)
+        {
+            case LauncherAction.Update:
+                _ = PlayAsync();
+                break;
+
+            case LauncherAction.Play:
+                _ = RepairAsync();
+                break;
+        }
+    }
+
     /// <summary>Downloads and installs the release the last check found.</summary>
     private async Task InstallAsync()
     {
@@ -308,15 +357,19 @@ public sealed class LauncherViewModel : ObservableObject
 
         Busy = true;
         Failed = false;
-        CanUpdate = false;
-        CanPlay = false;
+        Action = LauncherAction.None;
         CanCancel = true;
 
         try
         {
             await Run(ct => _orchestrator.InstallAsync(check, new UiProgress(this), ct));
             _check = check with { Installed = _orchestrator.State.Read() };
-            Ready(check.LatestVersion, "Ready to play");
+
+            VersionLine = $"Version {check.LatestVersion}";
+            Status = "Ready to play";
+            Detail = string.Empty;
+            ProgressVisible = false;
+            Action = LauncherAction.Play;
         }
         catch (OperationCanceledException)
         {
@@ -337,16 +390,20 @@ public sealed class LauncherViewModel : ObservableObject
     {
         Busy = true;
         Failed = false;
-        CanPlay = false;
-        CanUpdate = false;
+        Action = LauncherAction.None;
         CanCancel = true;
 
         try
         {
             Status = "Repairing the installation";
-            await Run(ct => _orchestrator.RepairAsync(new UiProgress(this), ct));
-            _check = _check is null ? null : _check with { Installed = _orchestrator.State.Read() };
-            Ready(_orchestrator.State.Read()?.Version ?? string.Empty, "Repaired and ready");
+            var installed = await Run(ct => _orchestrator.RepairAsync(new UiProgress(this), ct));
+            _check = _check is null ? null : _check with { Installed = installed };
+
+            VersionLine = $"Version {installed.Version}";
+            Status = "Repaired and ready";
+            Detail = string.Empty;
+            ProgressVisible = false;
+            Action = LauncherAction.Play;
         }
         catch (OperationCanceledException)
         {
@@ -366,6 +423,7 @@ public sealed class LauncherViewModel : ObservableObject
     private async Task PlayAsync()
     {
         Busy = true;
+        Action = LauncherAction.None;
 
         try
         {
@@ -384,11 +442,13 @@ public sealed class LauncherViewModel : ObservableObject
                 Detail = $"It exited with code {process.ExitCode} moments after starting.";
                 FailureAdvice = "Repairing the installation may help. The log has the details.";
                 ProgressVisible = false;
+                Action = LauncherAction.Play;
                 _log.Warn($"The game exited with code {process.ExitCode} during the grace period.");
                 return;
             }
 
             Status = "Running";
+            Action = LauncherAction.Play;
 
             if (!_keepOpenAfterLaunch)
             {
@@ -521,34 +581,12 @@ public sealed class LauncherViewModel : ObservableObject
     {
         Failed = false;
         FailureAdvice = string.Empty;
-        CanPlay = false;
-        CanUpdate = false;
+        Action = LauncherAction.None;
         CanCancel = false;
         ProgressVisible = true;
         ProgressIndeterminate = true;
         Status = "Checking for updates";
         Detail = string.Empty;
-    }
-
-    private void Ready(string version, string status)
-    {
-        VersionLine = string.IsNullOrEmpty(version) ? string.Empty : $"Version {version}";
-        Status = status;
-        Detail = string.Empty;
-        ProgressVisible = false;
-        CanPlay = true;
-        CanUpdate = false;
-    }
-
-    /// <summary>Both options live at once: play what is installed, or take the new release.</summary>
-    private void OfferChoice(UpdateCheck check)
-    {
-        VersionLine = $"Version {check.InstalledVersion} installed · {check.LatestVersion} available";
-        Status = $"Update to {check.LatestVersion}?";
-        Detail = $"You can keep playing {check.InstalledVersion} for now.";
-        ProgressVisible = false;
-        CanPlay = true;
-        CanUpdate = true;
     }
 
     private void ShowLauncherTooOld(UpdateCheck check)
@@ -562,8 +600,7 @@ public sealed class LauncherViewModel : ObservableObject
         ProgressVisible = false;
 
         // Whatever is installed still runs; only updating the game is off the table.
-        CanPlay = check.Installed is not null;
-        CanUpdate = false;
+        Action = LauncherActions.AfterCheck(check);
     }
 
     private void Cancelled()
@@ -571,8 +608,7 @@ public sealed class LauncherViewModel : ObservableObject
         Status = "Cancelled";
         Detail = "A partial download is kept and will continue next time.";
         ProgressVisible = false;
-        CanPlay = _orchestrator.State.Read() is not null;
-        CanUpdate = _check?.UpdateRequired ?? false;
+        Action = LauncherActions.AfterInterruption(_check, _orchestrator.State.Read() is not null);
     }
 
     /// <summary>
@@ -593,13 +629,11 @@ public sealed class LauncherViewModel : ObservableObject
         FailureAdvice = string.Empty;
         ProgressVisible = false;
 
-        // An installation already on disk stays playable, which is what matters when the failure
-        // was simply that the server could not be reached.
-        var installed = _orchestrator.State.Read();
-        CanPlay = installed is not null;
-        CanUpdate = message.Recoverable && (_check?.UpdateRequired ?? false);
+        Action = message.Recoverable
+            ? LauncherActions.AfterInterruption(_check, _orchestrator.State.Read() is not null)
+            : LauncherAction.None;
 
-        if (installed is not null && string.IsNullOrEmpty(VersionLine))
+        if (_orchestrator.State.Read() is { } installed && string.IsNullOrEmpty(VersionLine))
         {
             VersionLine = $"Version {installed.Version} installed";
         }
@@ -651,14 +685,16 @@ public sealed class LauncherViewModel : ObservableObject
                  $"{(download.TotalBytes is { } total ? DiskSpace.Format(total) : "?")}";
     }
 
-    private void RaiseAll()
+    private void RaiseButtons()
     {
-        PlayCommand.RaiseCanExecuteChanged();
-        UpdateCommand.RaiseCanExecuteChanged();
-        RepairCommand.RaiseCanExecuteChanged();
-        RetryCommand.RaiseCanExecuteChanged();
+        Raise(nameof(PrimaryLabel));
+        Raise(nameof(PrimaryEnabled));
+        Raise(nameof(SecondaryLabel));
+        Raise(nameof(SecondaryVisible));
+
+        PrimaryCommand.RaiseCanExecuteChanged();
+        SecondaryCommand.RaiseCanExecuteChanged();
         UpdateLauncherCommand.RaiseCanExecuteChanged();
-        Raise(nameof(IsInstalled));
     }
 
     /// <summary>Marshals progress reports onto the UI thread.</summary>
