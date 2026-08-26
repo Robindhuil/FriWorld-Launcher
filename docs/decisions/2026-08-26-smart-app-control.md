@@ -47,11 +47,36 @@ Možnosti, zoradené podľa toho, čo dáva zmysel:
 Kým sa to nevyrieši, platí: `dotnet build` a `dotnet test` na riešení fungujú len potiaľ,
 pokiaľ nejde o beh vlastného kódu. Launcher sa spustiť nedá.
 
-### Dočasné obídenie pre testy
+### Čo presne prejde a čo nie
 
-Blokuje sa **načítanie samostatnej DLL**, nie testovacia assembly ako taká. Keď sa zdroje
-`Core` preložia priamo do testovacieho projektu, žiadna `FriWorld.Launcher.Core.dll` sa
-nenačítava a testy prebehnú. Projekt mimo repa s týmto obsahom stačí:
+Odmerané, nie odhadnuté:
+
+| | výsledok |
+|---|---|
+| `dotnet build` | prejde vždy — blokuje sa **beh**, nie preklad |
+| apphost `.exe` (aj jednosúborový self-contained) | **blokované vždy** |
+| `dotnet exec` + samostatná `Core.dll` | **blokované** |
+| `dotnet exec` + jedna zlúčená assembly, `OutputType=Exe` | **prejde** |
+| `dotnet exec` + jedna zlúčená assembly, `OutputType=WinExe` | **blokované** — trikrát po sebe, aj po prebuildovaní |
+
+Rozhodujúce sú teda tri veci naraz: **jedna assembly** (žiadne načítanie druhej DLL),
+**konzolový subsystém** namiesto `WinExe`, a spustenie cez **podpísaný `dotnet` host**
+namiesto vygenerovaného apphostu. Avalonia okno sa pri `Exe` normálne otvorí, len k nemu
+pribudne konzola.
+
+### Dočasné obídenie
+
+Skript [`tools/run-under-smart-app-control.ps1`](../../tools/run-under-smart-app-control.ps1)
+to robí sám — poskladá projekt mimo repa, zbuildí ho a spustí:
+
+```powershell
+./tools/run-under-smart-app-control.ps1              # okno launchera proti mock releasu
+./tools/run-under-smart-app-control.ps1 -Target cli -Arguments 'check'
+```
+
+Overené: okno sa otvorí, mock release sa stiahne, overí, rozbalí a nainštaluje.
+
+Pre testy platí to isté. Projekt mimo repa s týmto obsahom stačí:
 
 ```xml
 <PropertyGroup>

@@ -189,15 +189,20 @@ zbuildovaných DLL. Ak `dotnet test` alebo spustenie launchera padne na
 `An Application Control policy has blocked this file (0x800711C7)`, je to ono.
 Detaily a možnosti sú v [`docs/decisions/2026-08-26-smart-app-control.md`](docs/decisions/2026-08-26-smart-app-control.md).
 
-Bez vypínania Smart App Control sa dá pracovať takto:
+Bez vypínania Smart App Control sa dá pracovať. Skript to rieši sám:
 
-| chcem | ako |
-|---|---|
-| spustiť testy | zdroje `Core` preložiť priamo do testovacieho projektu — postup v zápise vyššie |
-| spustiť testy a overiť Linux | kontajner `mcr.microsoft.com/dotnet/sdk:10.0` |
-| vidieť a klikať v okne launchera | VM s Windows, kde Smart App Control nebeží |
+```powershell
+./tools/run-under-smart-app-control.ps1              # okno launchera proti mock releasu
+./tools/run-under-smart-app-control.ps1 -Target cli -Arguments 'check'
+```
 
-Kontajner je jediná cesta, ako dnes overiť execute bity a symlinky z `tar.gz`.
+Poskladá projekt mimo repa tak, aby prešiel — jedna assembly, konzolový subsystém,
+spustenie cez podpísaný `dotnet` host. Podrobnosti aj s tým, čo presne prejde a čo nie,
+sú v zápise vyššie.
+
+Pre testy platí to isté; postup je tam tiež. Kontajner
+`mcr.microsoft.com/dotnet/sdk:10.0` je navyše jediná cesta, ako dnes overiť execute bity
+a symlinky z `tar.gz` na skutočnom Linuxe.
 
 ---
 

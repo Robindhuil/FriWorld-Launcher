@@ -61,5 +61,8 @@ _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.0-alpha**._
   (`docs/decisions/2026-08-26-bez-podpisu-launcher-je-most-k-steamu.md`)
 
 ### Fixed
+- Chyby v okne sa nikde nezapisovali. Launcher, ktorý padne na cudzom stroji, sa diagnostikuje
+  z `launcher.log` alebo nijak, takže `Fail` teraz loguje aj s výnimkou.
+- Riadok „Starting" v konzolovom výstupe sa neukončil a výstup hry sa naň nalepil.
 - Odvodené vlastnosti `PlatformPackage` sa serializovali do manifestu a padali na
   relatívnej URL. Odhalil to end-to-end test proti mock releasu.

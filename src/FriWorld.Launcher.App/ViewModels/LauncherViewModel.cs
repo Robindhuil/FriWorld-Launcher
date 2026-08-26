@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Threading;
 using FriWorld.Launcher.Core;
+using FriWorld.Launcher.Core.Diagnostics;
 using FriWorld.Launcher.Core.Install;
 using FriWorld.Launcher.Core.Launch;
 using FriWorld.Launcher.Core.Update;
@@ -19,6 +20,7 @@ namespace FriWorld.Launcher.App.ViewModels;
 public sealed class LauncherViewModel : ObservableObject
 {
     private readonly UpdateOrchestrator _orchestrator;
+    private readonly ILauncherLog _log;
     private readonly SingleInstanceLock? _instanceLock;
     private CancellationTokenSource? _work;
 
@@ -38,6 +40,7 @@ public sealed class LauncherViewModel : ObservableObject
     public LauncherViewModel()
     {
         var configuration = LauncherConfiguration.Resolve();
+        _log = configuration.Log;
         _instanceLock = SingleInstanceLock.TryAcquire(configuration.Paths);
         _orchestrator = configuration.CreateOrchestrator();
 
@@ -177,7 +180,7 @@ public sealed class LauncherViewModel : ObservableObject
             var installed = _orchestrator.State.Read();
             CanPlay = installed is not null;
 
-            Fail(ex.Message);
+            Fail("Checking for updates failed.", ex);
 
             if (installed is not null)
             {
@@ -202,7 +205,7 @@ public sealed class LauncherViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            Fail(ex.Message);
+            Fail("Starting the game failed.", ex);
         }
         finally
         {
@@ -210,11 +213,20 @@ public sealed class LauncherViewModel : ObservableObject
         }
     }
 
-    private void Fail(string message)
+    /// <summary>
+    /// Shows the failure and, just as importantly, writes it down.
+    ///
+    /// The window can only hold one sentence, and it is gone the moment the player closes it.
+    /// A launcher that fails on someone else's machine is diagnosed from <c>launcher.log</c> or
+    /// not at all, so nothing may fail quietly here.
+    /// </summary>
+    private void Fail(string message, Exception? exception = null)
     {
+        _log.Error(message, exception);
+
         Failed = true;
         Status = "Something went wrong";
-        Detail = message;
+        Detail = exception?.Message ?? message;
         ProgressVisible = false;
     }
 

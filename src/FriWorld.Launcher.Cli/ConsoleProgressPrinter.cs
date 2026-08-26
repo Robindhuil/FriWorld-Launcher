@@ -29,7 +29,11 @@ public sealed class ConsoleProgressPrinter : IProgress<UpdateStatus>
             Console.Write('\r' + line + new string(' ', padding));
             _lastLineLength = line.Length;
 
-            if (status.Stage is UpdateStage.Ready or UpdateStage.UpToDate or UpdateStage.Failed)
+            // Launching ends the line as well, otherwise the game's own output starts halfway
+            // along ours: the launcher writes "Starting …" and the process prints its first line
+            // before anything has moved to the next row.
+            if (status.Stage is UpdateStage.Ready or UpdateStage.UpToDate
+                or UpdateStage.Failed or UpdateStage.Launching)
             {
                 Console.WriteLine();
                 _lastLineLength = 0;
