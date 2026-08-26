@@ -1,0 +1,107 @@
+FriWorld Launcher
+=================
+
+Ostry launcher. Instaluje skutocnu hru do beznego miesta pre pouzivatelske aplikacie.
+Toto nie je testovacia maketa — na to je priecinok FriWorld-Launcher-Test.
+
+
+SPUSTENIE
+---------
+
+Dvojklik na  FriWorldLauncher.exe
+
+Ak Windows vypise "Smart App Control has blocked this app", spusti namiesto toho
+Spustit-ak-exe-nejde.cmd — je to ta ista aplikacia, len cez podpisany dotnet host.
+
+
+CO SA STANE
+-----------
+
+Okno sa otvori, precita manifest a napise, ze hra nie je nainstalovana, aj kolko
+sa bude stahovat. Nic sa nedeje, kym neklikes na Instalovat.
+
+Jedno hlavne tlacidlo meni popis podla stavu:
+
+  nic nainstalovane          Instalovat
+  je novsia verzia           Aktualizovat   (+ vedla "Hrat <stara verzia>")
+  nainstalovane a aktualne   Hrat           (+ vedla "Opravit")
+
+Po spusteni hry sa launcher sam zavrie. Ak by hra spadla hned po starte, okno
+zostane otvorene a povie to aj s navratovym kodom.
+
+
+AK SMART APP CONTROL BLOKUJE AJ ZALOHU
+--------------------------------------
+
+Stava sa to. Smart App Control rozhoduje aj podla mena suboru a verdikt sa casom
+meni — nie je to deterministicke.
+
+Spolahliva cesta je ho vypnut:
+
+  Windows Security -> App & browser control -> Smart App Control settings -> Off
+
+Od jarnych aktualizacii 2026 sa da rovnakou cestou zapnut spat, takze to uz nie je
+nevratne rozhodnutie ako kedysi.
+
+
+KAM SA INSTALUJE
+----------------
+
+  C:\Users\robob\AppData\Local\FriWorld\
+
+  game\            hra
+  game.old\        predosla verzia, drzi sa kym nova raz nenabehne
+  cache\           stiahnute archivy, mazu sa po uspesnej instalacii
+  installed.json   co je nainstalovane
+  launcher.log     co launcher robil
+
+Potrebuje asi 1,3 GB volneho miesta: archiv aj rozbalena hra naraz.
+
+Uloziska hraca su inde — v AppData\LocalLow\Crimsoned Rose\FriWorld — takze
+odinstalovanie hry o ne nepride.
+
+
+ODKIAL BERIE HRU
+----------------
+
+Zo suboru launcher.json vedla tohto textu:
+
+  {
+    "manifestUrl": "C:/Users/robob/Documents/FriWorld-Release/0.1.1-alpha/manifest.json"
+  }
+
+Teraz to ukazuje na lokalny priecinok, lebo externe ulozisko este nie je. Ked bude,
+zmeni sa tento jeden riadok na https adresu a nic ine:
+
+  "manifestUrl": "https://.../manifest.json"
+
+Ziadny novy build launchera. To je cely zmysel toho suboru.
+
+
+AKO VYDAT NOVU VERZIU
+---------------------
+
+1. V Unity zdvihni bundleVersion a zbuildi: FriWorld -> Build -> Release
+2. Z repa launchera:
+
+     dotnet run --project src/FriWorld.Launcher.Cli -- pack ^
+       --input "E:/UNITY/FriWorld/Build/<verzia>" ^
+       --version <verzia> ^
+       --notes "Co je nove." ^
+       --out "C:/Users/robob/Documents/FriWorld-Release/<verzia>"
+
+3. Preved launcher.json na novy priecinok
+4. Spusti launcher — ponukne Update
+
+Cely postup aj s kontrolnym zoznamom je v repe launchera: docs/releasing.md
+
+
+AK NIECO NEJDE
+--------------
+
+  C:\Users\robob\AppData\Local\FriWorld\launcher.log
+
+Je v nom zapisane aj to, co okno nestihlo ukazat.
+
+Uplne od zaciatku sa da zacat tak, ze zmazes cely priecinok
+C:\Users\robob\AppData\Local\FriWorld

@@ -12,6 +12,13 @@ na to číslo.
 
 _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.1-alpha**._
 
+### Fixed
+- **Záloha v zipe hlásila predošlú verziu.** Jej projekt sa skladal ručne a mal verziu
+  zadrôtovanú, takže launcher spustený cez zálohu by donekonečna ponúkal aktualizáciu
+  sám na seba — a nemohol by ju použiť, lebo viacsúborové nasadenie sa vymeniť nedá.
+  `tools/build-release-package.ps1` teraz vyrobí obidva assety, obidva ostampuje verziou
+  z `Directory.Build.props` a **sám overí**, že sa zhodujú.
+
 ## [0.1.1-alpha] - 2026-08-26
 
 _Prvá vydaná verzia. Všetko nižšie vzniklo pred ňou._

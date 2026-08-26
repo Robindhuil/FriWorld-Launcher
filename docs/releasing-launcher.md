@@ -35,7 +35,24 @@ porovnáva sa na nerovnosť s tým, čo je v manifeste.
 
 Riadok do `CHANGELOG.md`, `[Unreleased]` premenovať.
 
-### 2. Postav jednosúborový build
+### 2. Postav obidva assety
+
+```powershell
+./tools/build-release-package.ps1
+```
+
+Vyrobí `.exe` aj zip do `dist/launcher/<verzia>/` a **overí, že obidva nesú verziu
+z `Directory.Build.props`**. Ručné skladanie raz vydalo zip, ktorého záloha hlásila predošlú
+verziu — taký launcher by donekonečna ponúkal aktualizáciu sám na seba. Preto to robí skript
+a preto si to sám kontroluje.
+
+Súbory do zipu (`Spustit-ak-exe-nejde.cmd`, `CITAJ-MA.txt`, `launcher.json`) sú v
+`tools/package/`.
+
+<details>
+<summary>Čo skript robí ručne</summary>
+
+### 2a. Jednosúborový build
 
 ```bash
 dotnet publish src/FriWorld.Launcher.App/FriWorld.Launcher.App.csproj \
@@ -48,7 +65,7 @@ dotnet publish src/FriWorld.Launcher.App/FriWorld.Launcher.App.csproj \
 **Musí to byť jeden súbor.** Self-update odmieta vymeniť build rozsypaný do desiatok DLL,
 lebo polovične vymenený launcher je horší než starý.
 
-### 3. Zabaľ zip so zálohou
+### 2b. Zip so zálohou
 
 Zip obsahuje: `FriWorldLauncher.exe`, `Spustit-ak-exe-nejde.cmd`, `launcher.json`,
 `CITAJ-MA.txt` a priečinok `zaloha\` — zlúčený build s konzolovým subsystémom, ktorý
@@ -57,7 +74,9 @@ Smart App Control púšťa tam, kde apphost zastaví.
 Záloha sa stavia rovnako ako v `tools/run-under-smart-app-control.ps1`: zdroje `Core`
 a `App` preložené do jednej assembly, `OutputType=Exe`, framework-dependent.
 
-### 4. Vydaj
+</details>
+
+### 3. Vydaj
 
 ```bash
 gh release create v<verzia> \
@@ -67,7 +86,7 @@ gh release create v<verzia> \
   --title "<verzia>" --notes-file <poznamky.md> --prerelease
 ```
 
-### 5. Oznám to v manifeste hry
+### 4. Oznám to v manifeste hry
 
 Až teraz, keď je binárka naozaj na svojom mieste:
 
