@@ -191,6 +191,68 @@ public sealed class UpdateOrchestrator(
         _installer.Promote();
     }
 
+    /// <summary>
+    /// Removes the installed game and everything downloaded for it.
+    ///
+    /// Deliberately leaves two things alone. The log survives, because the most likely reason
+    /// someone uninstalls is that something went wrong and the record of it is the only way to
+    /// find out what. And the player's saves were never in here — the game writes those under
+    /// its own folder in LocalLow, so uninstalling does not touch anyone's progress.
+    /// </summary>
+    public void Uninstall()
+    {
+        if (_launcher.IsGameRunning())
+        {
+            throw new GameIsRunningException("The game is running. Close it before uninstalling.");
+        }
+
+        var installed = _state.Read();
+
+        // State first: if a delete fails half way, a launcher that already knows nothing is
+        // installed will offer to install cleanly rather than trying to play a gutted folder.
+        _state.Clear();
+
+        foreach (var directory in new[] { paths.Game, paths.GameNew, paths.GameOld, paths.Cache })
+        {
+            DeleteDirectory(directory);
+        }
+
+        _log.Info(installed is null
+            ? "Uninstalled; nothing was recorded as installed."
+            : $"Uninstalled {installed.Version} ({installed.Platform}).");
+    }
+
+    private void DeleteDirectory(string directory)
+    {
+        if (!Directory.Exists(directory))
+        {
+            return;
+        }
+
+        try
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // A file held open by a scanner should not turn uninstalling into a failure; what
+            // is left will be cleared by the next install, which wipes these anyway.
+            _log.Warn($"Could not fully remove {directory}: {ex.Message}");
+        }
+    }
+
+    /// <summary>The installed game's executable, for showing in the file manager.</summary>
+    public string? InstalledExecutablePath()
+    {
+        if (_state.Read() is not { } installed)
+        {
+            return null;
+        }
+
+        var path = Path.Combine(paths.Game, installed.Exec);
+        return File.Exists(path) ? path : Directory.Exists(paths.Game) ? paths.Game : null;
+    }
+
     /// <summary>Checks, and installs only if something actually changed.</summary>
     public async Task<UpdateCheck> EnsureLatestAsync(
         IProgress<UpdateStatus>? progress = null,

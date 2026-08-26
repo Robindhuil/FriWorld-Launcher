@@ -118,6 +118,14 @@ a čo hovorí manifest, nie o tom, ako vyzerá UI.
 | zlyhalo pred prvou kontrolou | **Retry** | — |
 | práve pracuje | zakázané | Cancel |
 
+Pod `⋯` vedľa zatvárania sú dve akcie, ktoré dávajú zmysel len s nainštalovanou hrou:
+**otvoriť priečinok s hrou** a **odinštalovať**. Sú tam zámerne — sú zriedkavé a štvrté
+tlačidlo v akčnom pásme by otupilo to hlavné.
+
+Odinštalovanie zmaže `game`, `game.new`, `game.old` a `cache`, ale **log necháva**.
+Najpravdepodobnejší dôvod, prečo niekto odinštaluje, je že sa niečo pokazilo, a log je
+jediný záznam o tom. Uloženia hráča sú mimo inštalačného koreňa, takže sa ich to netýka.
+
 **Nič veľké sa nedeje samo.** Otvorenie launchera skontroluje, čo je vonku, a potom čaká.
 Stiahnuť stovky megabajtov preto, že niekto otvoril okno, nie je rozhodnutie launchera —
 a to platí aj vtedy, keď je to jediná zmysluplná vec, ktorú by človek spravil.

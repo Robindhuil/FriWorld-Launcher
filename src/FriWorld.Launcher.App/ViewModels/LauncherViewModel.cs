@@ -63,6 +63,7 @@ public sealed class LauncherViewModel : ObservableObject
     private bool _busy;
     private bool _canCancel;
     private bool _failed;
+    private bool _confirmingUninstall;
 
     public LauncherViewModel()
     {
@@ -82,6 +83,10 @@ public sealed class LauncherViewModel : ObservableObject
         UpdateLauncherCommand = new RelayCommand(() => _ = UpdateLauncherAsync(), () => !Busy);
         MinimiseCommand = new RelayCommand(() => MinimiseRequested?.Invoke(this, EventArgs.Empty));
         CloseCommand = new RelayCommand(() => CloseRequested?.Invoke(this, EventArgs.Empty));
+        RevealCommand = new RelayCommand(Reveal, () => IsInstalled);
+        AskUninstallCommand = new RelayCommand(() => ConfirmingUninstall = true, () => IsInstalled && !Busy);
+        ConfirmUninstallCommand = new RelayCommand(Uninstall, () => !Busy);
+        CancelUninstallCommand = new RelayCommand(() => ConfirmingUninstall = false);
     }
 
     /// <summary>The one prominent button. What it does depends on <see cref="Action"/>.</summary>
@@ -97,6 +102,16 @@ public sealed class LauncherViewModel : ObservableObject
     public RelayCommand MinimiseCommand { get; }
 
     public RelayCommand CloseCommand { get; }
+
+    /// <summary>Shows the installed game in the file manager.</summary>
+    public RelayCommand RevealCommand { get; }
+
+    /// <summary>Asks about uninstalling. Deleting is never one click away.</summary>
+    public RelayCommand AskUninstallCommand { get; }
+
+    public RelayCommand ConfirmUninstallCommand { get; }
+
+    public RelayCommand CancelUninstallCommand { get; }
 
     public event EventHandler? MinimiseRequested;
 
@@ -144,6 +159,33 @@ public sealed class LauncherViewModel : ObservableObject
     };
 
     public bool SecondaryVisible => Action is LauncherAction.Update or LauncherAction.Play;
+
+    /// <summary>
+    /// Whether anything is installed. Gates the two actions that only mean something with a game
+    /// on disk: showing it in the file manager, and removing it.
+    /// </summary>
+    public bool IsInstalled => _orchestrator.State.Read() is not null;
+
+    /// <summary>
+    /// Whether the uninstall question is showing.
+    ///
+    /// Uninstalling deletes hundreds of megabytes and cannot be undone, so it gets a question
+    /// rather than a click. The question sits in the window rather than in a dialog, because
+    /// everything else this launcher has to say sits there too.
+    /// </summary>
+    public bool ConfirmingUninstall
+    {
+        get => _confirmingUninstall;
+        private set
+        {
+            if (SetField(ref _confirmingUninstall, value))
+            {
+                Raise(nameof(NotesVisible));
+                Raise(nameof(InfoVisible));
+                Raise(nameof(PlainTextVisible));
+            }
+        }
+    }
 
     public string Status
     {
@@ -193,7 +235,7 @@ public sealed class LauncherViewModel : ObservableObject
     public bool InfoVisible => NotesVisible && !string.IsNullOrEmpty(Detail);
 
     /// <summary>A bare sentence, for states with neither notes nor progress to show.</summary>
-    public bool PlainTextVisible => !Failed && !ProgressVisible && !NotesVisible && !string.IsNullOrEmpty(Detail);
+    public bool PlainTextVisible => !Failed && !ProgressVisible && !ConfirmingUninstall && !NotesVisible && !string.IsNullOrEmpty(Detail);
 
     public string VersionLine
     {
@@ -215,7 +257,7 @@ public sealed class LauncherViewModel : ObservableObject
         }
     }
 
-    public bool NotesVisible => !Failed && !ProgressVisible && !string.IsNullOrEmpty(Notes);
+    public bool NotesVisible => !Failed && !ProgressVisible && !ConfirmingUninstall && !string.IsNullOrEmpty(Notes);
 
     public string FailureHeadline
     {
@@ -807,10 +849,56 @@ public sealed class LauncherViewModel : ObservableObject
         Raise(nameof(SecondaryLabel));
         Raise(nameof(SecondaryVisible));
         Raise(nameof(StatusDot));
+        Raise(nameof(IsInstalled));
 
         PrimaryCommand.RaiseCanExecuteChanged();
         SecondaryCommand.RaiseCanExecuteChanged();
         UpdateLauncherCommand.RaiseCanExecuteChanged();
+        RevealCommand.RaiseCanExecuteChanged();
+        AskUninstallCommand.RaiseCanExecuteChanged();
+        ConfirmUninstallCommand.RaiseCanExecuteChanged();
+    }
+
+    private void Reveal()
+    {
+        var path = _orchestrator.InstalledExecutablePath();
+
+        if (path is null || !SystemFileManager.TryReveal(path))
+        {
+            Detail = "Priečinok s hrou sa nepodarilo otvoriť.";
+        }
+    }
+
+    private void Uninstall()
+    {
+        ConfirmingUninstall = false;
+        Busy = true;
+
+        try
+        {
+            _orchestrator.Uninstall();
+            _check = _check is null ? null : _check with { Installed = null };
+
+            VersionLine = _check is null ? string.Empty : $"Verzia {_check.LatestVersion} k dispozícii";
+            Notes = _check?.Manifest.Notes ?? string.Empty;
+            Status = "Odinštalované";
+            Detail = _check is null
+                ? "Hra bola odstránená."
+                : $"Hra bola odstránená. Na stiahnutie {Size(_check.Package.Size)}.";
+            Failed = false;
+            ProgressVisible = false;
+
+            // Saves live outside the install, so this genuinely is only the game coming off.
+            Action = _check is null ? LauncherAction.Retry : LauncherAction.Install;
+        }
+        catch (Exception ex)
+        {
+            Fail(ex);
+        }
+        finally
+        {
+            Busy = false;
+        }
     }
 
     /// <summary>Marshals progress reports onto the UI thread.</summary>

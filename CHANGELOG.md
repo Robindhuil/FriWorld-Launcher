@@ -145,6 +145,17 @@ _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.0-alpha**._
   Postup vydávania je v `docs/releasing-launcher.md` vrátane kontrolného zoznamu na
   prvú ostrú skúšku.
 
+- Odinštalovanie hry a otvorenie priečinka s hrou. Obidve sú zriedkavé akcie, tak sedia pod
+  `⋯` vedľa zatvárania, nie v akčnom pásme — štvrté tlačidlo vedľa hlavného by otupilo to,
+  na ktorom záleží. Zobrazia sa len keď je hra nainštalovaná.
+- Odinštalovanie **sa pýta**. Zmaže stovky megabajtov a vrátiť sa to nedá, tak to nie je
+  jedno kliknutie. Otázka je v okne, nie v dialógu, lebo tam je aj všetko ostatné.
+- Odinštalovanie **nechá log**. Najpravdepodobnejší dôvod, prečo niekto odinštaluje, je že sa
+  niečo pokazilo — a log je jediný záznam o tom. Zmazať ho spolu s hrou by zahodilo dôkaz.
+  Uloženia hráča sú mimo inštalácie, takže sa ich to nedotkne vôbec.
+- `launcher uninstall --yes` robí to isté bez okna. Oproti `clean`, ktorý zmaže celý koreň
+  vrátane logu.
+
 ### Fixed
 - **`launcher.log` ticho zahadzoval riadky, keď mal súbor otvorený iný proces.** Zapisovalo sa
   cez `File.AppendAllText`, čo súbor zakaždým otvorí so `FileShare.Read` — stačilo, že ho čítal

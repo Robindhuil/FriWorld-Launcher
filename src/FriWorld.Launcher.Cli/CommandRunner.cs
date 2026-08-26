@@ -43,6 +43,7 @@ public static class CommandRunner
                 "run" => await Run(options, cancellation.Token),
                 "play" => await Play(options, cancellation.Token),
                 "repair" => await Repair(options, cancellation.Token),
+                "uninstall" => Uninstall(options),
                 "self-update" => await SelfUpdate(options, cancellation.Token),
                 "clean" => Clean(options),
                 "help" or "--help" or "-h" => Help(),
@@ -457,6 +458,42 @@ public static class CommandRunner
         return 0;
     }
 
+    /// <summary>
+    /// Removes the game but leaves the log and the player's saves. `clean` deletes everything
+    /// including the log; this is the one someone would actually want.
+    /// </summary>
+    private static int Uninstall(CommandLineOptions options)
+    {
+        var config = Configure(options);
+
+        using var instanceLock = SingleInstanceLock.TryAcquire(config.Paths);
+        if (instanceLock is null)
+        {
+            Console.Error.WriteLine("Another launcher is already running.");
+            return 2;
+        }
+
+        var orchestrator = config.CreateOrchestrator();
+        var installed = orchestrator.State.Read();
+
+        if (installed is null)
+        {
+            Console.WriteLine("Nothing is installed.");
+            return 0;
+        }
+
+        if (!options.Has("yes"))
+        {
+            Console.WriteLine($"This removes {installed.Version} from {config.Paths.Game}.");
+            Console.WriteLine("Saves are kept; they live outside the install. Re-run with --yes.");
+            return 1;
+        }
+
+        orchestrator.Uninstall();
+        Console.WriteLine($"Removed {installed.Version}.");
+        return 0;
+    }
+
     private static int Clean(CommandLineOptions options)
     {
         var paths = Configure(options).Paths;
@@ -524,10 +561,11 @@ public static class CommandRunner
               run                      update, then start the game
               play                     Start what is installed, without checking for updates
               repair                   Reinstall the current version over a damaged one
+              uninstall --yes          Remove the game, keeping the log and the player's saves
               self-update              Replace the launcher itself
               pack                     Turn Unity player output into a release plus manifest
               mock-release             Generate a fake release in a local folder
-              clean --yes              Delete the entire install root
+              clean --yes              Delete the entire install root, log included
 
             Options
               --manifest <url|path>    Manifest location. Overrides FRIWORLD_MANIFEST_URL.

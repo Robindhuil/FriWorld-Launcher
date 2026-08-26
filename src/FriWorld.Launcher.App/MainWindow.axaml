@@ -126,6 +126,27 @@
             <Setter Property="TextElement.Foreground" Value="White" />
         </Style>
 
+        <!-- Rows inside the overflow menu. Rare actions belong here rather than in the action
+             bar, where a fourth button would blunt the one that matters. -->
+        <Style Selector="Button.menuitem">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Padding" Value="14,10" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#DBFFFFFF" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+        <Style Selector="Button.menuitem:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource HoverFill}" />
+            <Setter Property="TextElement.Foreground" Value="White" />
+        </Style>
+        <Style Selector="Button.destructive:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#3D3C0E0C" />
+            <Setter Property="TextElement.Foreground" Value="#FFB4AC" />
+        </Style>
+
         <Style Selector="ProgressBar.slim">
             <Setter Property="Height" Value="8" />
             <Setter Property="CornerRadius" Value="4" />
@@ -199,6 +220,23 @@
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6"
                                 VerticalAlignment="Top">
+                        <Button Classes="chrome"
+                                Content="&#x22EF;"
+                                IsVisible="{Binding IsInstalled}"
+                                ToolTip.Tip="Ďalšie akcie">
+                            <Button.Flyout>
+                                <Flyout Placement="BottomEdgeAlignedRight">
+                                    <StackPanel Width="240" Spacing="2">
+                                        <Button Classes="menuitem"
+                                                Content="Otvoriť priečinok s hrou"
+                                                Command="{Binding RevealCommand}" />
+                                        <Button Classes="menuitem destructive"
+                                                Content="Odinštalovať hru"
+                                                Command="{Binding AskUninstallCommand}" />
+                                    </StackPanel>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
                         <Button Classes="chrome"
                                 Content="&#x2014;"
                                 IsVisible="{Binding ShowMinimise}"
