@@ -137,6 +137,14 @@ _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.0-alpha**._
   `Apply` sa dá vykonať naozaj — vrátane toho najnebezpečnejšieho okna, keď je starý súbor
   premenovaný nabok a nový sa nedá presunúť. Doteraz boli pokryté len poistky okolo.
 
+- Prvý release launchera, `v0.1.0-alpha`, s dvoma assetmi. `.exe` je jeden súbor a je to
+  presne to, čo si launcher ťahá pri aktualizácii; zip navyše nesie zálohu pre prípad,
+  že Smart App Control `.exe` odmietne. Adresa v manifeste ukazuje na `.exe`, nikdy na zip —
+  výmena je jedna atomická operácia a rozbaľovanie by z nej spravilo niekoľko.
+- Manifest hry teraz nesie aj binárku launchera, takže **self-update je zapnutý**.
+  Postup vydávania je v `docs/releasing-launcher.md` vrátane kontrolného zoznamu na
+  prvú ostrú skúšku.
+
 ### Fixed
 - **`launcher.log` ticho zahadzoval riadky, keď mal súbor otvorený iný proces.** Zapisovalo sa
   cez `File.AppendAllText`, čo súbor zakaždým otvorí so `FileShare.Read` — stačilo, že ho čítal
