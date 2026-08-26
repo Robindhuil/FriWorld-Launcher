@@ -28,6 +28,16 @@ public static class MockReleaseBuilder
 
         public int PayloadBytes { get; init; } = DefaultPayloadBytes;
 
+        /// <summary>
+        /// How long the stand-in game stays up before closing itself.
+        ///
+        /// Zero exits immediately, which is what a build crashing on startup looks like — useful,
+        /// but it means the launcher never sees a successful launch. Anything longer than the
+        /// launch grace period exercises the other half: the version gets confirmed, the previous
+        /// install is dropped and the window closes.
+        /// </summary>
+        public int StubRunsForSeconds { get; init; }
+
         /// <summary>Platform keys to generate. Defaults to all three real targets.</summary>
         public IReadOnlyList<string> Platforms { get; init; } =
             [PlatformKey.WindowsX64, PlatformKey.LinuxX64, PlatformKey.MacArm64];
@@ -127,9 +137,7 @@ public static class MockReleaseBuilder
         {
             execRelative = "FriWorld.cmd";
             execAbsolute = Path.Combine(root, execRelative);
-            File.WriteAllText(execAbsolute,
-                "@echo off\r\n" +
-                $"echo FriWorld mock build {opts.Version} started.\r\n");
+            File.WriteAllText(execAbsolute, WindowsStub(opts));
         }
         else if (platform.StartsWith("osx", StringComparison.Ordinal))
         {
@@ -143,13 +151,13 @@ public static class MockReleaseBuilder
 
             execRelative = Path.Combine("FriWorld.app", "Contents", "MacOS", "FriWorld");
             execAbsolute = Path.Combine(root, execRelative);
-            WriteShellStub(execAbsolute, opts.Version);
+            WriteShellStub(execAbsolute, opts);
         }
         else
         {
             execRelative = "FriWorld";
             execAbsolute = Path.Combine(root, execRelative);
-            WriteShellStub(execAbsolute, opts.Version);
+            WriteShellStub(execAbsolute, opts);
         }
 
         MarkExecutable(execAbsolute);
@@ -165,10 +173,49 @@ public static class MockReleaseBuilder
         return execRelative;
     }
 
-    private static void WriteShellStub(string path, string version)
+    /// <summary>
+    /// A batch file that announces itself and then holds the console open.
+    ///
+    /// It waits with ping rather than timeout because timeout refuses to run when its input is
+    /// not a console, and the launcher starts this through cmd without a terminal of its own.
+    /// </summary>
+    private static string WindowsStub(Options opts)
     {
+        var lines = new List<string>
+        {
+            "@echo off",
+            $"title FriWorld {opts.Version} (mock)",
+            $"echo FriWorld mock build {opts.Version} started.",
+            "echo.",
+            "echo Toto nie je hra. Je to nahrada, aby sa launcher dal skusat",
+            "echo bez cakania na skutocny build.",
+        };
+
+        if (opts.StubRunsForSeconds > 0)
+        {
+            lines.Add("echo.");
+            lines.Add($"echo Okno sa samo zavrie o {opts.StubRunsForSeconds} sekund.");
+            lines.Add($"ping -n {opts.StubRunsForSeconds + 1} 127.0.0.1 >nul");
+        }
+
+        return string.Join("\r\n", lines) + "\r\n";
+    }
+
+    private static void WriteShellStub(string path, Options opts)
+    {
+        var lines = new List<string>
+        {
+            "#!/bin/sh",
+            $"echo \"FriWorld mock build {opts.Version} started.\"",
+        };
+
+        if (opts.StubRunsForSeconds > 0)
+        {
+            lines.Add($"sleep {opts.StubRunsForSeconds}");
+        }
+
         // Written with unix line endings; a CRLF shebang line is a classic "bad interpreter" failure.
-        File.WriteAllText(path, "#!/bin/sh\necho \"FriWorld mock build " + version + " started.\"\n");
+        File.WriteAllText(path, string.Join("\n", lines) + "\n");
     }
 
     private static void MarkExecutable(string path)

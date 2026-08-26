@@ -19,7 +19,17 @@ dotnet run --project src/FriWorld.Launcher.Cli -- run --manifest mock/store/mani
 ```
 
 `mock-release` vyrobí falošný release — tri archívy v správnych formátoch, checksummy
-a manifest. Falošná „hra" je skript, ktorý vypíše riadok a skončí.
+a manifest. Falošná „hra" je skript.
+
+`--stub-seconds <n>` rozhoduje, ako dlho ten skript beží, a to určuje, ktorú polovicu
+launchera vyskúšaš:
+
+| | čo sa stane |
+|---|---|
+| `0` (predvolené) | skript hneď skončí — launcher to vyhodnotí ako build padnutý pri štarte |
+| dlhšie než doba odkladu | zapíše sa potvrdenie, uprace sa predošlá inštalácia, okno sa zavrie |
+
+Bez toho druhého sa úspešný štart nedá odskúšať vôbec.
 
 `--root .localroot` presmeruje inštaláciu mimo skutočného `%LOCALAPPDATA%`, takže sa nič
 ostré neprepíše. Priečinok je v `.gitignore`.
@@ -71,8 +81,10 @@ Vypnutie Smart App Control je od marca/apríla 2026 vratné, takže je to aj leg
 možnosť. Podrobnosti v
 [`decisions/2026-08-26-smart-app-control.md`](decisions/2026-08-26-smart-app-control.md).
 
-Blokovanie je **po jednotlivých súboroch a nekonzistentné**. Keď `dotnet test` zrazu padne
-na tú istú chybu, pomáha preložiť to v inej konfigurácii (`-c Release`), lebo sa zmení hash.
+Blokovanie je **po jednotlivých súboroch a nekonzistentné**, a rozhoduje pri ňom aj **meno
+assembly**, nielen obsah. Keď zrazu prestane bežať niečo, čo pred chvíľou bežalo, pomáha
+zmeniť `AssemblyName` alebo konfiguráciu — obidve zmenia identitu súboru. Niekedy treba
+skúsiť dvakrát; je to lotéria, nie deterministické pravidlo.
 
 ---
 
@@ -94,6 +106,7 @@ Chybové stavy sa vyvolávajú takto:
 | launcher je starý | daj do manifestu `minLauncherVersion` vyššiu než tvoju |
 | nedostupné úložisko | ukáž `--manifest` na adresu, ktorá neexistuje |
 | poškodená inštalácia | zmaž súbor z `game/` a pozri, že `check` to nevidí, ale `repair` opraví |
+| hra spadne pri štarte | `mock-release --stub-seconds 0` |
 
 ---
 

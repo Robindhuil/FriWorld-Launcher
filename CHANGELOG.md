@@ -101,6 +101,12 @@ _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.0-alpha**._
   a povie to aj s návratovým kódom — to je jediná chvíľa, keď má launcher čo dodať.
   `keepOpenAfterLaunch` v `launcher.json` to vypne, čo sa hodí pri ladení samotného launchera.
 
+- `mock-release --stub-seconds <n>` — falošná hra zostane nažive daný počet sekúnd.
+  Doteraz sa vypísala a hneď skončila, čo je z pohľadu launchera build padnutý pri štarte.
+  Úspešný štart sa tým nedal vyskúšať vôbec: nezapísalo sa potvrdenie, neuprataná zostala
+  predošlá inštalácia a okno sa nezavrelo. Nula je stále predvolená, takže sa dá vyvolať
+  aj ten pád.
+
 ### Fixed
 - **Self-update štartoval nový launcher, kým starý ešte držal zámok jednej inštancie.**
   Nový by ako prvú vec ohlásil, že beží iný launcher, a aktualizácia by vyzerala, že všetko

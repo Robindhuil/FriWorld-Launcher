@@ -267,6 +267,7 @@ public static class CommandRunner
             {
                 Version = version,
                 PayloadBytes = payloadMb * 1024 * 1024,
+                StubRunsForSeconds = int.Parse(options.Value("stub-seconds", "0")),
             },
             ct);
 
