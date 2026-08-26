@@ -86,6 +86,11 @@ assembly**, nielen obsah. Keď zrazu prestane bežať niečo, čo pred chvíľou
 zmeniť `AssemblyName` alebo konfiguráciu — obidve zmenia identitu súboru. Niekedy treba
 skúsiť dvakrát; je to lotéria, nie deterministické pravidlo.
 
+Verdikt sa navyše **zhoršuje časom**: meno, ktoré mesiac prechádzalo, začne byť blokované
+konzistentne. Stalo sa to `FriWorldLauncher.dll` v testovacom balíčku — po premenovaní na
+`FriWorldLauncherHost.dll` to zase išlo. Preto sa na túto barlu nedá spoliehať; je to
+pomôcka pri vývoji, nie riešenie pre používateľa.
+
 ---
 
 ## Ako si pozrieť stavy, ktoré normálne prebehnú príliš rýchlo
