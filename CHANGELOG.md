@@ -87,7 +87,21 @@ _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.0-alpha**._
   do `Build/<bundleVersion>/<platformKey>/` a skončí. Balenie robí `launcher pack`.
   Linux je prepínač v menu, predvolene vypnutý. Skript `bundleVersion` len číta.
 
+- Dokumentácia: [architektúra](docs/architecture.md), [manifest ako kontrakt](docs/manifest.md),
+  [postup vydania](docs/releasing.md) s kontrolným zoznamom a [vývoj](docs/development.md).
+  README prepísané na to, čo projekt naozaj je.
+
 ### Fixed
+- **Self-update štartoval nový launcher, kým starý ešte držal zámok jednej inštancie.**
+  Nový by ako prvú vec ohlásil, že beží iný launcher, a aktualizácia by vyzerala, že všetko
+  rozbila. Zámok sa uvoľní pred štartom nástupcu a `TryAcquire` chvíľu počká.
+- **Cancel na už uvoľnenom `CancellationTokenSource` zhodil aplikáciu.** Z obsluhy tlačidla
+  je neošetrená výnimka koniec procesu.
+- **`Detail` sa v dvoch stavoch nastavoval a nikdy nezobrazil** — pri ponuke aktualizácie
+  a po zrušení. Vykresľoval sa iba v paneli priebehu a v paneli chyby, takže práve tie
+  upokojujúce vety boli neviditeľné.
+- Tlačidlo Repair svietilo, aj keď nebolo nič nainštalované.
+- `UpdateException` padala do vetvy „Something went wrong" namiesto vlastnej vety.
 - Do releasu sa balil priečinok `FriWorld_BurstDebugInformation_DoNotShip`. Unity ho vyrába
   vedľa hry a v názve sám hovorí, že sa nemá posielať — sú v ňom debug symboly a absolútne
   cesty z build stroja. Balič ho aj `*_BackUpThisFolder_ButDontShipItWithYourGame` vynecháva
