@@ -1,0 +1,69 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:FriWorld.Launcher.App.ViewModels"
+        mc:Ignorable="d"
+        x:Class="FriWorld.Launcher.App.MainWindow"
+        x:DataType="vm:LauncherViewModel"
+        Title="FriWorld"
+        Width="520" Height="320"
+        MinWidth="440" MinHeight="280"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid RowDefinitions="Auto,*,Auto" Margin="28">
+
+        <StackPanel Grid.Row="0" Spacing="4">
+            <TextBlock Text="{Binding Title}" FontSize="30" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding VersionLine}" Opacity="0.6" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" VerticalAlignment="Center" Spacing="10">
+
+            <TextBlock Text="{Binding Notes}"
+                       TextWrapping="Wrap"
+                       Opacity="0.75"
+                       MaxLines="3"
+                       TextTrimming="CharacterEllipsis" />
+
+            <StackPanel Spacing="6" IsVisible="{Binding ProgressVisible}">
+                <ProgressBar Minimum="0" Maximum="100"
+                             Height="6"
+                             Value="{Binding Progress}"
+                             IsIndeterminate="{Binding ProgressIndeterminate}" />
+                <TextBlock Text="{Binding Detail}" FontSize="12" Opacity="0.6" />
+            </StackPanel>
+
+            <TextBlock Text="{Binding Detail}"
+                       IsVisible="{Binding Failed}"
+                       TextWrapping="Wrap"
+                       FontSize="12"
+                       Foreground="#d9534f" />
+
+        </StackPanel>
+
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto">
+
+            <TextBlock Grid.Column="0"
+                       Text="{Binding Status}"
+                       VerticalAlignment="Center"
+                       Opacity="0.8" />
+
+            <Button Grid.Column="1"
+                    Content="Retry"
+                    Margin="0,0,8,0"
+                    IsVisible="{Binding Failed}"
+                    Command="{Binding RetryCommand}" />
+
+            <Button Grid.Column="2"
+                    Content="Play"
+                    MinWidth="112"
+                    Padding="18,10"
+                    IsEnabled="{Binding CanPlay}"
+                    Command="{Binding PlayCommand}" />
+
+        </Grid>
+
+    </Grid>
+
+</Window>

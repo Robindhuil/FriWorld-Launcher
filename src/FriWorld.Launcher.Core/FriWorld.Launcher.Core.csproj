@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <!-- The path-traversal guard and the progress throttle are internal but worth testing directly. -->
+    <InternalsVisibleTo Include="FriWorld.Launcher.Core.Tests" />
+  </ItemGroup>
+
+</Project>

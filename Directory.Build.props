@@ -1,0 +1,22 @@
+<Project>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
+
+    <!-- Nullability mistakes are the cheapest class of bug to catch here, so they fail the build. -->
+    <WarningsAsErrors>nullable</WarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Product>FriWorld Launcher</Product>
+    <Company>Crimsoned Rose</Company>
+    <!-- Launcher versions independently of the game's bundleVersion. -->
+    <Version>0.1.0-alpha</Version>
+  </PropertyGroup>
+
+</Project>
