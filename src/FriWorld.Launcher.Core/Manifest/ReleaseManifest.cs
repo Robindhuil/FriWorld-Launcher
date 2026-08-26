@@ -24,6 +24,19 @@ public sealed record ReleaseManifest
     /// </summary>
     public LauncherRelease? Launcher { get; init; }
 
+    /// <summary>
+    /// The oldest launcher allowed to act on this manifest. Optional, and normally absent.
+    ///
+    /// This is the escape hatch for the one problem tolerating unknown fields cannot solve. Adding
+    /// a field is safe, because older launchers ignore it — but only while ignoring it still
+    /// produces correct behaviour. The day a manifest means something an old launcher would get
+    /// wrong, this field makes it stop and ask for an update instead of carrying on.
+    ///
+    /// Setting it locks out every launcher already in the wild below that version, so it is set
+    /// only when the alternative is those launchers misbehaving.
+    /// </summary>
+    public string? MinLauncherVersion { get; init; }
+
     /// <summary>Returns the package for the first of <paramref name="platformKeys"/> the manifest carries.</summary>
     public bool TryGetPackage(IReadOnlyList<string> platformKeys, out string matchedKey, out PlatformPackage package)
     {

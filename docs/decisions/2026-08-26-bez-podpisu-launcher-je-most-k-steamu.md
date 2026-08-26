@@ -32,12 +32,15 @@ ako daň za dočasné riešenie.
 
 Z toho plynie, čo sa **nesmie** stavať, lebo to Steam aj tak zahodí:
 
-- **Žiadny self-update launchera.** Bola to najdrahšia a najrizikovejšia fáza plánu.
-  Launcher len zistí, že existuje novšia verzia jeho samého, a odkáže na Hub.
 - **Žiadne delta patchovanie.** Steam to robí lepšie a zadarmo.
 - **Žiadne macOS.** Bez Macu sa neotestuje, Gatekeeper je horší než Smart App Control
   a je to tretina objemu každého releasu navyše.
 - **Žiadne CI buildy.** Editor skript stačí.
+
+> **Revidované 2026-08-26:** self-update launchera bol pôvodne v tomto zozname a je z neho
+> vyňatý. Dôvod je v [Launcher raz a poriadne](2026-08-26-launcher-raz-a-poriadne.md):
+> keď sa launcher nevie opraviť sám, musí byť správne na prvý raz, čo je drahšie než ho
+> naučiť sa aktualizovať.
 
 A čo sa **musí** spraviť, lebo to je zadarmo a inak to hráča zablokuje:
 

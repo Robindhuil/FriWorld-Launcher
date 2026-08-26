@@ -48,6 +48,23 @@ _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.0-alpha**._
   zabudovaná predvoľba. Relatívna cesta v súbore sa počíta od launchera, nie od pracovného
   priečinka — spúšťač môže byť kdekoľvek. Rozbitý súbor launcher nezastaví.
 
+- Aktualizácia je ponuka, nie mýtna brána. Keď je nainštalovaná hrateľná verzia a vyjde
+  nová, launcher sa spýta a ponúkne obe možnosti naraz. Bez nainštalovanej hry sa
+  neinštaluje z čoho vyberať, tak sa nepýta.
+- Self-update launchera. Zdrojom je sekcia `launcher` v manifeste hry. Iba `https`,
+  iba jednosúborové nasadenie, SHA256 pred výmenou, starý súbor sa maže až ďalším štartom
+  a pri zlyhaní sa vracia späť. Keď sa vymeniť nedá, zostáva odkaz na stiahnutie.
+  (`docs/decisions/2026-08-26-launcher-raz-a-poriadne.md`)
+- `minLauncherVersion` v manifeste. Jediné miesto, kde sa verzie radia. Bez neho by sa
+  formát manifestu nedal nikdy zmeniť — tolerancia neznámych polí pomôže len dovtedy, kým
+  ich ignorovanie ešte dáva správny výsledok.
+- `repair` — preinštaluje aktuálnu verziu cez poškodenú. Kontrola verzií porovnáva iba tagy,
+  takže chýbajúci súbor nevidí.
+- `play` — spustí nainštalované bez kontroly aktualizácií.
+- Zrušenie sťahovania tlačidlom. Rozstiahnutá časť zostáva a pokračuje sa pri ďalšom behu.
+- `FailureMessages` — jedno miesto, ktoré prekladá výnimky na vetu, radu a príznak, či má
+  zmysel skúsiť znova. Používa ho okno aj CLI, takže tú istú poruchu nemôžu opísať inak.
+
 ### Changed
 - Manifest sa číta ako **statický JSON súbor na pevnej URL**, nie cez GitHub Releases API.
   Neautentizované API má strop 60 volaní za hodinu na IP a viacerí hráči za jedným NAT-om

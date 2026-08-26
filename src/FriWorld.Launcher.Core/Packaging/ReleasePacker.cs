@@ -38,6 +38,9 @@ public static class ReleasePacker
 
         /// <summary>Optional pointer at the newest launcher, for the update notice.</summary>
         public LauncherRelease? Launcher { get; init; }
+
+        /// <summary>Optional floor: launchers older than this refuse to act on the manifest.</summary>
+        public string? MinLauncherVersion { get; init; }
     }
 
     public sealed record Result(string ManifestPath, IReadOnlyList<PackedPlatform> Platforms);
@@ -129,6 +132,7 @@ public static class ReleasePacker
             Notes = options.Notes,
             Platforms = packages,
             Launcher = options.Launcher,
+            MinLauncherVersion = options.MinLauncherVersion,
         };
 
         // Round-trip the manifest before writing it, so a release cannot ship a file the

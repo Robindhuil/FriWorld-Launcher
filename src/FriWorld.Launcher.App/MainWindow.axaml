@@ -7,18 +7,18 @@
         x:Class="FriWorld.Launcher.App.MainWindow"
         x:DataType="vm:LauncherViewModel"
         Title="FriWorld"
-        Width="520" Height="320"
-        MinWidth="440" MinHeight="280"
+        Width="560" Height="380"
+        MinWidth="480" MinHeight="340"
         WindowStartupLocation="CenterScreen">
 
     <Grid RowDefinitions="Auto,*,Auto" Margin="28">
 
         <StackPanel Grid.Row="0" Spacing="4">
             <TextBlock Text="{Binding Title}" FontSize="30" FontWeight="SemiBold" />
-            <TextBlock Text="{Binding VersionLine}" Opacity="0.6" />
+            <TextBlock Text="{Binding VersionLine}" Opacity="0.6" FontSize="13" />
         </StackPanel>
 
-        <StackPanel Grid.Row="1" VerticalAlignment="Center" Spacing="10">
+        <StackPanel Grid.Row="1" VerticalAlignment="Center" Spacing="12">
 
             <TextBlock Text="{Binding Notes}"
                        TextWrapping="Wrap"
@@ -31,46 +31,75 @@
                              Height="6"
                              Value="{Binding Progress}"
                              IsIndeterminate="{Binding ProgressIndeterminate}" />
-                <TextBlock Text="{Binding Detail}" FontSize="12" Opacity="0.6" />
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="{Binding Detail}" FontSize="12" Opacity="0.6" />
+                    <Button Grid.Column="1"
+                            Content="Cancel"
+                            Padding="10,2"
+                            FontSize="12"
+                            IsVisible="{Binding CanCancel}"
+                            Command="{Binding CancelCommand}" />
+                </Grid>
             </StackPanel>
 
-            <TextBlock Text="{Binding Detail}"
-                       IsVisible="{Binding Failed}"
-                       TextWrapping="Wrap"
-                       FontSize="12"
-                       Foreground="#d9534f" />
-
-            <!-- A newer launcher is offered as a link. The launcher never replaces itself. -->
-            <StackPanel Orientation="Horizontal"
-                        Spacing="8"
-                        IsVisible="{Binding LauncherUpdateAvailable}">
-                <TextBlock Text="{Binding LauncherUpdateNotice}"
-                           VerticalAlignment="Center"
+            <!-- Failure detail and advice. Kept separate from the status line so the headline
+                 stays short enough to read at a glance. -->
+            <StackPanel Spacing="4" IsVisible="{Binding Failed}">
+                <TextBlock Text="{Binding Detail}"
+                           TextWrapping="Wrap"
+                           FontSize="12"
+                           Foreground="#d9534f" />
+                <TextBlock Text="{Binding FailureAdvice}"
                            TextWrapping="Wrap"
                            FontSize="12"
                            Opacity="0.7" />
-                <Button Content="Get it"
-                        Padding="10,4"
-                        FontSize="12"
-                        Command="{Binding OpenLauncherDownloadCommand}" />
             </StackPanel>
+
+            <!-- A newer launcher. Installed in place when the manifest carries a binary for this
+                 machine, otherwise offered as a link. -->
+            <Border IsVisible="{Binding LauncherUpdateAvailable}"
+                    Background="#14808080"
+                    CornerRadius="6"
+                    Padding="12,10">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding LauncherUpdateNotice}"
+                               VerticalAlignment="Center"
+                               TextWrapping="Wrap"
+                               FontSize="12"
+                               Opacity="0.8" />
+                    <Button Grid.Column="1"
+                            Content="{Binding LauncherUpdateAction}"
+                            Padding="12,5"
+                            FontSize="12"
+                            Command="{Binding UpdateLauncherCommand}" />
+                </Grid>
+            </Border>
 
         </StackPanel>
 
-        <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto">
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
 
             <TextBlock Grid.Column="0"
                        Text="{Binding Status}"
                        VerticalAlignment="Center"
-                       Opacity="0.8" />
+                       TextWrapping="NoWrap"
+                       TextTrimming="CharacterEllipsis"
+                       Opacity="0.85" />
 
             <Button Grid.Column="1"
-                    Content="Retry"
-                    Margin="0,0,8,0"
-                    IsVisible="{Binding Failed}"
-                    Command="{Binding RetryCommand}" />
+                    Content="Repair"
+                    Padding="12,10"
+                    Command="{Binding RepairCommand}"
+                    ToolTip.Tip="Download and reinstall the current version, for when files are damaged." />
 
             <Button Grid.Column="2"
+                    Content="Update"
+                    Padding="16,10"
+                    IsVisible="{Binding CanUpdate}"
+                    Command="{Binding UpdateCommand}" />
+
+            <Button Grid.Column="3"
                     Content="Play"
                     MinWidth="112"
                     Padding="18,10"

@@ -2,8 +2,10 @@ using FriWorld.Launcher.Core;
 using FriWorld.Launcher.Core.Install;
 using FriWorld.Launcher.Core.Manifest;
 using FriWorld.Launcher.Core.Mock;
+using FriWorld.Launcher.Core.Net;
 using FriWorld.Launcher.Core.Packaging;
 using FriWorld.Launcher.Core.Platform;
+using FriWorld.Launcher.Core.Verify;
 using FriWorld.Launcher.Core.Update;
 
 namespace FriWorld.Launcher.Cli;
@@ -39,6 +41,9 @@ public static class CommandRunner
                 "check" => await Check(options, cancellation.Token),
                 "update" => await Update(options, cancellation.Token),
                 "run" => await Run(options, cancellation.Token),
+                "play" => await Play(options, cancellation.Token),
+                "repair" => await Repair(options, cancellation.Token),
+                "self-update" => await SelfUpdate(options, cancellation.Token),
                 "clean" => Clean(options),
                 "help" or "--help" or "-h" => Help(),
                 _ => Unknown(options.Command),
@@ -52,14 +57,15 @@ public static class CommandRunner
         catch (Exception ex)
         {
             Console.Error.WriteLine();
-            Console.Error.WriteLine($"{ex.GetType().Name}: {ex.Message}");
+            Console.Error.WriteLine(FailureMessages.Flatten(ex));
 
             if (options.Has("verbose"))
             {
+                Console.Error.WriteLine();
                 Console.Error.WriteLine(ex);
             }
 
-            return 1;
+            return ex is GameIsRunningException ? 3 : ex is LauncherTooOldException ? 4 : 1;
         }
     }
 
@@ -116,6 +122,7 @@ public static class CommandRunner
                 BaseUrl = options.Value("base-url"),
                 ExecOverrides = ParseExecOverrides(options),
                 Launcher = ParseLauncherRelease(options),
+                MinLauncherVersion = options.Value("min-launcher"),
             },
             new Progress<string>(Console.WriteLine),
             ct);
@@ -155,12 +162,17 @@ public static class CommandRunner
         return overrides;
     }
 
+    /// <summary>
+    /// Builds the manifest's launcher section. A download page alone is enough for the launcher
+    /// to point someone at; adding a binary per platform is what lets it replace itself.
+    /// </summary>
     private static LauncherRelease? ParseLauncherRelease(CommandLineOptions options)
     {
         var version = options.Value("launcher-version");
         var url = options.Value("launcher-url");
+        var files = options.Values("launcher-file");
 
-        if (version is null && url is null)
+        if (version is null && url is null && files.Count == 0)
         {
             return null;
         }
@@ -170,6 +182,7 @@ public static class CommandRunner
             Version = version ?? LauncherVersion.Current,
             DownloadUrl = url ?? string.Empty,
             Notes = options.Value("launcher-notes"),
+            Platforms = HashLauncherBinaries(files, options.Value("launcher-base-url")),
         };
 
         if (!release.IsUsable)
@@ -179,6 +192,65 @@ public static class CommandRunner
         }
 
         return release;
+    }
+
+    /// <summary>Hashes each launcher binary and pairs it with the address it will be served from.</summary>
+    private static Dictionary<string, LauncherBinary> HashLauncherBinaries(
+        IReadOnlyList<string> files,
+        string? baseUrl)
+    {
+        var binaries = new Dictionary<string, LauncherBinary>(StringComparer.OrdinalIgnoreCase);
+
+        if (files.Count == 0)
+        {
+            return binaries;
+        }
+
+        if (string.IsNullOrWhiteSpace(baseUrl))
+        {
+            throw new PackagingException(
+                "--launcher-file needs --launcher-base-url, the https folder the binaries will be served from.");
+        }
+
+        foreach (var pair in files)
+        {
+            var split = pair.IndexOf('=');
+
+            if (split <= 0)
+            {
+                throw new PackagingException($"--launcher-file expects <platform>=<path>, got '{pair}'.");
+            }
+
+            var platform = pair[..split];
+            var path = pair[(split + 1)..];
+
+            if (!File.Exists(path))
+            {
+                throw new PackagingException($"No such launcher binary: {path}");
+            }
+
+            var name = Path.GetFileName(path);
+            var trimmed = baseUrl.TrimEnd('/');
+
+            var binary = new LauncherBinary
+            {
+                Url = $"{trimmed}/{name}",
+                Sha256 = Sha256Verifier.ComputeAsync(path).GetAwaiter().GetResult(),
+                Size = new FileInfo(path).Length,
+            };
+
+            if (!binary.IsUsable)
+            {
+                throw new PackagingException(
+                    $"The launcher binary for {platform} would be unusable. " +
+                    "The base url must be https, because the launcher replaces itself with this file.");
+            }
+
+            binaries[platform] = binary;
+            Console.WriteLine($"launcher {platform}: {DiskSpace.Format(binary.Size)}, sha256 {binary.Sha256[..16]}…");
+        }
+
+        return binaries;
     }
 
     private static async Task<int> MockRelease(CommandLineOptions options, CancellationToken ct)
@@ -287,6 +359,103 @@ public static class CommandRunner
         return 0;
     }
 
+    /// <summary>Starts what is installed without checking for anything. The "play the old one" path.</summary>
+    private static async Task<int> Play(CommandLineOptions options, CancellationToken ct)
+    {
+        var config = Configure(options);
+
+        using var instanceLock = SingleInstanceLock.TryAcquire(config.Paths);
+        if (instanceLock is null)
+        {
+            Console.Error.WriteLine("Another launcher is already running.");
+            return 2;
+        }
+
+        var orchestrator = config.CreateOrchestrator();
+        var process = await orchestrator.LaunchAsync(new ConsoleProgressPrinter(), ct: ct);
+        Console.WriteLine($"Started process {process.Id}.");
+
+        if (!options.Has("wait"))
+        {
+            return 0;
+        }
+
+        await process.WaitForExitAsync(ct);
+        Console.WriteLine($"The game exited with code {process.ExitCode}.");
+        return process.ExitCode;
+    }
+
+    /// <summary>Reinstalls the current version over whatever is on disk.</summary>
+    private static async Task<int> Repair(CommandLineOptions options, CancellationToken ct)
+    {
+        var config = Configure(options);
+
+        using var instanceLock = SingleInstanceLock.TryAcquire(config.Paths);
+        if (instanceLock is null)
+        {
+            Console.Error.WriteLine("Another launcher is already running.");
+            return 2;
+        }
+
+        var installed = await config.CreateOrchestrator().RepairAsync(new ConsoleProgressPrinter(), ct);
+        Console.WriteLine($"Reinstalled {installed.Version}.");
+        return 0;
+    }
+
+    /// <summary>
+    /// Replaces the launcher itself. Only possible for a single-file build; anything else is told
+    /// to download manually, because a half-replaced launcher is worse than an old one.
+    /// </summary>
+    private static async Task<int> SelfUpdate(CommandLineOptions options, CancellationToken ct)
+    {
+        var config = Configure(options);
+        var content = CompositeContentClient.CreateDefault();
+        var updater = new LauncherSelfUpdater(content, config.Log);
+
+        updater.CleanUpSupersededExecutable();
+
+        var check = await config.CreateOrchestrator().CheckAsync(ct: ct);
+
+        if (check.LauncherUpdate is not { } launcher)
+        {
+            Console.WriteLine($"Launcher {LauncherVersion.Current} is current.");
+            return 0;
+        }
+
+        Console.WriteLine($"Launcher {launcher.Version} is available (this one is {LauncherVersion.Current}).");
+
+        if (check.LauncherBinary is not { } binary)
+        {
+            Console.WriteLine($"The manifest carries no binary for {PlatformKey.Current}.");
+            Console.WriteLine($"Download it from {launcher.DownloadUrl}");
+            return 0;
+        }
+
+        if (updater.BlockedReason() is { } reason)
+        {
+            Console.WriteLine(reason);
+            Console.WriteLine($"Download it from {launcher.DownloadUrl}");
+            return 0;
+        }
+
+        if (!options.Has("yes"))
+        {
+            Console.WriteLine();
+            Console.WriteLine("This replaces the running launcher. Re-run with --yes to go ahead.");
+            return 0;
+        }
+
+        var staged = await updater.StageAsync(binary, new ConsoleDownloadPrinter(), ct);
+
+        // Without --restart the new launcher is put in place and left for the next manual start,
+        // which is what a script wants.
+        updater.Apply(staged, restart: options.Has("restart"));
+
+        Console.WriteLine();
+        Console.WriteLine($"Launcher replaced with {launcher.Version}.");
+        return 0;
+    }
+
     private static int Clean(CommandLineOptions options)
     {
         var paths = Configure(options).Paths;
@@ -352,6 +521,9 @@ public static class CommandRunner
               check                    Fetch the manifest and report whether an update is needed
               update                   Download, verify, unpack and swap in the latest build
               run                      update, then start the game
+              play                     Start what is installed, without checking for updates
+              repair                   Reinstall the current version over a damaged one
+              self-update              Replace the launcher itself
               pack                     Turn Unity player output into a release plus manifest
               mock-release             Generate a fake release in a local folder
               clean --yes              Delete the entire install root
@@ -360,7 +532,11 @@ public static class CommandRunner
               --manifest <url|path>    Manifest location. Overrides FRIWORLD_MANIFEST_URL.
               --root <path>            Install root. Overrides FRIWORLD_LAUNCHER_ROOT.
               --verbose                Mirror the log to stderr and print stack traces
-              --wait                   run only: stay alive until the game exits
+              --wait                   run and play: stay alive until the game exits
+
+            self-update
+              --yes                    Actually do it; without this it only reports
+              --restart                Start the new launcher afterwards
 
             pack
               --input <path>           Folder with one subfolder per platform key (required)
@@ -372,6 +548,9 @@ public static class CommandRunner
               --launcher-version <tag> Newest launcher, for the update notice
               --launcher-url <url>     Download page for the newest launcher
               --launcher-notes <text>  One-liner about the newest launcher
+              --launcher-file <p>=<f>  Launcher binary per platform; enables self-update
+              --launcher-base-url <u>  https folder the launcher binaries are served from
+              --min-launcher <tag>     Refuse this release on older launchers
 
             mock-release
               --out <path>             Output folder (default mock/store)
@@ -379,7 +558,8 @@ public static class CommandRunner
               --payload-mb <n>         Filler size per platform (default 8)
 
             Exit codes
-              0 ok · 1 error · 2 another launcher is running · 10 update available (check) · 130 cancelled
+              0 ok · 1 error · 2 another launcher is running · 3 the game is running
+              4 launcher too old for this release · 10 update available (check) · 130 cancelled
 
             Getting started
               dotnet run --project src/FriWorld.Launcher.Cli -- mock-release

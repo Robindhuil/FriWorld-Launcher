@@ -50,6 +50,13 @@ public sealed class UpdateOrchestrator(
                 $"It offers: {string.Join(", ", manifest.Platforms.Keys)}.");
         }
 
+        if (LauncherVersion.IsOlderThan(manifest.MinLauncherVersion))
+        {
+            _log.Warn(
+                $"This manifest needs launcher {manifest.MinLauncherVersion} or newer; " +
+                $"this one is {LauncherVersion.Current}.");
+        }
+
         var installed = _state.Read();
         var reason = DecideReason(installed, manifest.Version, key);
 
@@ -95,12 +102,20 @@ public sealed class UpdateOrchestrator(
         IProgress<UpdateStatus>? progress = null,
         CancellationToken ct = default)
     {
+        if (check.LauncherTooOld)
+        {
+            throw new LauncherTooOldException(
+                $"This release needs launcher {check.Manifest.MinLauncherVersion} or newer. " +
+                $"This launcher is {LauncherVersion.Current}.");
+        }
+
         if (_launcher.IsGameRunning())
         {
-            throw new UpdateException("The game is running. Close it before updating.");
+            throw new GameIsRunningException("The game is running. Close it before updating.");
         }
 
         paths.EnsureCreated();
+        _installer.CleanScratch();
         DiskSpace.Require(paths, check.Package.Size);
 
         var archivePath = Path.Combine(paths.Cache, check.Package.CacheFileName);
@@ -189,9 +204,31 @@ public sealed class UpdateOrchestrator(
             return check;
         }
 
-        _installer.CleanScratch();
         await InstallAsync(check, progress, ct).ConfigureAwait(false);
         return check with { Installed = _state.Read() };
+    }
+
+    /// <summary>
+    /// Reinstalls the version the manifest names, whatever is on disk.
+    ///
+    /// Without this a damaged installation has no way back that a player could be talked through.
+    /// Files go missing — antivirus quarantines one, a disk fills up mid-extract, someone deletes
+    /// something — and the version check says everything is fine, because it only compares tags.
+    /// </summary>
+    public async Task<InstalledState> RepairAsync(
+        IProgress<UpdateStatus>? progress = null,
+        CancellationToken ct = default)
+    {
+        var check = await CheckAsync(progress, ct).ConfigureAwait(false);
+
+        _log.Info($"Repairing: reinstalling {check.LatestVersion} over whatever is there.");
+
+        // The cached archive is suspect too, since a damaged install may well have come from it.
+        var cached = Path.Combine(paths.Cache, check.Package.CacheFileName);
+        TryDelete(cached);
+        TryDelete(cached + ".part");
+
+        return await InstallAsync(check, progress, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -264,5 +301,11 @@ public sealed class UpdateOrchestrator(
     }
 }
 
-public sealed class UpdateException(string message, Exception? inner = null)
+public class UpdateException(string message, Exception? inner = null)
     : Exception(message, inner);
+
+/// <summary>The game is running, so its files cannot be replaced.</summary>
+public sealed class GameIsRunningException(string message) : UpdateException(message);
+
+/// <summary>The manifest declares a launcher version floor this launcher is below.</summary>
+public sealed class LauncherTooOldException(string message) : UpdateException(message);

@@ -6,6 +6,8 @@ using FriWorld.Launcher.Core;
 using FriWorld.Launcher.Core.Diagnostics;
 using FriWorld.Launcher.Core.Install;
 using FriWorld.Launcher.Core.Launch;
+using FriWorld.Launcher.Core.Manifest;
+using FriWorld.Launcher.Core.Net;
 using FriWorld.Launcher.Core.Update;
 
 namespace FriWorld.Launcher.App.ViewModels;
@@ -14,28 +16,39 @@ namespace FriWorld.Launcher.App.ViewModels;
 /// Drives the single launcher window.
 ///
 /// It owns no update logic of its own — everything is <see cref="UpdateOrchestrator"/>, the same
-/// code the headless front end runs. This class only turns progress reports into strings and
-/// decides which button is enabled.
+/// code the headless front end runs. This class decides which buttons are live and turns progress
+/// and failures into sentences.
+///
+/// The one rule shaping all of it: an installed game stays playable. A new release, an unreachable
+/// server and a failed download are all things that must not stand between a player and a game
+/// that is already on their disk.
 /// </summary>
 public sealed class LauncherViewModel : ObservableObject
 {
     private readonly UpdateOrchestrator _orchestrator;
+    private readonly LauncherSelfUpdater _selfUpdater;
     private readonly ILauncherLog _log;
     private readonly SingleInstanceLock? _instanceLock;
+
     private CancellationTokenSource? _work;
+    private UpdateCheck? _check;
+    private LauncherBinary? _launcherBinary;
+    private string? _launcherDownloadPage;
 
     private string _status = "Starting";
     private string _detail = string.Empty;
     private string _versionLine = string.Empty;
     private string _notes = string.Empty;
+    private string _failureAdvice = string.Empty;
+    private string _launcherUpdateNotice = string.Empty;
     private double _progress;
     private bool _progressIndeterminate = true;
     private bool _progressVisible;
     private bool _busy;
     private bool _canPlay;
+    private bool _canUpdate;
+    private bool _canCancel;
     private bool _failed;
-    private string _launcherUpdateNotice = string.Empty;
-    private string? _launcherUpdateUrl;
 
     public LauncherViewModel()
     {
@@ -43,17 +56,30 @@ public sealed class LauncherViewModel : ObservableObject
         _log = configuration.Log;
         _instanceLock = SingleInstanceLock.TryAcquire(configuration.Paths);
         _orchestrator = configuration.CreateOrchestrator();
+        _selfUpdater = new LauncherSelfUpdater(CompositeContentClient.CreateDefault(), _log);
+
+        // The second half of the rename trick from the last self-update, if there was one.
+        _selfUpdater.CleanUpSupersededExecutable();
 
         PlayCommand = new RelayCommand(() => _ = PlayAsync(), () => CanPlay && !Busy);
+        UpdateCommand = new RelayCommand(() => _ = InstallAsync(), () => CanUpdate && !Busy);
+        RepairCommand = new RelayCommand(() => _ = RepairAsync(), () => !Busy);
         RetryCommand = new RelayCommand(() => _ = RefreshAsync(), () => !Busy);
-        OpenLauncherDownloadCommand = new RelayCommand(OpenLauncherDownload);
+        CancelCommand = new RelayCommand(Cancel, () => CanCancel);
+        UpdateLauncherCommand = new RelayCommand(() => _ = UpdateLauncherAsync(), () => !Busy);
     }
 
     public RelayCommand PlayCommand { get; }
 
+    public RelayCommand UpdateCommand { get; }
+
+    public RelayCommand RepairCommand { get; }
+
     public RelayCommand RetryCommand { get; }
 
-    public RelayCommand OpenLauncherDownloadCommand { get; }
+    public RelayCommand CancelCommand { get; }
+
+    public RelayCommand UpdateLauncherCommand { get; }
 
     public string Title => "FriWorld";
 
@@ -81,6 +107,18 @@ public sealed class LauncherViewModel : ObservableObject
         private set => SetField(ref _notes, value);
     }
 
+    public string FailureAdvice
+    {
+        get => _failureAdvice;
+        private set => SetField(ref _failureAdvice, value);
+    }
+
+    public string LauncherUpdateNotice
+    {
+        get => _launcherUpdateNotice;
+        private set => SetField(ref _launcherUpdateNotice, value);
+    }
+
     public double Progress
     {
         get => _progress;
@@ -105,13 +143,12 @@ public sealed class LauncherViewModel : ObservableObject
         private set => SetField(ref _failed, value);
     }
 
-    public string LauncherUpdateNotice
-    {
-        get => _launcherUpdateNotice;
-        private set => SetField(ref _launcherUpdateNotice, value);
-    }
+    public bool LauncherUpdateAvailable => _launcherDownloadPage is not null;
 
-    public bool LauncherUpdateAvailable => _launcherUpdateUrl is not null;
+    /// <summary>Whether the newer launcher can be installed here, rather than only linked to.</summary>
+    public bool LauncherUpdateIsAutomatic => _launcherBinary is not null && _selfUpdater.BlockedReason() is null;
+
+    public string LauncherUpdateAction => LauncherUpdateIsAutomatic ? "Update and restart" : "Open download page";
 
     public bool Busy
     {
@@ -120,8 +157,7 @@ public sealed class LauncherViewModel : ObservableObject
         {
             if (SetField(ref _busy, value))
             {
-                PlayCommand.RaiseCanExecuteChanged();
-                RetryCommand.RaiseCanExecuteChanged();
+                RaiseAll();
             }
         }
     }
@@ -133,62 +169,156 @@ public sealed class LauncherViewModel : ObservableObject
         {
             if (SetField(ref _canPlay, value))
             {
-                PlayCommand.RaiseCanExecuteChanged();
+                RaiseAll();
             }
         }
     }
 
-    /// <summary>Checks for an update and installs it. Called once when the window opens.</summary>
+    /// <summary>An update is available and waiting for the player to say yes.</summary>
+    public bool CanUpdate
+    {
+        get => _canUpdate;
+        private set
+        {
+            if (SetField(ref _canUpdate, value))
+            {
+                RaiseAll();
+            }
+        }
+    }
+
+    public bool CanCancel
+    {
+        get => _canCancel;
+        private set
+        {
+            if (SetField(ref _canCancel, value))
+            {
+                CancelCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Looks for an update, and installs one only when there is nothing playable yet.
+    ///
+    /// A player who already has the game gets asked. Downloading hundreds of megabytes because
+    /// someone opened the launcher is not a decision the launcher gets to make for them.
+    /// </summary>
     public async Task RefreshAsync()
     {
         if (_instanceLock is null)
         {
-            Fail("Another launcher is already running.");
+            Fail(new UpdateException("Another launcher is already running."));
             return;
         }
 
-        _work?.Cancel();
-        _work = new CancellationTokenSource();
-
+        Reset();
         Busy = true;
-        Failed = false;
-        CanPlay = false;
-        ProgressVisible = true;
 
         try
         {
-            var check = await _orchestrator.EnsureLatestAsync(new UiProgress(this), _work.Token);
+            _check = await Run(ct => _orchestrator.CheckAsync(new UiProgress(this), ct));
 
-            VersionLine = $"Version {check.LatestVersion}";
-            Notes = check.Manifest.Notes ?? string.Empty;
-            Status = "Ready to play";
-            Detail = string.Empty;
-            ProgressVisible = false;
-            CanPlay = true;
+            ApplyLauncherUpdate(_check);
+            Notes = _check.Manifest.Notes ?? string.Empty;
 
-            ApplyLauncherUpdate(check);
+            if (_check.LauncherTooOld)
+            {
+                ShowLauncherTooOld(_check);
+                return;
+            }
+
+            if (!_check.UpdateRequired)
+            {
+                Ready(_check.LatestVersion, "Ready to play");
+                return;
+            }
+
+            if (_check.CanPlayWithoutUpdating)
+            {
+                OfferChoice(_check);
+                return;
+            }
+
+            // Nothing playable is installed, so there is no choice to offer.
+            await InstallAsync();
         }
         catch (OperationCanceledException)
         {
-            Status = "Cancelled";
-            ProgressVisible = false;
+            Cancelled();
         }
         catch (Exception ex)
         {
-            // An install already on disk stays playable even when the check could not complete,
-            // which matters when the player is simply offline.
-            var installed = _orchestrator.State.Read();
-            CanPlay = installed is not null;
-
-            Fail("Checking for updates failed.", ex);
-
-            if (installed is not null)
-            {
-                VersionLine = $"Version {installed.Version} (offline)";
-            }
+            Fail(ex);
         }
         finally
         {
+            Busy = false;
+        }
+    }
+
+    /// <summary>Downloads and installs the release the last check found.</summary>
+    private async Task InstallAsync()
+    {
+        if (_check is not { } check)
+        {
+            return;
+        }
+
+        Busy = true;
+        Failed = false;
+        CanUpdate = false;
+        CanPlay = false;
+        CanCancel = true;
+
+        try
+        {
+            await Run(ct => _orchestrator.InstallAsync(check, new UiProgress(this), ct));
+            _check = check with { Installed = _orchestrator.State.Read() };
+            Ready(check.LatestVersion, "Ready to play");
+        }
+        catch (OperationCanceledException)
+        {
+            Cancelled();
+        }
+        catch (Exception ex)
+        {
+            Fail(ex);
+        }
+        finally
+        {
+            CanCancel = false;
+            Busy = false;
+        }
+    }
+
+    private async Task RepairAsync()
+    {
+        Busy = true;
+        Failed = false;
+        CanPlay = false;
+        CanUpdate = false;
+        CanCancel = true;
+
+        try
+        {
+            Status = "Repairing the installation";
+            await Run(ct => _orchestrator.RepairAsync(new UiProgress(this), ct));
+            _check = _check is null ? null : _check with { Installed = _orchestrator.State.Read() };
+            Ready(_orchestrator.State.Read()?.Version ?? string.Empty, "Repaired and ready");
+        }
+        catch (OperationCanceledException)
+        {
+            Cancelled();
+        }
+        catch (Exception ex)
+        {
+            Fail(ex);
+        }
+        finally
+        {
+            CanCancel = false;
             Busy = false;
         }
     }
@@ -205,7 +335,7 @@ public sealed class LauncherViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            Fail("Starting the game failed.", ex);
+            Fail(ex);
         }
         finally
         {
@@ -214,51 +344,186 @@ public sealed class LauncherViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Shows the failure and, just as importantly, writes it down.
-    ///
-    /// The window can only hold one sentence, and it is gone the moment the player closes it.
-    /// A launcher that fails on someone else's machine is diagnosed from <c>launcher.log</c> or
-    /// not at all, so nothing may fail quietly here.
+    /// Replaces the launcher when the manifest carries a binary for this machine, otherwise opens
+    /// the download page. Both paths end with a person having a newer launcher.
     /// </summary>
-    private void Fail(string message, Exception? exception = null)
+    private async Task UpdateLauncherAsync()
     {
-        _log.Error(message, exception);
+        if (!LauncherUpdateIsAutomatic)
+        {
+            if (_launcherDownloadPage is { } page && !SystemBrowser.TryOpen(page))
+            {
+                Detail = $"Could not open the browser. The download page is {page}";
+            }
 
-        Failed = true;
-        Status = "Something went wrong";
-        Detail = exception?.Message ?? message;
+            return;
+        }
+
+        Busy = true;
+        Failed = false;
+        CanCancel = true;
+        string? staged = null;
+
+        try
+        {
+            Status = "Downloading the new launcher";
+            ProgressVisible = true;
+
+            staged = await Run(ct => _selfUpdater.StageAsync(_launcherBinary!, new UiDownloadProgress(this), ct));
+
+            Status = "Restarting";
+            _selfUpdater.Apply(staged);
+
+            // Apply started the replacement; this process must get out of its way.
+            Environment.Exit(0);
+        }
+        catch (OperationCanceledException)
+        {
+            if (staged is not null)
+            {
+                LauncherSelfUpdater.DiscardStaged(staged);
+            }
+
+            Cancelled();
+        }
+        catch (Exception ex)
+        {
+            if (staged is not null)
+            {
+                LauncherSelfUpdater.DiscardStaged(staged);
+            }
+
+            Fail(ex);
+        }
+        finally
+        {
+            CanCancel = false;
+            Busy = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        Status = "Cancelling";
+        _work?.Cancel();
+    }
+
+    private async Task<T> Run<T>(Func<CancellationToken, Task<T>> work)
+    {
+        _work?.Dispose();
+        _work = new CancellationTokenSource();
+        return await work(_work.Token);
+    }
+
+    private void Reset()
+    {
+        Failed = false;
+        FailureAdvice = string.Empty;
+        CanPlay = false;
+        CanUpdate = false;
+        CanCancel = false;
+        ProgressVisible = true;
+        ProgressIndeterminate = true;
+        Status = "Checking for updates";
+        Detail = string.Empty;
+    }
+
+    private void Ready(string version, string status)
+    {
+        VersionLine = string.IsNullOrEmpty(version) ? string.Empty : $"Version {version}";
+        Status = status;
+        Detail = string.Empty;
         ProgressVisible = false;
+        CanPlay = true;
+        CanUpdate = false;
+    }
+
+    /// <summary>Both options live at once: play what is installed, or take the new release.</summary>
+    private void OfferChoice(UpdateCheck check)
+    {
+        VersionLine = $"Version {check.InstalledVersion} installed · {check.LatestVersion} available";
+        Status = $"Update to {check.LatestVersion}?";
+        Detail = $"You can keep playing {check.InstalledVersion} for now.";
+        ProgressVisible = false;
+        CanPlay = true;
+        CanUpdate = true;
+    }
+
+    private void ShowLauncherTooOld(UpdateCheck check)
+    {
+        Failed = true;
+        Status = "This launcher is too old";
+        Detail = $"Release {check.LatestVersion} needs launcher {check.Manifest.MinLauncherVersion} or newer.";
+        FailureAdvice = LauncherUpdateAvailable
+            ? "Use the launcher update below."
+            : "Download a newer launcher from the FriWorld Hub.";
+        ProgressVisible = false;
+
+        // Whatever is installed still runs; only updating the game is off the table.
+        CanPlay = check.Installed is not null;
+        CanUpdate = false;
+    }
+
+    private void Cancelled()
+    {
+        Status = "Cancelled";
+        Detail = "A partial download is kept and will continue next time.";
+        ProgressVisible = false;
+        CanPlay = _orchestrator.State.Read() is not null;
+        CanUpdate = _check?.UpdateRequired ?? false;
     }
 
     /// <summary>
-    /// Surfaces a newer launcher as a link, never as an action. The launcher does not replace
-    /// itself: that is the most fragile thing a launcher can do, and the game is on its way to a
-    /// store that will make the launcher redundant anyway.
+    /// Shows the failure and, just as importantly, writes it down.
+    ///
+    /// The window holds one sentence and it is gone when the player closes it. A launcher that
+    /// fails on someone else's machine is diagnosed from <c>launcher.log</c> or not at all.
     /// </summary>
+    private void Fail(Exception exception)
+    {
+        _log.Error("Launcher operation failed.", exception);
+
+        var message = FailureMessages.Describe(exception);
+
+        Failed = true;
+        Status = message.Headline;
+        Detail = message.Advice ?? string.Empty;
+        FailureAdvice = string.Empty;
+        ProgressVisible = false;
+
+        // An installation already on disk stays playable, which is what matters when the failure
+        // was simply that the server could not be reached.
+        var installed = _orchestrator.State.Read();
+        CanPlay = installed is not null;
+        CanUpdate = message.Recoverable && (_check?.UpdateRequired ?? false);
+
+        if (installed is not null && string.IsNullOrEmpty(VersionLine))
+        {
+            VersionLine = $"Version {installed.Version} installed";
+        }
+    }
+
     private void ApplyLauncherUpdate(UpdateCheck check)
     {
         if (check.LauncherUpdate is not { } launcher)
         {
-            _launcherUpdateUrl = null;
+            _launcherDownloadPage = null;
+            _launcherBinary = null;
             LauncherUpdateNotice = string.Empty;
         }
         else
         {
-            _launcherUpdateUrl = launcher.DownloadUrl;
+            _launcherDownloadPage = launcher.DownloadUrl;
+            _launcherBinary = check.LauncherBinary;
+
             LauncherUpdateNotice = string.IsNullOrWhiteSpace(launcher.Notes)
                 ? $"Launcher {launcher.Version} is available."
                 : $"Launcher {launcher.Version} is available. {launcher.Notes}";
         }
 
         Raise(nameof(LauncherUpdateAvailable));
-    }
-
-    private void OpenLauncherDownload()
-    {
-        if (_launcherUpdateUrl is { } url && !SystemBrowser.TryOpen(url))
-        {
-            LauncherUpdateNotice = $"Could not open the browser. The download page is {url}";
-        }
+        Raise(nameof(LauncherUpdateIsAutomatic));
+        Raise(nameof(LauncherUpdateAction));
     }
 
     private void Apply(UpdateStatus status)
@@ -275,10 +540,32 @@ public sealed class LauncherViewModel : ObservableObject
             : string.Empty;
     }
 
+    private void ApplyDownload(DownloadProgress download)
+    {
+        ProgressIndeterminate = download.Fraction is null;
+        Progress = (download.Fraction ?? 0) * 100;
+        ProgressVisible = true;
+        Detail = $"{DiskSpace.Format(download.BytesReceived)} of " +
+                 $"{(download.TotalBytes is { } total ? DiskSpace.Format(total) : "?")}";
+    }
+
+    private void RaiseAll()
+    {
+        PlayCommand.RaiseCanExecuteChanged();
+        UpdateCommand.RaiseCanExecuteChanged();
+        RepairCommand.RaiseCanExecuteChanged();
+        RetryCommand.RaiseCanExecuteChanged();
+        UpdateLauncherCommand.RaiseCanExecuteChanged();
+    }
+
     /// <summary>Marshals progress reports onto the UI thread.</summary>
     private sealed class UiProgress(LauncherViewModel owner) : IProgress<UpdateStatus>
     {
-        public void Report(UpdateStatus value) =>
-            Dispatcher.UIThread.Post(() => owner.Apply(value));
+        public void Report(UpdateStatus value) => Dispatcher.UIThread.Post(() => owner.Apply(value));
+    }
+
+    private sealed class UiDownloadProgress(LauncherViewModel owner) : IProgress<DownloadProgress>
+    {
+        public void Report(DownloadProgress value) => Dispatcher.UIThread.Post(() => owner.ApplyDownload(value));
     }
 }

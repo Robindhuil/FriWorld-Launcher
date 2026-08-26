@@ -23,13 +23,28 @@ public sealed record UpdateCheck
     public string? InstalledVersion => Installed?.Version;
 
     /// <summary>
+    /// Whether the player could start the game right now without updating first. This is what
+    /// turns an update into a choice rather than a toll gate.
+    /// </summary>
+    public bool CanPlayWithoutUpdating => Installed is not null && Reason is UpdateReason.None or UpdateReason.VersionDiffers;
+
+    /// <summary>
+    /// True when this manifest declares a floor the running launcher is below. Nothing else may
+    /// be acted on in that case: the manifest means something this launcher does not understand.
+    /// </summary>
+    public bool LauncherTooOld => LauncherVersion.IsOlderThan(Manifest.MinLauncherVersion);
+
+    /// <summary>
     /// The newer launcher, when the manifest names one that is not the running version.
-    /// Null otherwise. Nothing acts on this automatically — it exists to be shown to a person.
+    /// Null otherwise.
     /// </summary>
     public LauncherRelease? LauncherUpdate =>
         Manifest.Launcher is { IsUsable: true } launcher && LauncherVersion.DiffersFrom(launcher.Version)
             ? launcher
             : null;
+
+    /// <summary>The launcher binary this machine could install, when the manifest carries one.</summary>
+    public LauncherBinary? LauncherBinary => LauncherUpdate?.BinaryForThisPlatform;
 }
 
 /// <summary>
