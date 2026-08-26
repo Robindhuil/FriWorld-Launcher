@@ -43,6 +43,12 @@ _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.0-alpha**._
   Pôvodný plán mal `"exec": "FriWorld.app"`, čo sa spustiť nedá. Launcher si vie binárku
   v bundli dohľadať, ale ohlási to ako varovanie.
 
+- Rozsah je uzavretý: launcher je most k Steamu, nie produkt. Nepodpisuje sa nič,
+  neplatí sa za nič, a nestavia sa self-update, delta patche, macOS ani CI buildy —
+  Steam ich aj tak nahradí. Hráčom, ktorým Smart App Control launcher zablokuje,
+  sa ponúkne web build.
+  (`docs/decisions/2026-08-26-bez-podpisu-launcher-je-most-k-steamu.md`)
+
 ### Fixed
 - Odvodené vlastnosti `PlatformPackage` sa serializovali do manifestu a padali na
   relatívnej URL. Odhalil to end-to-end test proti mock releasu.

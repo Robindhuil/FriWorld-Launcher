@@ -85,13 +85,8 @@ Zasiahnutá je aj samotná hra: `FriWorld.exe` z Unity buildu je tiež nepodpís
 ho spúšťa ako podproces.
 
 To mení váhu rozhodnutia „podpis je mimo rozsahu, stojí peniaze". Nie je to už kozmetika
-prvého spustenia, ale otázka, či sa hra na časti strojov spustí vôbec. Treba k tomu:
+prvého spustenia, ale otázka, či sa hra na časti strojov spustí vôbec.
 
-- zistiť, koľko cieľových hráčov má Smart App Control zapnutý (upgradnuté Windows ho
-  väčšinou zapnutý nemajú, čerstvo nainštalované áno),
-- ak to nie je zanedbateľné, vrátiť sa k otázke code signing certifikátu skôr,
-  než sa launcher dostane k cudzím ľuďom,
-- do textu na Hube pridať aj tento prípad, nie len SmartScreen.
-
-Nič z toho neblokuje ďalšiu prácu na launcheri. Ale je to prvá vec, ktorá sa má overiť,
-skôr než sa launcher pošle prvému cudziemu človeku.
+**Vyriešené:** podpis sa nekupuje, dôsledky sa akceptujú a hráčom, ktorých to trafí,
+sa ponúkne web build. Odôvodnenie a čo z toho plynie pre rozsah launchera je
+v [Bez podpisu, launcher je most k Steamu](2026-08-26-bez-podpisu-launcher-je-most-k-steamu.md).

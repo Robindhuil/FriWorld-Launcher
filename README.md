@@ -178,11 +178,33 @@ zbuildovaných DLL. Ak `dotnet test` alebo spustenie launchera padne na
 `An Application Control policy has blocked this file (0x800711C7)`, je to ono.
 Detaily a možnosti sú v [`docs/decisions/2026-08-26-smart-app-control.md`](docs/decisions/2026-08-26-smart-app-control.md).
 
+Bez vypínania Smart App Control sa dá pracovať takto:
+
+| chcem | ako |
+|---|---|
+| spustiť testy | zdroje `Core` preložiť priamo do testovacieho projektu — postup v zápise vyššie |
+| spustiť testy a overiť Linux | kontajner `mcr.microsoft.com/dotnet/sdk:10.0` |
+| vidieť a klikať v okne launchera | VM s Windows, kde Smart App Control nebeží |
+
+Kontajner je jediná cesta, ako dnes overiť execute bity a symlinky z `tar.gz`.
+
 ---
 
-## Čo zatiaľ nie je
+## Rozsah
 
-- **Self-update launchera.** Zatiaľ sa len zistí, že je novšia verzia, a odkáže sa na Hub.
-- **Delta patchovanie.** Pri buildoch okolo 1 GB to bude chýbať, ale nie vo v1.
-- **Podpis a notarizácia.** Stojí peniaze.
+Launcher je **most k Steamu, nie produkt**. Steam si aktualizácie, delta patche aj verzie
+rieši sám, takže sa sem nestavia nič, čo by aj tak zahodil. Rozhodnutie aj s odôvodnením:
+[Bez podpisu, launcher je most k Steamu](docs/decisions/2026-08-26-bez-podpisu-launcher-je-most-k-steamu.md).
+
+Zámerne **nie je a nebude**:
+
+- **Podpis a notarizácia.** Nepodpisuje sa nič, neplatí sa za nič.
+- **Self-update launchera.** Len sa zistí, že je novšia verzia, a odkáže sa na Hub.
+- **Delta patchovanie.** Steam to robí lepšie a zadarmo.
+- **macOS.** Bez Macu sa neotestuje, Gatekeeper je horší než Smart App Control.
+- **CI buildy.** Editor skript stačí.
+
+Zatiaľ chýba, ale patrí sem:
+
 - **Reálne úložisko.** Manifest sa dnes číta z lokálneho mocku.
+- **Build pipeline na strane hry**, ktorá archívy a manifest vyrobí.
