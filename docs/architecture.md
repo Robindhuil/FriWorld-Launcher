@@ -72,8 +72,12 @@ porovnaj tag s installed.json
                 │
         zapíš installed.json
                 │
-        spusti; keď prežije, zmaž game.old
+        spusti; keď prežije, zmaž game.old a zavri okno
 ```
+
+Posledný krok je jeden: doba odkladu po spustení hry rozhoduje **aj** o upratání predošlej
+inštalácie, **aj** o tom, či sa okno zavrie. Hra, ktorá prežila, launcher už nepotrebuje.
+Hra, ktorá hneď spadla, potrebuje okno, ktoré povie prečo.
 
 ### Prečo sa verzie neporovnávajú na poradie
 
@@ -159,7 +163,8 @@ vedieť ukázať inam bez editovania nasadeného súboru.
 ```json
 {
   "manifestUrl": "https://…/manifest.json",
-  "installRoot": "instalacia"
+  "installRoot": "instalacia",
+  "keepOpenAfterLaunch": false
 }
 ```
 

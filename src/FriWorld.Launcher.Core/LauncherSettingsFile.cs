@@ -21,6 +21,16 @@ public sealed record LauncherSettingsFile
     public string? InstallRoot { get; init; }
 
     /// <summary>
+    /// Keeps the window open after the game starts. Off by default: the launcher's job is done
+    /// once the game is running, and a second window on the taskbar is just clutter.
+    ///
+    /// Worth turning on while testing the launcher itself, when closing it every time is a nuisance.
+    /// A game that dies immediately keeps the window open regardless — that is the one case where
+    /// there is something left to say.
+    /// </summary>
+    public bool KeepOpenAfterLaunch { get; init; }
+
+    /// <summary>
     /// Reads the file beside the running executable. Returns an empty instance when it is absent
     /// or unreadable — a broken settings file must not stop the launcher from starting, because
     /// then there would be no way to tell the player what went wrong.

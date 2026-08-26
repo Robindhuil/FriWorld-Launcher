@@ -30,6 +30,8 @@ public sealed class LauncherViewModel : ObservableObject
     private readonly ILauncherLog _log;
     private readonly Lock _workGate = new();
 
+    private readonly bool _keepOpenAfterLaunch;
+
     private SingleInstanceLock? _instanceLock;
     private CancellationTokenSource? _work;
     private UpdateCheck? _check;
@@ -54,6 +56,7 @@ public sealed class LauncherViewModel : ObservableObject
     public LauncherViewModel()
     {
         var configuration = LauncherConfiguration.Resolve();
+        _keepOpenAfterLaunch = LauncherSettingsFile.Load().KeepOpenAfterLaunch;
         _log = configuration.Log;
         _instanceLock = SingleInstanceLock.TryAcquire(configuration.Paths);
         _orchestrator = configuration.CreateOrchestrator();
@@ -81,6 +84,12 @@ public sealed class LauncherViewModel : ObservableObject
     public RelayCommand CancelCommand { get; }
 
     public RelayCommand UpdateLauncherCommand { get; }
+
+    /// <summary>
+    /// Raised once the game is up and the launcher has nothing left to do. The window listens
+    /// and closes itself; the view model does not reach into the UI to do it.
+    /// </summary>
+    public event EventHandler? CloseRequested;
 
     public string Title => "FriWorld";
 
@@ -361,8 +370,30 @@ public sealed class LauncherViewModel : ObservableObject
         try
         {
             Status = "Starting the game";
-            await _orchestrator.LaunchAsync(new UiProgress(this));
+
+            // LaunchAsync already waits out the grace period that confirms the build can start,
+            // so by the time it returns the answer is known and the previous install is gone.
+            var process = await _orchestrator.LaunchAsync(new UiProgress(this));
+
+            if (process.HasExited)
+            {
+                // The game stopped within seconds of starting. Staying open is the whole point
+                // here: this is the one moment when the launcher has something useful to say.
+                Failed = true;
+                Status = "The game closed straight away";
+                Detail = $"It exited with code {process.ExitCode} moments after starting.";
+                FailureAdvice = "Repairing the installation may help. The log has the details.";
+                ProgressVisible = false;
+                _log.Warn($"The game exited with code {process.ExitCode} during the grace period.");
+                return;
+            }
+
             Status = "Running";
+
+            if (!_keepOpenAfterLaunch)
+            {
+                CloseRequested?.Invoke(this, EventArgs.Empty);
+            }
         }
         catch (Exception ex)
         {

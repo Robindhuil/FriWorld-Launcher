@@ -96,6 +96,11 @@ _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.0-alpha**._
   bar ani tlačidlo Cancel sa nedajú ani pozrieť, nieto stlačiť. Zástupca za vzdialené
   úložisko má zastupovať aj to, ako dlho to trvá, nielen výsledok.
 
+- Launcher sa po spustení hry zavrie. Jeho práca tam končí a druhé okno na paneli úloh
+  je len neporiadok. Keď hra spadne v priebehu doby odkladu, okno **zostane** otvorené
+  a povie to aj s návratovým kódom — to je jediná chvíľa, keď má launcher čo dodať.
+  `keepOpenAfterLaunch` v `launcher.json` to vypne, čo sa hodí pri ladení samotného launchera.
+
 ### Fixed
 - **Self-update štartoval nový launcher, kým starý ešte držal zámok jednej inštancie.**
   Nový by ako prvú vec ohlásil, že beží iný launcher, a aktualizácia by vyzerala, že všetko
