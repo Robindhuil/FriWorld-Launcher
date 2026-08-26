@@ -42,7 +42,7 @@ public class SingleInstanceLockTests
     }
 
     [Fact]
-    public void A_lock_released_mid_wait_is_picked_up()
+    public async Task A_lock_released_mid_wait_is_picked_up()
     {
         // This is the self-update handover: the outgoing launcher lets go a moment after its
         // replacement has already started asking. Without the wait the new one would report
@@ -62,7 +62,7 @@ public class SingleInstanceLockTests
         using var incoming = SingleInstanceLock.TryAcquire(paths, TimeSpan.FromSeconds(5));
 
         Assert.NotNull(incoming);
-        releasing.Wait();
+        await releasing;
     }
 
     [Fact]

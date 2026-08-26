@@ -76,6 +76,27 @@ na tú istú chybu, pomáha preložiť to v inej konfigurácii (`-c Release`), l
 
 ---
 
+## Ako si pozrieť stavy, ktoré normálne prebehnú príliš rýchlo
+
+Lokálny zdroj skopíruje 415 MB za štyri sekundy, takže progress bar aj Cancel len bliknú.
+`FRIWORLD_SIMULATED_BANDWIDTH` obmedzí `FileContentClient` na daný počet bajtov za sekundu:
+
+```bash
+FRIWORLD_SIMULATED_BANDWIDTH=20971520 dotnet run --project src/FriWorld.Launcher.Cli -- run --manifest mock/store/manifest.json --root .localroot
+```
+
+Chybové stavy sa vyvolávajú takto:
+
+| stav | ako |
+|---|---|
+| poškodené stiahnutie | prepíš `sha256` v manifeste na nezmysel |
+| beží hra | spusti hru a skús aktualizovať |
+| launcher je starý | daj do manifestu `minLauncherVersion` vyššiu než tvoju |
+| nedostupné úložisko | ukáž `--manifest` na adresu, ktorá neexistuje |
+| poškodená inštalácia | zmaž súbor z `game/` a pozri, že `check` to nevidí, ale `repair` opraví |
+
+---
+
 ## Linux a macOS
 
 Kód obidve platformy podporuje a testy execute bitov aj tar.gz prechádzajú. Ale:

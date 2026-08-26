@@ -91,6 +91,11 @@ _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.0-alpha**._
   [postup vydania](docs/releasing.md) s kontrolným zoznamom a [vývoj](docs/development.md).
   README prepísané na to, čo projekt naozaj je.
 
+- Simulácia rýchlosti sťahovania pre lokálny zdroj — `FRIWORLD_SIMULATED_BANDWIDTH`
+  v bajtoch za sekundu. Bez nej sa 415 MB z priečinka skopíruje za štyri sekundy a progress
+  bar ani tlačidlo Cancel sa nedajú ani pozrieť, nieto stlačiť. Zástupca za vzdialené
+  úložisko má zastupovať aj to, ako dlho to trvá, nielen výsledok.
+
 ### Fixed
 - **Self-update štartoval nový launcher, kým starý ešte držal zámok jednej inštancie.**
   Nový by ako prvú vec ohlásil, že beží iný launcher, a aktualizácia by vyzerala, že všetko
