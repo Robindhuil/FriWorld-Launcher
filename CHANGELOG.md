@@ -118,6 +118,10 @@ _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.0-alpha**._
 - `LauncherActions` v `Core` — rozhodnutie, čo ponúknuť, je vec domény, nie okna. Vďaka tomu
   sa dá otestovať bez UI, a testy naň sú.
 
+- `docs/ui-spec.md` — zadanie pre návrh okna. Úplný zoznam stavov, tlačidiel a textov,
+  ktoré launcher zobrazuje, plus pravidlá, ktoré návrh nesmie obísť. Otvorené je v ňom
+  jedno rozhodnutie: UI je po anglicky, ale cieľovka sú slovenskí žiaci.
+
 ### Fixed
 - **Self-update štartoval nový launcher, kým starý ešte držal zámok jednej inštancie.**
   Nový by ako prvú vec ohlásil, že beží iný launcher, a aktualizácia by vyzerala, že všetko
