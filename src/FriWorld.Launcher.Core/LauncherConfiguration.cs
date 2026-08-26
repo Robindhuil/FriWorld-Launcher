@@ -39,25 +39,50 @@ public sealed class LauncherConfiguration
     public ILauncherLog Log { get; }
 
     /// <summary>
-    /// Resolves configuration from, in order: the explicit argument, the environment, the default.
-    /// Both the manifest URL and the install root are overridable so a development run never
-    /// touches the real installation.
+    /// Resolves configuration from, most specific first: the explicit argument, the environment,
+    /// <c>launcher.json</c> beside the executable, then the built-in default.
+    ///
+    /// The argument comes first because a person typing a switch means it right now. The settings
+    /// file comes last of the three because it belongs to the installation, not to this run — a
+    /// development run must be able to point somewhere else without editing the deployed file.
     /// </summary>
     public static LauncherConfiguration Resolve(
         string? manifestUrlOverride = null,
         string? rootOverride = null,
         Action<string>? logMirror = null)
     {
-        var raw = manifestUrlOverride
-            ?? Environment.GetEnvironmentVariable(ManifestUrlVariable)
-            ?? DefaultManifestUrl;
+        var settings = LauncherSettingsFile.Load();
 
-        var url = ParseUrlOrPath(raw);
-        var paths = rootOverride is null ? LauncherPaths.Default() : new LauncherPaths(rootOverride);
+        // A relative path typed on the command line means "from where I am standing", but the same
+        // text in the settings file means "next to the launcher" — a shortcut can start it anywhere.
+        var fromCommandLineOrEnvironment = Coalesce(
+            manifestUrlOverride,
+            Environment.GetEnvironmentVariable(ManifestUrlVariable));
+
+        var url = fromCommandLineOrEnvironment is not null
+            ? ParseUrlOrPath(fromCommandLineOrEnvironment)
+            : settings.ManifestUrl is { } fromFile
+                ? ParseUrlOrPath(ResolveAgainstExecutable(fromFile))
+                : ParseUrlOrPath(DefaultManifestUrl);
+
+        var root = Coalesce(
+            rootOverride,
+            Environment.GetEnvironmentVariable(LauncherPaths.RootOverrideVariable),
+            settings.InstallRoot);
+        var paths = root is null ? LauncherPaths.Default() : new LauncherPaths(ResolveAgainstExecutable(root));
         var log = new FileLauncherLog(paths.LogFile, logMirror);
 
         return new LauncherConfiguration(url, paths, log);
     }
+
+    private static string? Coalesce(params string?[] candidates) =>
+        candidates.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
+
+    /// <summary>Resolves a relative path against the executable, leaving URLs and absolute paths alone.</summary>
+    private static string ResolveAgainstExecutable(string value) =>
+        Uri.TryCreate(value, UriKind.Absolute, out _) || Path.IsPathRooted(value)
+            ? value
+            : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, value));
 
     /// <summary>Accepts a URL or a local filesystem path, so a mock manifest can be named directly.</summary>
     public static Uri ParseUrlOrPath(string value)

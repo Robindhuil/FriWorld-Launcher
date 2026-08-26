@@ -42,6 +42,12 @@ _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.0-alpha**._
   sa **nikdy nevymieňa sám** — je to najkrehkejšia časť a Steam ho aj tak nahradí.
   Adresa z manifestu sa otvára len keď je `http` alebo `https`.
 
+- `launcher.json` vedľa spustiteľného súboru — nepovinný, nesie `manifestUrl` a `installRoot`.
+  Bez neho by bola adresa manifestu zadrôtovaná v binárke, čo znamená iný build pre každé
+  nasadenie. Poradie: prepínač, potom premenná prostredia, potom tento súbor, potom
+  zabudovaná predvoľba. Relatívna cesta v súbore sa počíta od launchera, nie od pracovného
+  priečinka — spúšťač môže byť kdekoľvek. Rozbitý súbor launcher nezastaví.
+
 ### Changed
 - Manifest sa číta ako **statický JSON súbor na pevnej URL**, nie cez GitHub Releases API.
   Neautentizované API má strop 60 volaní za hodinu na IP a viacerí hráči za jedným NAT-om
