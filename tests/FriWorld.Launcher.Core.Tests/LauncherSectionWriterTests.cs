@@ -104,6 +104,21 @@ public class LauncherSectionWriterTests
     }
 
     [Fact]
+    public void Does_not_rewrite_fields_it_was_not_asked_to_touch()
+    {
+        // A '+' in a timestamp offset or a version with build metadata is legal unescaped, and
+        // escaping it turns every launcher release into a diff nobody can read.
+        using var temp = new TempDirectory("launcher-section");
+        var path = WriteExisting(temp);
+
+        LauncherSectionWriter.Write(path, Release());
+
+        var written = File.ReadAllText(path);
+        Assert.DoesNotContain("\u002B", written);
+        Assert.Contains("2026-08-26T10:00:00", written);
+    }
+
+    [Fact]
     public void Removes_the_section_when_asked()
     {
         // The safe rollback: without a launcher section the launcher only offers a download page.

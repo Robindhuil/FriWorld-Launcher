@@ -1,3 +1,4 @@
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -16,6 +17,11 @@ public static class ManifestJson
         WriteIndented = true,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+
+        // The default encoder escapes '+' as +, which turns a timestamp offset or a version
+        // with build metadata into something nobody can read in a diff. This file is fetched as
+        // JSON and never embedded in a page, so the escaping buys nothing and costs legibility.
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
     public static ReleaseManifest Parse(string json)

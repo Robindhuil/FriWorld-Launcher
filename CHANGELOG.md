@@ -27,6 +27,10 @@ _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.4-alpha**._
   klesol na obyčajný odkaz.
 
 ### Fixed
+- **Zápis manifestu prepísal `+` na `+`** v poliach, ktorých sa úprava netýkala —
+  časový posun, verzia s build metadátami. Platný JSON, ale každé vydanie launchera by
+  vyrábalo diff, ktorý sa nedá prečítať. Manifest sa ťahá ako JSON a nikdy nevkladá do
+  stránky, takže to escapovanie nič nechráni.
 - **Test potvrdenia spustenia vyhrával preteky, nie test.** Čakal, že mock stub prežije
   milisekundovú lehotu — čo na Windows platilo len preto, že `cmd.exe` sa spašťa pomaly než
   to. Na rychlejsom shelli tie preteky prehral. Stub teraz beží tri sekundy, takže lehota
