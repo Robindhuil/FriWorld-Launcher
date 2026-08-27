@@ -2,6 +2,7 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
 using FriWorld.Launcher.App.ViewModels;
 using FriWorld.Launcher.Core;
+using FriWorld.Launcher.Core.Update;
 
 namespace FriWorld.Launcher.App.Tests;
 
@@ -27,11 +28,19 @@ public class PlaySessionTests
         window.Show();
 
         var model = (LauncherViewModel)window.DataContext!;
-        await Settle(() => !model.Busy, TimeSpan.FromSeconds(20));
 
-        Assert.Equal("Pripravené", model.Status);
+        // Wait for the check to have both started and finished. Waiting only for !Busy can return
+        // before it starts, which reads as a stuck launcher when nothing is stuck at all.
+        await Settle(() => model.Action != LauncherAction.None && !model.Busy, TimeSpan.FromSeconds(20));
+
+        Assert.True(model.Status == "Pripravené", Describe(model));
         return (window, model);
     }
+
+    /// <summary>Everything worth knowing when one of these fails, since the run is not repeatable.</summary>
+    private static string Describe(LauncherViewModel model) =>
+        $"{model.Status} [action {model.Action}, busy {model.Busy}, failed {model.Failed}, " +
+        $"headline '{model.FailureHeadline}', progress {model.ProgressVisible}]";
 
     /// <summary>Pumps the dispatcher until <paramref name="done"/> holds or the time runs out.</summary>
     private static async Task Settle(Func<bool> done, TimeSpan within)
@@ -64,14 +73,15 @@ public class PlaySessionTests
         await Settle(() => !window.IsVisible, TimeSpan.FromSeconds(15));
         Assert.False(window.IsVisible, "the launcher never got out of the way");
 
-        await Settle(() => window.IsVisible && !model.Busy, TimeSpan.FromSeconds(30));
+        await Settle(
+            () => window.IsVisible && !model.Busy && model.Action != LauncherAction.None,
+            TimeSpan.FromSeconds(30));
 
         Assert.True(window.IsVisible, "the launcher never came back");
         Assert.False(model.Busy, "the launcher came back still working");
 
         // The bug: it came back showing the text the check sets before it starts, and stayed.
-        Assert.NotEqual("Kontrolujem aktualizácie", model.Status);
-        Assert.Equal("Pripravené", model.Status);
+        Assert.True(model.Status == "Pripravené", Describe(model));
         Assert.False(model.ProgressVisible, "the progress bar was left on screen");
     }
 }
