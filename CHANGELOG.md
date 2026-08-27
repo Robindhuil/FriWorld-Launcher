@@ -10,7 +10,31 @@ na to číslo.
 
 ## [Unreleased]
 
-_Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.4-alpha**._
+_Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.5-alpha**._
+
+## [0.1.5-alpha] - 2026-08-27
+
+### Added
+- **Klávesnica.** Vlastný rám okna znamená, že systém neponúke žiadnu skratku sám, takže
+  Enter a Escape doteraz nerobili nič.
+  **Enter** stlačí hlavné tlačidlo — okrem chvíle, keď je na obrazovke otázka na
+  odinštalovanie. Odpoveď na ňu sa nesmie dať tým istým Enterom, ktorým sa o sekundu skôr
+  spúšťala hra.
+  **Escape** ustupuje od toho, čo je najviac vpredu: odpovie na otázku *Ponechať*, zruší
+  sťahovanie, alebo zavrie okno. Počas rozbaľovania a výmeny priečinkov **nerobí nič** —
+  Escape je reflex a reflex nesmie zabiť proces uprostred výmeny. Zavrieť sa dá ďalej
+  tlačidlom, čo je rozhodnutie.
+  Poradie je v `DismissChoice` v Core, nie v okne, aby sa dalo otestovať — vrátane toho, že
+  počas práce Escape nikdy nezavrie okno.
+- **Fokus je vidieť.** Predvolený čiarkovaný rámček sa na fotografickom pozadí stratí;
+  tlačidlá majú biely dvojpixelový obrys pri `:focus-visible`, takže sa neobjaví po kliknutí
+  myšou.
+
+### Fixed
+- Smart App Control zablokoval aj **testovaciu assembly**, po `FriWorldLauncher.dll`
+  a `FriWorld.Launcher.Core.dll` už tretiu v poradí, a zhodil tým celú sadu naraz.
+  Volá sa teraz `FriWorldLauncherSuite`; `InternalsVisibleTo` v `Core` sedí s tým menom.
+  Na CI sa to nedeje.
 
 ## [0.1.4-alpha] - 2026-08-27
 
