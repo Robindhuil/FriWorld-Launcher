@@ -395,14 +395,15 @@ pridanie poľa dôvod nie je; neznáme polia staré launchery ignorujú. Podrobn
 Pred nasadením stropu sa uisti, že v tom istom manifeste je aj sekcia `launcher`
 s binárkou. Inak zamkneš ľudí von bez cesty von.
 
-### 6.7 Čo overiť pred prvým ostrým self-updatom
+### 6.7 Skúška self-updatu
 
-Výmena je otestovaná na skutočných súboroch (`SelfUpdateSwapTests`), ale **nikdy nebežala
-v skutočnom nasadení** — vyžaduje jednosúborový build, ktorý Smart App Control na
-vývojovom stroji blokuje.
+**Overené 2026-08-27** na vydaní 0.1.2-alpha: launcher 0.1.1-alpha ponuku ukázal, vymenil
+sa a nová verzia nabehla. Dovtedy výmena bežala len v testoch nad skutočnými súbormi
+(`SelfUpdateSwapTests`) — jednosúborový build, ktorý na to treba, Smart App Control na
+vývojovom stroji blokuje, takže sa to inak nedalo vyskúšať.
 
-Pred tým, než sa naň spoľahneš u cudzích ľudí, sprav skúšku nanečisto na stroji, kde sa
-jednosúborový build spustiť dá:
+Skúšku zopakuj vždy, keď sa dotkneš výmeny, zámku jednej inštancie alebo spôsobu
+nasadenia. Na stroji, kde sa jednosúborový build spustiť dá:
 
 ```
 [ ] stará verzia sa spustí a ohlási novú

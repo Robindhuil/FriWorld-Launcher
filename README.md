@@ -158,10 +158,13 @@ v [rozhodnutí](docs/decisions/2026-08-26-smart-app-control.md).
 
 ## Stav
 
-**0.1.1-alpha.** Jadro, balenie, CLI aj okno sú hotové a overené proti skutočnému
+**0.1.2-alpha.** Jadro, balenie, CLI aj okno sú hotové a overené proti skutočnému
 746 MB Unity buildu; hra sa sťahuje z GitHub Releases a launcher je na stiahnutie
 [na Hube](https://fri-world-hub.vercel.app/download).
 
+**Celá cesta bola prejdená naostro**, vrátane tej poslednej: 0.1.1-alpha sa cez ponuku
+v okne vymenil na 0.1.2-alpha a nová verzia nabehla. Postup na zopakovanie skúšky je
+v [Nasadení](docs/deploying.md#67-skúška-self-updatu).
+
 Otvorené: editor skript z [`tools/game-repo/`](tools/game-repo/) ešte nie je v repe hry,
-logo je zatiaľ dvojfarebný text namiesto obrázka, a **self-update nikdy nebežal v ostrom
-nasadení** — skúška nanečisto je v [Nasadení](docs/deploying.md#67-čo-overiť-pred-prvým-ostrým-self-updatom).
+logo je zatiaľ dvojfarebný text namiesto obrázka, a launcher nie je podpísaný.
