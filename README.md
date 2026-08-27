@@ -24,8 +24,12 @@ prečíta manifest  →  porovná s tým, čo je nainštalované  →  spýta sa
 - **Neoverený archív sa nikdy nerozbaľuje.** Nezhoda SHA256 znamená zmazať a skončiť.
 - **Nainštalovaná hra zostáva hrateľná**, aj keď je server nedostupný alebo sťahovanie zlyhá.
 - **Predošlá inštalácia sa drží**, kým nová raz úspešne nenabehne.
-- **Oprava inštalácie** jedným tlačidlom, keď sa súbory poškodia.
-- **Odinštalovanie a otvorenie priečinka s hrou** v ponuke `⋯`, keď je hra nainštalovaná.
+- **Počas hry sa launcher skryje a po jej zatvorení vráti** — a rovno skontroluje, čo je nové.
+- **Naraz beží jedna hra.** Druhé spustenie sa odmietne.
+- **Oprava, otvorenie priečinka a odinštalovanie** pri hlavnom tlačidle, keď je hra na disku.
+- **Zmazať hru sa dá len cez otázku** v modale, ktorý zatieni a zablokuje zvyšok okna.
+- **Okno sa prispôsobí veľkosti obrazovky** — celé jedným faktorom, aj s písmom.
+- **Enter, Escape a Tab robia to, čo majú.** Enter patrí tomu, kto má fokus.
 - **Launcher sa vie aktualizovať sám**, s overením a s návratom pri zlyhaní.
 
 ---
@@ -119,6 +123,7 @@ Presun buildov na iné úložisko je preto úprava jedného riadka, nie vydanie 
 | [Architektúra](docs/architecture.md) | ako je to poskladané a prečo tak |
 | [Manifest](docs/manifest.md) | kontrakt medzi hrou a launcherom, pole po poli |
 | [Nasadenie](docs/deploying.md) | **web aj desktop od Unity po hráča**, s kontrolnými zoznamami |
+| [Zmeny](CHANGELOG.md) | čo pribudlo v ktorej verzii a prečo |
 | [Vývoj](docs/development.md) | prostredie, testy, Smart App Control |
 | [Zadanie pre UI](docs/ui-spec.md) | okno, stavy, tlačidlá, texty — podklad pre návrh |
 | [Build pipeline](docs/build-pipeline-spec.md) | zadanie pre repo hry |
@@ -161,13 +166,18 @@ v [rozhodnutí](docs/decisions/2026-08-26-smart-app-control.md).
 
 ## Stav
 
-**0.1.2-alpha.** Jadro, balenie, CLI aj okno sú hotové a overené proti skutočnému
+**0.1.8-alpha.** Jadro, balenie, CLI aj okno sú hotové a overené proti skutočnému
 746 MB Unity buildu; hra sa sťahuje z GitHub Releases a launcher je na stiahnutie
 [na Hube](https://fri-world-hub.vercel.app/download).
 
-**Celá cesta bola prejdená naostro**, vrátane tej poslednej: 0.1.1-alpha sa cez ponuku
-v okne vymenil na 0.1.2-alpha a nová verzia nabehla. Postup na zopakovanie skúšky je
-v [Nasadení](docs/deploying.md#67-skúška-self-updatu).
+Testy bežia na **CI pri každom push**, na Windows aj Linuxe — 225 nad mechanikou a 15 nad
+skutočným oknom. Na vývojovom stroji ich Smart App Control už nespustí, viď
+[rozhodnutie](docs/decisions/2026-08-27-testy-bezia-na-ci.md).
+
+**Celá cesta bola prejdená naostro**, vrátane self-updatu: launcher sa vymenil sám a nová
+verzia nabehla. Postup na zopakovanie skúšky je v [Nasadení](docs/deploying.md#67-skúška-self-updatu).
+
+Ďalšie funkcie idú ako **0.2.0-alpha**.
 
 Otvorené: editor skript z [`tools/game-repo/`](tools/game-repo/) ešte nie je v repe hry,
 logo je zatiaľ dvojfarebný text namiesto obrázka, a launcher nie je podpísaný.

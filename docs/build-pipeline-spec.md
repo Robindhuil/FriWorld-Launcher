@@ -1,6 +1,6 @@
 # Build pipeline — zadanie pre repo hry
 
-**Verzia launchera:** 0.1.1-alpha · **Dátum:** 2026-08-26 · **Stav:** zadanie, nezačaté
+**Verzia launchera:** 0.1.8-alpha · **Dátum:** 2026-08-26 · **Stav:** zadanie, nezačaté
 
 Dokument je písaný tak, aby sa podľa neho dalo pracovať v session nad repom
 `Robindhuil/FriWorld` bez kontextu tejto konverzácie.

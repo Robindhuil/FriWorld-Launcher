@@ -1,6 +1,6 @@
 # Nasadenie — web aj desktop
 
-**Verzia launchera:** 0.1.1-alpha · **Dátum:** 2026-08-26
+**Verzia launchera:** 0.1.8-alpha · **Dátum:** 2026-08-26
 
 Jediný runbook pre obidve platformy. Písaný tak, aby sa podľa neho dalo nasadiť bez pamätania
 si čohokoľvek — vrátane toho, aby to podľa neho vedel spraviť Claude v novej session.

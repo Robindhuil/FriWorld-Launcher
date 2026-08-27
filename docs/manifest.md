@@ -1,6 +1,6 @@
 # Manifest — kontrakt medzi hrou a launcherom
 
-**Verzia:** 0.1.1-alpha · **Dátum:** 2026-08-26
+**Verzia:** 0.1.8-alpha · **Dátum:** 2026-08-26
 
 Jediný súbor, ktorý launcher číta. Nečíta názvy súborov v úložisku, nečíta žiadne API —
 len toto. Preto sa dá úložisko vymeniť bez toho, aby sa u ľudí menil launcher.

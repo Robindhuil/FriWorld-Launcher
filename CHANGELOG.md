@@ -10,7 +10,8 @@ na to číslo.
 
 ## [Unreleased]
 
-_Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.8-alpha**._
+_Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.8-alpha**; ďalšie funkcie idú
+ako **0.2.0-alpha**._
 
 ## [0.1.8-alpha] - 2026-08-27
 

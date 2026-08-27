@@ -1,13 +1,12 @@
 # FriWorld Launcher — zadanie pre návrh UI
 
-**Verzia launchera:** 0.1.1-alpha · **Dátum:** 2026-08-26 · **Stav:** navrhnuté a postavené
+**Verzia launchera:** 0.1.8-alpha · **Dátum:** 2026-08-27 · **Stav:** záväzný popis okna
 
 Pôvodne zadanie pre návrh, dnes **záväzný popis okna**. Hovorí, čo okno obsahuje, kedy sa
 čo zobrazí a čo sa nesmie zmeniť — bez znalosti kódu.
 
-Návrh, ktorý z neho vznikol, je v [`ui-handoff.md`](ui-handoff.md); okno v aplikácii ho
-sleduje. Texty v tomto dokumente sú miestami po anglicky, ako boli v zadaní —
-**v aplikácii sú všetky po slovensky**, viď sekciu 8.
+Návrh, ktorý z neho vznikol, je v [`ui-handoff.md`](ui-handoff.md). Ten dokument sa nemení
+a v niekoľkých veciach už neplatí — **pri rozpore rozhoduje tento**.
 
 ---
 
@@ -115,7 +114,7 @@ Tri pásma zhora nadol:
 ┌ ⋯ ───────────────────────────────────────────── — ✕ ┐
 │                                                      │  hlavička
 │   FriWorld                                           │  logo + verzia
-│   Verzia 0.1.2-alpha                                 │
+│   Verzia 0.1.8-alpha                                 │
 │                                                      │
 │                  (pozadie: render FRI)               │  stred
 │                                                      │  poznámky k verzii,

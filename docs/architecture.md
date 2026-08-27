@@ -1,6 +1,6 @@
 # Architektúra
 
-**Verzia:** 0.1.1-alpha · **Dátum:** 2026-08-26
+**Verzia:** 0.1.8-alpha · **Dátum:** 2026-08-26
 
 Ako je launcher poskladaný a prečo tak. Rozhodnutia, ktoré k tomu viedli, sú
 v [`decisions/`](decisions/README.md).
@@ -72,12 +72,13 @@ porovnaj tag s installed.json
                 │
         zapíš installed.json
                 │
-        spusti; keď prežije, zmaž game.old a zavri okno
+        spusti; keď prežije, zmaž game.old a skry okno
 ```
 
 Posledný krok je jeden: doba odkladu po spustení hry rozhoduje **aj** o upratání predošlej
-inštalácie, **aj** o tom, či sa okno zavrie. Hra, ktorá prežila, launcher už nepotrebuje.
-Hra, ktorá hneď spadla, potrebuje okno, ktoré povie prečo.
+inštalácie, **aj** o tom, či sa okno skryje. Hra, ktorá prežila, launcher medzitým
+nepotrebuje — vráti sa, keď skončí. Hra, ktorá hneď spadla, potrebuje okno, ktoré povie
+prečo, takže to nezmizne.
 
 ### Prečo sa verzie neporovnávajú na poradie
 
@@ -111,16 +112,34 @@ a čo hovorí manifest, nie o tom, ako vyzerá UI.
 
 | stav | hlavné tlačidlo | vedľajšie |
 |---|---|---|
-| nič nainštalované | **Install** | — |
-| nainštalované a aktuálne | **Play** | Repair |
-| je novšia verzia | **Update** | Play *(stará verzia)* |
-| launcher je pristarý | **Play**, ak je čo hrať | — |
-| zlyhalo pred prvou kontrolou | **Retry** | — |
-| práve pracuje | zakázané | Cancel |
+| nič nainštalované | **Inštalovať** | — |
+| nainštalované a aktuálne | **Hrať** | — |
+| je novšia verzia | **Aktualizovať** | Hrať *(stará verzia)* |
+| launcher je pristarý | **Hrať**, ak je čo hrať | — |
+| zlyhalo pred prvou kontrolou | **Skúsiť znova** | — |
+| práve pracuje | zakázané | Zrušiť *(pri priebehu)* |
 
-Pod `⋯` vedľa zatvárania sú dve akcie, ktoré dávajú zmysel len s nainštalovanou hrou:
-**otvoriť priečinok s hrou** a **odinštalovať**. Sú tam zámerne — sú zriedkavé a štvrté
-tlačidlo v akčnom pásme by otupilo to hlavné.
+Naľavo od nich sú tri akcie na hre, ktoré sa objavia **len keď je hra nainštalovaná**: dva
+štvorce s ikonami — kľúč pre opravu, priečinok pre otvorenie — a **Odinštalovať**. Poradie
+je zámerné: každé ďalšie doprava je hlasnejšie a hlavné je najširšie. Odinštalovanie stojí
+vedľa hrania, tak nesmie vyzerať ako jeho rovnocenný sused; hlavnú farbu nenesie nikdy.
+
+Ponuka `⋯` vľavo hore nesie **akcie na launcheri**, nie na hre: skontrolovať znova
+a otvoriť denník. To delenie platí aj pre to, čo pribudne — hra dole, launcher hore.
+
+**Klávesnica.** Enter stlačí tlačidlo, ktoré má fokus; hlavné ho chytá cez `IsDefault`, čo
+platí len pre Enter, ktorý si nevzal nikto iný. Escape ustúpi od toho, čo je najviac vpredu
+— odpovie na otázku, zruší sťahovanie, alebo sa spýta na zavretie. Sám nezavrie nikdy
+a počas rozbaľovania nespraví nič. Poradie je v `DismissChoice` v `Core`.
+
+**Otázky sú modal.** Zavretie aj odinštalovanie zatienia okno a položia kartu do stredu.
+Obsah pod ňou je zakázaný, nie len prekrytý — zatienenie zastaví kliknutia, ale zakázané
+prvky navyše preskočí tabulátor, a hlavné tlačidlo je predvolené, takže inak by ním Enter
+prešiel rovno do inštalácie.
+
+**Veľkosť okna sa počíta zo screenu.** Vnútro je navrhnuté v jednotkách 980 × 720
+a `WindowFit` v `Core` vráti jeden faktor pre celok. Podrobne v
+[rozhodnutí](decisions/2026-08-27-okno-sa-skaluje-jednym-faktorom.md).
 
 Odinštalovanie zmaže `game`, `game.new`, `game.old` a `cache`, ale **log necháva**.
 Najpravdepodobnejší dôvod, prečo niekto odinštaluje, je že sa niečo pokazilo, a log je
@@ -129,6 +148,35 @@ jediný záznam o tom. Uloženia hráča sú mimo inštalačného koreňa, takž
 **Nič veľké sa nedeje samo.** Otvorenie launchera skontroluje, čo je vonku, a potom čaká.
 Stiahnuť stovky megabajtov preto, že niekto otvoril okno, nie je rozhodnutie launchera —
 a to platí aj vtedy, keď je to jediná zmysluplná vec, ktorú by človek spravil.
+
+---
+
+## Kým hra beží
+
+Launcher sa po spustení hry **skryje a po jej zatvorení vráti**. Nezatvára sa: to, čo človek
+chce najskôr po dohraní, je zvyčajne práve launcher.
+
+```
+Hrať  →  spustenie  →  ochranná lehota 5 s
+                            │
+              spadla ───────┤────── beží
+                 │          │         │
+      okno zostane      okno sa skryje
+      a povie to        (aj z panela úloh)
+                                      │
+                            hra skončí │
+                                      ▼
+                        okno sa vráti a skontroluje znova
+```
+
+Návrat okna je vo `finally`. Čokoľvek vyhodené po skrytí by inak nechalo launcher bežať bez
+okna a bez spôsobu, ako sa k nemu dostať — pričom stále drží zámok jednej inštancie.
+
+**Naraz beží jedna hra.** `GameLauncher.IsGameRunning` hľadá proces, ktorý beží z priečinka
+inštalácie, a `LaunchAsync` pri ňom odmietne spustiť ďalší. Dve kópie zdieľajú jeden
+priečinok s uloženými pozíciami a jedny nastavenia, a tá, ktorá skončí druhá, rozhodne, čo
+bolo to prvé sedenie hodné. To isté pravidlo dávno platí pre aktualizáciu a odinštalovanie,
+kde ide o niečo iné: na Windows sa otvorený súbor nedá premenovať preč.
 
 ---
 
@@ -231,5 +279,22 @@ Poradie krokov je zvolené tak, aby zlyhanie kdekoľvek nechalo funkčný launch
 | `Core/Install/` | cesty, stav, výmena priečinkov, miesto, zámok |
 | `Core/Launch/` | nájdenie a spustenie hry, otvorenie prehliadača |
 | `Core/Update/` | orchestrátor, self-update, preklad chýb |
-| `Core/Packaging/` | výroba releasu z Unity výstupu |
+| `Core/Packaging/` | výroba releasu z Unity výstupu, prepis sekcie `launcher` |
+| `Core/Platform/` | cesty, kľúče platforiem, veľkosť okna |
 | `Core/Mock/` | falošný release na vývoj |
+| `App/ViewModels/` | čo okno hovorí a čo tlačidlá robia |
+| `App/` | `MainWindow.axaml` a jeho code-behind |
+| `Cli/` | rozbor prepínačov a jednotlivé príkazy |
+
+Testy sú v dvoch projektoch, lebo testujú dve rôzne veci:
+
+| projekt | čo |
+|---|---|
+| `Core.Tests` | mechanika bez UI — manifest, sťahovanie, výmena, balenie, rozhodnutia |
+| `App.Tests` | skutočné okno cez `Avalonia.Headless` — klávesy, fokus, modal, veľkosť |
+
+Druhý existuje preto, že smerovanie klávesov a poradie vykonania na UI vlákne sa zo zdrojáku
+vyčítať nedá; viď [pasce v okne](decisions/2026-08-27-dve-pasce-v-okne.md).
+
+Obidva bežia na CI pri každom push, na Windows aj Linuxe. Na vývojovom stroji ich Smart App
+Control už nespustí — [prečo](decisions/2026-08-27-testy-bezia-na-ci.md).

@@ -3,10 +3,14 @@
 Netriviálne rozhodnutia a pasce, na ktoré by niekto nabehol znova.
 Najnovšia verzia hore.
 
-## Nezaradené
+## 0.1.4-alpha – 0.1.8-alpha
 
 | dátum | rozhodnutie |
 |---|---|
+| 2026-08-27 | [Dve pasce v okne: kto vlastní kláves a kto vlastní stav](2026-08-27-dve-pasce-v-okne.md) |
+| 2026-08-27 | [Launcher sa po spustení hry neuzavrie, len skryje](2026-08-27-launcher-po-hre-zostava.md) |
+| 2026-08-27 | [Okno sa škáluje celé jedným faktorom](2026-08-27-okno-sa-skaluje-jednym-faktorom.md) |
+| 2026-08-27 | [Testy bežia na CI, lebo na vývojovom stroji už nemôžu](2026-08-27-testy-bezia-na-ci.md) |
 | 2026-08-27 | [Jeden runbook pre web aj desktop](2026-08-27-jeden-runbook-pre-web-aj-desktop.md) |
 
 ## 0.1.0-alpha

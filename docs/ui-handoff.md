@@ -1,9 +1,16 @@
 # Handoff: FriWorld Launcher (0.1.0-alpha)
 
-> **Stav:** návrh je zapracovaný a okno podľa neho beží. Dokument sa nemení — je to
-> prevzatý podklad. Čo v ňom nie je, lebo pribudlo neskôr: ponuka `⋯` v hlavičke
-> s odinštalovaním a otvorením priečinka, a otázka na odinštalovanie v strede okna.
-> Záväzný popis okna je [`ui-spec.md`](ui-spec.md).
+> **Stav:** návrh je zapracovaný a okno z neho vychádza. Dokument sa nemení — je to
+> prevzatý podklad, a **v niekoľkých veciach už neplatí**:
+>
+> | čo hovorí | čo platí |
+> |---|---|
+> | po spustení hry sa okno zavrie | skryje sa a po zatvorení hry vráti |
+> | pevných 980 × 720 | návrhová veľkosť; skutočná sa škáluje podľa obrazovky |
+> | otázky v strede okna | modal so zatieneným a zablokovaným pozadím |
+> | akcie na hre pod `⋯` | v akčnom pásme; pod `⋯` sú akcie launchera |
+>
+> **Záväzný popis okna je [`ui-spec.md`](ui-spec.md)**, nie tento súbor.
 
 ## Overview
 Desktop launcher pre hru **FriWorld** — 3D prehliadka Fakulty riadenia a informatiky ŽU.

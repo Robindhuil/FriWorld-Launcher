@@ -1,6 +1,6 @@
 # Vývoj
 
-**Verzia:** 0.1.1-alpha · **Dátum:** 2026-08-26
+**Verzia:** 0.1.8-alpha · **Dátum:** 2026-08-26
 
 ---
 
@@ -27,7 +27,7 @@ launchera vyskúšaš:
 | | čo sa stane |
 |---|---|
 | `0` (predvolené) | skript hneď skončí — launcher to vyhodnotí ako build padnutý pri štarte |
-| dlhšie než doba odkladu | zapíše sa potvrdenie, uprace sa predošlá inštalácia, okno sa zavrie |
+| dlhšie než doba odkladu | zapíše sa potvrdenie, uprace sa predošlá inštalácia, okno sa skryje a po konci stubu vráti |
 
 Bez toho druhého sa úspešný štart nedá odskúšať vôbec.
 
@@ -42,12 +42,45 @@ ostré neprepíše. Priečinok je v `.gitignore`.
 dotnet test
 ```
 
-225 testov. Pipeline **nie je mockovaná okrem siete**: vyrobí sa skutočný archív, skutočne
-sa spočíta checksum, skutočne sa rozbalí strom aj s právami a skutočne sa vymenia
-priečinky. Jediný rozdiel oproti ostrej prevádzke je `file://` namiesto `https://`.
+**Na tomto stroji to zlyhá.** Smart App Control už nepustí ani jednu z testovacích assembly;
+podrobne nižšie. Testy bežia na CI pri každom push, na Windows aj Linuxe.
+
+Sú dva projekty, lebo testujú dve rôzne veci:
+
+| projekt | čo | koľko |
+|---|---|---|
+| `Core.Tests` | mechanika bez UI | 225 |
+| `App.Tests` | skutočné okno cez `Avalonia.Headless` | 15 |
+
+Pipeline **nie je mockovaná okrem siete**: vyrobí sa skutočný archív, skutočne sa spočíta
+checksum, skutočne sa rozbalí strom aj s právami a skutočne sa vymenia priečinky. Jediný
+rozdiel oproti ostrej prevádzke je `file://` namiesto `https://`.
 
 Testy self-updatu sa zámerne sústredia na to, **čo prežije zlyhanie**, nie na šťastnú cestu.
 Šťastná cesta sa dá vyskúšať; zlyhanie uprostred výmeny na cudzom stroji nie.
+
+### Prečo je druhý projekt nad skutočným oknom
+
+Smerovanie klávesov a poradie vykonania na UI vlákne sa zo zdrojáku vyčítať nedá. Či Enter
+dostane zafokusované tlačidlo alebo predvolené a či sa `Dispatcher.Post` vykoná pred alebo
+po pokračovaní `await`, sú vlastnosti Avalonie a plánovača.
+
+Hádanie v obidvoch prípadoch vydalo chybný launcher — raz taký, kde Tab posúval fokus
+a Enter ho ignoroval, raz taký, ktorý sa po hre vrátil zaseknutý. Obidve chyby v tejto sade
+padnú. Popis je v [pasciach v okne](decisions/2026-08-27-dve-pasce-v-okne.md).
+
+Okno v testoch dostáva vlastný inštalačný koreň pre každý test — zámok jednej inštancie sa
+medzi testami neuvoľňuje, takže spoločný koreň by nechal každé ďalšie okno hlásiť, že už
+beží iný launcher.
+
+### Čo sa mockom overiť nedá
+
+`GameLauncher.IsGameRunning` hľadá proces bežiaci z priečinka inštalácie. **Mock hra je
+shell skript**, takže procesom, ktorý operačný systém spustí, je interpreter a nič, čo
+hlási, neleží pod inštaláciou. Skutočný Unity build je `.exe` priamo tam a vidí sa bežne.
+
+Preto je zoznam bežiacich súborov za spojom (`RunningExecutables`). Testuje sa pravidlo, nie
+snímanie procesov.
 
 ---
 
