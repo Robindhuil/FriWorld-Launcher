@@ -12,14 +12,14 @@
     }
   },
   "launcher": {
-    "version": "0.1.6-alpha",
+    "version": "0.1.7-alpha",
     "downloadUrl": "https://github.com/Robindhuil/FriWorld-Launcher/releases/latest",
-    "notes": "Okno sa prisposobi velkosti obrazovky.",
+    "notes": "Launcher sa vrati po zatvoreni hry. Naraz bezi jedna hra.",
     "platforms": {
       "win-x64": {
-        "url": "https://github.com/Robindhuil/FriWorld-Launcher/releases/download/v0.1.6-alpha/FriWorldLauncher.exe",
-        "sha256": "864ad5cf194dbc7551cc411de3a37b933d377ee97400c3cfbd4c775dcf333568",
-        "size": 52772957
+        "url": "https://github.com/Robindhuil/FriWorld-Launcher/releases/download/v0.1.7-alpha/FriWorldLauncher.exe",
+        "sha256": "cccab11e3e085dde8e5ad34434a439b4828aeb35551e77544601a30b707a4cec",
+        "size": 52773663
       }
     }
   }
