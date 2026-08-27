@@ -47,6 +47,7 @@ bude chcieť medzitým robiť niečo iné. Odporúčam áno, vľavo od zatváran
 | podklad | čo s ním |
 |---|---|
 | **logo** | „Fri" v hlavnej farbe, „World" biele; pixelové/hranaté písmo |
+| | *zatiaľ je to text, nie obrázok — PNG ešte nedorazilo* |
 | **farba** | vzorka hlavnej farby — presný odtieň vziať zo vzorky, neodhadovať |
 | **ikona** | ikona aplikácie a v paneli úloh |
 | **kurzor** | vlastný kurzor v okne, šípka v hlavnej farbe |
@@ -78,32 +79,32 @@ Preto:
 Tri pásma zhora nadol:
 
 ```
-┌──────────────────────────────────────────── ⋯ — ✕ ┐
-│                                                     │  hlavička
-│   [ LOGO ]                                          │  logo + verzia
-│   Verzia 0.1.1-alpha                                │
-│                                                     │
-│                                                     │
-│                  (pozadie: render FRI)              │  stred
-│                                                     │  poznámky k verzii,
-│                                                     │  priebeh, chyby,
-│                                                     │  upozornenie na launcher
-│                                                     │
-│  ─────────────────────────────────────────────────  │
-│  Ready to play          [ Repair ]   [   PLAY   ]   │  akčné pásmo
-└─────────────────────────────────────────────────────┘
+┌ ⋯ ───────────────────────────────────────────── — ✕ ┐
+│                                                      │  hlavička
+│   FriWorld                                           │  logo + verzia
+│   Verzia 0.1.2-alpha                                 │
+│                                                      │
+│                  (pozadie: render FRI)               │  stred
+│                                                      │  poznámky k verzii,
+│                                                      │  priebeh, chyby,
+│                                                      │  otázka na odinštalovanie
+│                                                      │
+│  ──────────────────────────────────────────────────  │
+│  Pripravené   [🔧] [📁] [Odinštalovať]  [   HRAŤ   ]  │  akčné pásmo
+└──────────────────────────────────────────────────────┘
 ```
 
-**Hlavička** — logo, pod ním riadok o verzii. Vpravo hore ponuka `⋯`, minimalizácia
-a zatváranie.
+**Hlavička** — vľavo hore ponuka `⋯` s akciami launchera, vpravo hore minimalizácia
+a zatváranie. Pod nimi logo a riadok o verzii.
 
 **Stred** — najviac priestoru, väčšinou prázdny. Sem prichádzajú poznámky k verzii, pruh
 priebehu, chybové hlásenie, otázka na odinštalovanie a upozornenie na novší launcher.
 Naraz je aktívne najviac jedno — okrem upozornenia na launcher, ktoré má vlastný pruh nad
 zvyškom a smie sa objaviť súbežne s čímkoľvek.
 
-**Akčné pásmo** — vľavo stavový riadok, vpravo tlačidlá. Toto je jediné miesto, kam sa dá
-kliknúť, a musí byť jednoznačné.
+**Akčné pásmo** — vľavo stavový riadok, vpravo tlačidlá. Sú zoradené tak, že každé ďalšie
+doprava je hlasnejšie, a hlavné je najširšie. Toto je jediné miesto, kam sa pri bežnom
+použití dá kliknúť, a musí byť jednoznačné.
 
 ---
 
@@ -116,24 +117,42 @@ tlačidlá vedľa seba, z ktorých dve sú zakázané.
 
 | stav | popis |
 |---|---|
-| nič nenainštalované | **Install** |
-| je novšia verzia | **Update** |
-| nainštalované a aktuálne | **Play** |
-| zlyhalo pred prvou kontrolou | **Retry** |
-| práve pracuje | zakázané, popis „Please wait" |
+| nič nenainštalované | **Inštalovať** |
+| je novšia verzia | **Aktualizovať** |
+| nainštalované a aktuálne | **Hrať** |
+| zlyhalo pred prvou kontrolou | **Skúsiť znova** |
+| práve pracuje | zakázané, popis „Počkaj chvíľu" |
 
 Vizuálne najvýraznejší prvok okna po logu. Nesie hlavnú farbu.
 
 ### Vedľajšie tlačidlo
 
-Tichšie, vľavo od hlavného. Zobrazí sa **len v dvoch stavoch**:
+Tichšie, vľavo od hlavného. Zobrazí sa **v jedinom stave** — keď je k dispozícii novšia
+verzia — a nesie popis **Hrať 0.1.1-alpha**.
 
-| stav | popis | čo robí |
+Je podstatné: **nová verzia nesmie zablokovať hranie tej, ktorú človek už má.**
+
+### Tlačidlá pre nainštalovanú hru
+
+Naľavo od vedľajšieho, a **len keď je hra nainštalovaná** — na prázdnom disku by neznamenali
+nič, tak tam ani nie sú.
+
+| tlačidlo | tvar | čo robí |
 |---|---|---|
-| je novšia verzia | **Play 0.1.1-alpha** | spustí verziu, ktorú človek už má |
-| nainštalované a aktuálne | **Repair** | preinštaluje pri poškodených súboroch |
+| 🔧 | štvorec 52 × 52, ikona kľúča | preinštaluje verziu, ktorá je na disku, cez poškodené súbory |
+| 📁 | štvorec 52 × 52, ikona priečinka | otvorí správcu súborov na nainštalovanej hre |
+| **Odinštalovať** | obrysové, užšie než hlavné | vypýta si potvrdenie, nemaže hneď |
 
-To prvé je podstatné: **nová verzia nesmie zablokovať hranie tej, ktorú človek už má.**
+Štvorce sú bez textu zámerne: sú to ikony, ktoré sa spoznajú, nie popisy, ktoré sa čítajú.
+Majú rovnakú výšku ako ostatné tlačidlá, aby pásmo čítalo ako jedna línia, a majú
+`ToolTip` aj meno pre čítačku obrazovky.
+
+Odinštalovanie stojí vedľa hrania, tak **nesmie vyzerať ako jeho rovnocenný sused**: má ten
+istý obrys ako každé vedľajšie tlačidlo a červené je až pri prejdení myšou. Hlavnú farbu
+nenesie nikdy.
+
+Opraviť bolo pôvodne popis vedľajšieho tlačidla. Je vo štvorci preto, že dáva zmysel vždy,
+keď je hra na disku — nielen vtedy, keď sa práve nedeje nič iné.
 
 ### Zrušenie
 
@@ -145,21 +164,25 @@ obidve predošlé.
 Vlastné, vpravo hore. Bežné správanie: zvýraznenie pri prejdení myšou, jasný cieľ na
 kliknutie (najmenej 32 × 32 px). Vedľa neho tichšia minimalizácia.
 
-### Ponuka `⋯` — zriedkavé akcie
+### Ponuka `⋯` — akcie launchera
 
-Vľavo od minimalizácie, rovnaká veľkosť ako ostatné tlačidlá hlavičky. **Zobrazí sa len
-vtedy, keď je hra nainštalovaná.** Rozbalí sa nadol zarovnaná doprava.
+**Vľavo hore**, rovnaká veľkosť ako tlačidlá hlavičky vpravo. Rozbalí sa nadol zarovnaná
+doľava. Je vidieť vždy.
 
 | položka | čo robí |
 |---|---|
-| **Otvoriť priečinok s hrou** | otvorí správcu súborov na nainštalovanej hre |
-| **Odinštalovať hru** | tichá červená; vypýta si potvrdenie, nemaže hneď |
+| **Skontrolovať znova** | znovu sa opýta manifestu; zakázané, kým launcher pracuje |
+| **Otvoriť denník launchera** | otvorí `launcher.log` v správcovi súborov |
 
-Sú tu zámerne, nie v akčnom pásme. Štvrté tlačidlo vedľa hlavného by otupilo to, na ktoré
-sa má kliknúť — a obidve akcie človek za celý život launchera použije nanajvýš raz.
+Delenie je zámerné a drží sa ho aj to, čo pribudne: **v ponuke sú akcie na launcheri,
+v akčnom pásme akcie na hre.** Ponuka je vľavo hore práve preto, aby nebola po ceste
+k tomu, na čo sa naozaj klikáva.
 
-Keď sa priečinok nepodarí otvoriť, launcher to povie vetou v strede okna. Nič sa neotvorí
-potichu a nič nezlyhá potichu.
+Denník je jediná vec, ktorá je na niečo, keď niekto hlási problém — je v ňom aj to, čo okno
+nestihlo ukázať.
+
+Keď sa priečinok alebo denník nepodarí otvoriť, launcher to povie vetou v strede okna. Nič
+sa neotvorí potichu a nič nezlyhá potichu.
 
 ---
 
@@ -174,19 +197,18 @@ Hneď po otvorení okna, trvá zlomok sekundy až pár sekúnd.
 ```
 verzia     (prázdne)
 stred      neurčitý pruh priebehu
-stav       Checking for updates
+stav       Kontrolujem aktualizácie
 hlavné     zakázané
 ```
 
 ### 7.2 Nič nenainštalované
 
 ```
-verzia     Version 0.1.1-alpha available
+verzia     Verzia 0.1.1-alpha k dispozícii
 stred      poznámky k verzii
-           415.48 MB to download.
-stav       Not installed
-hlavné     Install
-vedľajšie  (žiadne)
+           Na stiahnutie 415,48 MB.
+stav       Nenainštalované
+pásmo      [ INŠTALOVAŤ ]   — nič iné, na disku nie je čo opravovať ani mazať
 ```
 
 **Nič sa nesťahuje, kým človek neklikne.** Toto je pravidlo, nie detail.
@@ -195,43 +217,44 @@ vedľajšie  (žiadne)
 
 ```
 stred      pruh s percentami
-           415.48 MB of 415.48 MB · 02:14 left        [ Cancel ]
-stav       Downloading 0.1.1-alpha
+           415,48 MB z 415,48 MB · zostáva 02:14        [ Zrušiť ]
+stav       Sťahujem 0.1.1-alpha
 hlavné     zakázané
 ```
 
-Ďalej rovnakým spôsobom: **Verifying download**, **Unpacking**, **Installing**.
+Ďalej rovnakým spôsobom: **Overujem stiahnuté**, **Rozbaľujem**, **Inštalujem**.
 Sú to štyri po sebe idúce fázy jedného procesu, nie štyri rôzne obrazovky.
 
 ### 7.4 Pripravené
 
 ```
-verzia     Version 0.1.1-alpha
+verzia     Verzia 0.1.1-alpha
 stred      poznámky k verzii
-stav       Ready to play
-hlavné     Play
-vedľajšie  Repair
+stav       Pripravené
+pásmo      [🔧] [📁] [Odinštalovať]   [ HRAŤ ]
 ```
 
 ### 7.5 Je novšia verzia
 
 ```
-verzia     Version 0.1.1-alpha installed · 0.1.2-alpha available
+verzia     Verzia 0.1.1-alpha nainštalovaná · 0.1.2-alpha k dispozícii
 stred      poznámky k novej verzii
-           You can keep playing 0.1.1-alpha for now.
-stav       Update to 0.1.2-alpha?
-hlavné     Update
-vedľajšie  Play 0.1.1-alpha
+           Zatiaľ môžeš hrať 0.1.1-alpha.
+stav       Aktualizovať na 0.1.2-alpha?
+pásmo      [🔧] [📁] [Odinštalovať] [Hrať 0.1.1-alpha]   [ AKTUALIZOVAŤ ]
 ```
+
+Toto je najplnší stav pásma. Päť tlačidiel je veľa, ale dve z nich sú štvorce a jediné
+výrazné je to posledné.
 
 ### 7.6 Chyba
 
 ```
-stred      (červeno) The download was damaged.
-           The file did not match its checksum and was deleted.
-           Trying again usually fixes it.
+stred      CHYBA  Stiahnutý súbor bol poškodený.
+           Nesedel s kontrolným súčtom a bol zmazaný.
+           Zvyčajne pomôže skúsiť to znova.
 stav       hlavička chyby
-hlavné     Retry, Install alebo Play — podľa toho, čo sa dá
+hlavné     Skúsiť znova, Inštalovať alebo Hrať — podľa toho, čo sa dá
 ```
 
 Chybové hlásenie má **dva riadky**: čo sa stalo, a čo s tým človek môže spraviť. Návrh
@@ -239,23 +262,25 @@ musí počítať s tromi až štyrmi riadkami textu.
 
 Ďalšie hlásenia, ktoré sa reálne zobrazujú:
 
-- *The game is already running.* — Close it and try again.
-- *Not enough free space.* — potrebuje miesto na stiahnutie aj rozbalenie naraz
-- *Could not reach the download server.* — Check the connection and try again.
-- *The game closed straight away.* — It exited with code N moments after starting.
-- *This launcher is too old.* — Release X needs launcher Y or newer.
+- *Hra už beží.* — zavri ju a skús to znova
+- *Nie je dosť miesta.* — potrebuje miesto na stiahnutie aj rozbalenie naraz
+- *Server sa nedá dosiahnuť.* — skontroluj pripojenie a skús to znova
+- *Hra sa hneď zavrela.* — skončila s kódom N pár sekúnd po spustení; môže pomôcť oprava
+- *Tento launcher je príliš starý.* — vydanie potrebuje launcher Y alebo novší
+- *Už beží iný launcher.*
 
 ### 7.7 Zrušené
 
 ```
-stred      A partial download is kept and will continue next time.
-stav       Cancelled
-hlavné     Install alebo Update
+stred      Čiastočne stiahnuté súbory sme nechali, nabudúce sa bude
+           pokračovať tam, kde si prestal.
+stav       Zrušené
+hlavné     Inštalovať alebo Aktualizovať
 ```
 
 ### 7.8 Otázka na odinštalovanie
 
-Po kliknutí na **Odinštalovať hru** v ponuke `⋯`. Nahradí obsah stredu, aj prípadnú chybu.
+Po kliknutí na **Odinštalovať** v akčnom pásme. Nahradí obsah stredu, aj prípadnú chybu.
 
 ```
 stred      Odinštalovať hru?
@@ -277,8 +302,7 @@ verzia     Verzia 0.1.1-alpha k dispozícii
 stred      poznámky k verzii
            Hra bola odstránená. Na stiahnutie 415.48 MB.
 stav       Odinštalované
-hlavné     Install
-ponuka ⋯   zmizne
+pásmo      [ INŠTALOVAŤ ]   — štvorce aj Odinštalovať zmizli
 ```
 
 Uložené pozície v hre ležia mimo inštalácie, takže dole ide naozaj len hra.
@@ -289,13 +313,13 @@ Samostatný panel v strede, môže sa objaviť **súbežne s ktorýmkoľvek stav
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│ Launcher 0.2.0-alpha is available.  [ Update and    │
-│ Rýchlejšie sťahovanie.                 restart ]    │
+│ Launcher 0.2.0-alpha je k dispozícii.  [ Aktualizovať│
+│ Rýchlejšie sťahovanie.                a reštartovať ]│
 └─────────────────────────────────────────────────────┘
 ```
 
-Tlačidlo má dva možné popisy: **Update and restart**, keď sa launcher vie vymeniť sám,
-alebo **Open download page**, keď nie.
+Tlačidlo má dva možné popisy: **Aktualizovať a reštartovať**, keď sa launcher vie vymeniť
+sám, alebo **Otvoriť stránku so stiahnutím**, keď nie.
 
 Musí byť **zreteľne tichší** než hlavné tlačidlo — je to poznámka, nie hlavná úloha.
 
@@ -343,7 +367,8 @@ Desatinná čiarka, nie bodka.
 | dlhé číslo verzie | `0.1.1-alpha` aj `0.2.0-rc.3+build.77` — riadok verzie musí skracovať |
 | dlhé poznámky k verzii | zalomiť, najviac tri riadky, potom „…" |
 | dlhá chybová hláška | tri až štyri riadky, nesmie roztlačiť akčné pásmo |
-| vedľajšie tlačidlo nesie verziu | „Play 0.1.1-alpha" je dlhšie než „Repair" — šírka sa mení |
+| vedľajšie tlačidlo nesie verziu | „Hrať 0.2.0-rc.3+build.77" je oveľa širšie než „Hrať 0.1.1-alpha" |
+| plné akčné pásmo | päť tlačidiel naraz; stavový riadok naľavo od nich musí skracovať |
 | pomalé pripojenie | pruh priebehu je na obrazovke aj desiatky minút, musí byť znesiteľný |
 | rýchle pripojenie | fázy preblesknú za sekundu — prechody nesmú blikať |
 | bez pripojenia | okno musí ukázať chybu **a zároveň** nechať hrateľné, čo je nainštalované |
@@ -358,7 +383,7 @@ Funkčné pravidlá, ktoré návrh nesmie obísť:
    Žiadne automatické sťahovanie.
 2. **Nainštalovaná hra zostáva hrateľná** — pri novej verzii, pri nedostupnom serveri
    aj po zlyhaní sťahovania.
-3. **Jedno hlavné tlačidlo.** Nie štyri, z ktorých sú tri zakázané.
+3. **Jedno hlavné tlačidlo.** Ostatné sú tichšie a užšie a nikdy nenesú hlavnú farbu.
 4. **Zrušenie je dostupné počas celého sťahovania.**
 5. **Po spustení hry sa okno zavrie.** Výnimka: keď hra spadne do niekoľkých sekúnd,
    okno zostane a povie to.

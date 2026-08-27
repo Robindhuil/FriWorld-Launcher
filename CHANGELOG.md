@@ -12,6 +12,24 @@ na to číslo.
 
 _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.2-alpha**._
 
+### Changed
+- **Odinštalovanie a otvorenie priečinka s hrou su v akčnom pásme, nie v ponuke.** Boli
+  schované za `⋯` v hlavičke, kde ich nikto nehľadal. Teš sú tam, kde už ruka je: dva štvorce
+  s ikonami — kľúč pre opravu, priečinok pre otvorenie — a za nimi **Odinštalovať**. Všetky
+  tri sa objavia len vtedy, keď je hra nainštalovaná.
+- **Opraviť už nie je popis vedľajšieho tlačidla, ale vlastná ikona.** Dáva zmysel vždy, keď
+  je hra na disku — nielen vtedy, keď sa práve nedeje nič iné. Vedľajšie tlačidlo tým zostalo
+  na jedinú vec, ktorú naozaj znamená: podržať si nainštalovanú verziu, keď je ponukávaná nová.
+- Ponuka `⋯` je vľavo hore a **obsahuje akcie na launcheri, nie na hre** — skontrolovať
+  znova a otvoriť denník. Delenie je zámerné a platí aj pre to, čo pribúdne: hra dole,
+  launcher hore. Vľavo je preto, aby nebola po ceste k tomu, na čo sa naozaj kliká.
+- Logo aj riadok verzie sú dvakrát väčšie.
+
+### Added
+- `run-under-smart-app-control.ps1 -Real` beží proti zverejnenému manifestu a skutočnej
+  inštalácii. Bez toho sa stavy, ktoré existujú len s nainštalovanou hrou, nedali pozrieť inak
+  než stiahnutím 415 MB mocku.
+
 ### Fixed
 - **Smart App Control zablokoval `FriWorld.Launcher.Core.dll` a vzal so sebou celú testovaciu
   sadu** — všetkých 172 testov padlo na `FileLoadException` pri načítaní tej istej knižnice.

@@ -9,6 +9,7 @@ using FriWorld.Launcher.Core.Install;
 using FriWorld.Launcher.Core.Launch;
 using FriWorld.Launcher.Core.Manifest;
 using FriWorld.Launcher.Core.Net;
+using FriWorld.Launcher.Core.Platform;
 using FriWorld.Launcher.Core.Update;
 
 namespace FriWorld.Launcher.App.ViewModels;
@@ -37,6 +38,7 @@ public sealed class LauncherViewModel : ObservableObject
     private readonly UpdateOrchestrator _orchestrator;
     private readonly LauncherSelfUpdater _selfUpdater;
     private readonly ILauncherLog _log;
+    private readonly LauncherPaths _paths;
     private readonly Lock _workGate = new();
     private readonly bool _keepOpenAfterLaunch;
 
@@ -70,6 +72,7 @@ public sealed class LauncherViewModel : ObservableObject
         var configuration = LauncherConfiguration.Resolve();
         _keepOpenAfterLaunch = LauncherSettingsFile.Load().KeepOpenAfterLaunch;
         _log = configuration.Log;
+        _paths = configuration.Paths;
         _instanceLock = SingleInstanceLock.TryAcquire(configuration.Paths);
         _orchestrator = configuration.CreateOrchestrator();
         _selfUpdater = new LauncherSelfUpdater(CompositeContentClient.CreateDefault(), _log);
@@ -85,6 +88,9 @@ public sealed class LauncherViewModel : ObservableObject
         CloseCommand = new RelayCommand(() => CloseRequested?.Invoke(this, EventArgs.Empty));
         RevealCommand = new RelayCommand(Reveal, () => IsInstalled);
         AskUninstallCommand = new RelayCommand(() => ConfirmingUninstall = true, () => IsInstalled && !Busy);
+        RepairCommand = new RelayCommand(() => _ = RepairAsync(), () => IsInstalled && !Busy);
+        RecheckCommand = new RelayCommand(() => _ = RefreshAsync(), () => !Busy);
+        OpenLogCommand = new RelayCommand(OpenLog);
         ConfirmUninstallCommand = new RelayCommand(Uninstall, () => !Busy);
         CancelUninstallCommand = new RelayCommand(() => ConfirmingUninstall = false);
     }
@@ -105,6 +111,15 @@ public sealed class LauncherViewModel : ObservableObject
 
     /// <summary>Shows the installed game in the file manager.</summary>
     public RelayCommand RevealCommand { get; }
+
+    /// <summary>Reinstalls the version already on disk, for when its files have gone bad.</summary>
+    public RelayCommand RepairCommand { get; }
+
+    /// <summary>Asks the manifest again, for when the first answer arrived before the network did.</summary>
+    public RelayCommand RecheckCommand { get; }
+
+    /// <summary>Opens the launcher's own log. The one thing worth having when someone reports a problem.</summary>
+    public RelayCommand OpenLogCommand { get; }
 
     /// <summary>Asks about uninstalling. Deleting is never one click away.</summary>
     public RelayCommand AskUninstallCommand { get; }
@@ -148,17 +163,17 @@ public sealed class LauncherViewModel : ObservableObject
     public bool PrimaryEnabled => Action != LauncherAction.None && !Busy;
 
     /// <summary>
-    /// The secondary button exists only where it has an obvious meaning: keeping the installed
-    /// build when an update is offered, and repairing when there is nothing else to do.
+    /// The secondary button exists for one thing only: keeping the build already installed when
+    /// an update is offered. Repairing moved to its own icon in the action bar, because it is
+    /// available whenever a game is installed and not only when there is nothing else to do.
     /// </summary>
     public string SecondaryLabel => Action switch
     {
         LauncherAction.Update => $"Hrať {_check?.InstalledVersion}",
-        LauncherAction.Play => "Opraviť",
         _ => string.Empty,
     };
 
-    public bool SecondaryVisible => Action is LauncherAction.Update or LauncherAction.Play;
+    public bool SecondaryVisible => Action is LauncherAction.Update;
 
     /// <summary>
     /// Whether anything is installed. Gates the two actions that only mean something with a game
@@ -865,6 +880,8 @@ public sealed class LauncherViewModel : ObservableObject
         RevealCommand.RaiseCanExecuteChanged();
         AskUninstallCommand.RaiseCanExecuteChanged();
         ConfirmUninstallCommand.RaiseCanExecuteChanged();
+        RepairCommand.RaiseCanExecuteChanged();
+        RecheckCommand.RaiseCanExecuteChanged();
     }
 
     private void Reveal()
@@ -874,6 +891,14 @@ public sealed class LauncherViewModel : ObservableObject
         if (path is null || !SystemFileManager.TryReveal(path))
         {
             Detail = "Priečinok s hrou sa nepodarilo otvoriť.";
+        }
+    }
+
+    private void OpenLog()
+    {
+        if (!SystemFileManager.TryReveal(_paths.LogFile))
+        {
+            Detail = "Denník launchera sa nepodarilo otvoriť.";
         }
     }
 

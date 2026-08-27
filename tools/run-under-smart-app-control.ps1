@@ -26,6 +26,12 @@
 .PARAMETER Arguments
     Passed through to the CLI, ignored for the window.
 
+.PARAMETER Real
+    Runs against the published manifest and the real install under %LOCALAPPDATA%\FriWorld
+    instead of a mock release in a temporary root. Use it to see the states that only exist
+    once a game is actually installed. It touches the real installation, so it is not the
+    default.
+
 .PARAMETER AssemblyName
     Name of the throwaway assembly. Smart App Control eventually blocks a name it has seen
     often enough, and when it does the fix is a name it has not seen. Defaults to a fresh
@@ -36,6 +42,10 @@
     Generates a mock release if needed and opens the launcher window against it.
 
 .EXAMPLE
+    ./tools/run-under-smart-app-control.ps1 -Real
+    Opens the window against the published manifest and the game already installed.
+
+.EXAMPLE
     ./tools/run-under-smart-app-control.ps1 -Target cli -Arguments 'check'
 #>
 [CmdletBinding()]
@@ -44,6 +54,8 @@ param(
     [string]$Target = 'app',
 
     [string[]]$Arguments = @(),
+
+    [switch]$Real,
 
     [string]$AssemblyName
 )
@@ -132,6 +144,21 @@ $dll = Join-Path $work "bin/Debug/net10.0/$AssemblyName.dll"
 
 if ($Target -eq 'cli') {
     dotnet exec $dll @Arguments
+    exit $LASTEXITCODE
+}
+
+if ($Real) {
+    # The same address the packaged launcher reads, so this is what a player would see.
+    $settings = Get-Content (Join-Path $repo 'tools/package/launcher.json') -Raw | ConvertFrom-Json
+    $env:FRIWORLD_MANIFEST_URL = $settings.manifestUrl
+    $env:FRIWORLD_LAUNCHER_ROOT = ''
+
+    Write-Host ''
+    Write-Host "manifest  $($env:FRIWORLD_MANIFEST_URL)"
+    Write-Host 'root      the real one'
+    Write-Host ''
+
+    dotnet exec $dll
     exit $LASTEXITCODE
 }
 
