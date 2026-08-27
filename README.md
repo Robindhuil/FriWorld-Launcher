@@ -124,6 +124,7 @@ Presun buildov na iné úložisko je preto úprava jedného riadka, nie vydanie 
 | [Manifest](docs/manifest.md) | kontrakt medzi hrou a launcherom, pole po poli |
 | [Nasadenie](docs/deploying.md) | **web aj desktop od Unity po hráča**, s kontrolnými zoznamami |
 | [Zmeny](CHANGELOG.md) | čo pribudlo v ktorej verzii a prečo |
+| [Plánované](docs/roadmap.md) | čo sa má spraviť a čo o tom už vieme |
 | [Vývoj](docs/development.md) | prostredie, testy, Smart App Control |
 | [Zadanie pre UI](docs/ui-spec.md) | okno, stavy, tlačidlá, texty — podklad pre návrh |
 | [Build pipeline](docs/build-pipeline-spec.md) | zadanie pre repo hry |

@@ -11,7 +11,7 @@ na to číslo.
 ## [Unreleased]
 
 _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.8-alpha**; ďalšie funkcie idú
-ako **0.2.0-alpha**._
+ako **0.2.0-alpha** — čo sa chystá, je v [docs/roadmap.md](docs/roadmap.md)._
 
 ## [0.1.8-alpha] - 2026-08-27
 
