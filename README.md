@@ -25,6 +25,7 @@ prečíta manifest  →  porovná s tým, čo je nainštalované  →  spýta sa
 - **Nainštalovaná hra zostáva hrateľná**, aj keď je server nedostupný alebo sťahovanie zlyhá.
 - **Predošlá inštalácia sa drží**, kým nová raz úspešne nenabehne.
 - **Oprava inštalácie** jedným tlačidlom, keď sa súbory poškodia.
+- **Odinštalovanie a otvorenie priečinka s hrou** v ponuke `⋯`, keď je hra nainštalovaná.
 - **Launcher sa vie aktualizovať sám**, s overením a s návratom pri zlyhaní.
 
 ---
@@ -53,7 +54,7 @@ src/
   FriWorld.Launcher.Core/   všetka mechanika, bez UI
   FriWorld.Launcher.Cli/    bezhlavý front end — všetko sa dá odladiť bez okna
   FriWorld.Launcher.App/    Avalonia okno
-tests/                      129 testov
+tests/                      172 testov
 tools/
   game-repo/                súbory, ktoré patria do repa hry
 docs/
@@ -79,6 +80,7 @@ dotnet run --project src/FriWorld.Launcher.Cli -- help
 | `run` | `update`, potom spustí hru |
 | `play` | spustí nainštalované bez kontroly aktualizácií |
 | `repair` | preinštaluje aktuálnu verziu cez poškodenú |
+| `uninstall --yes` | zmaže nainštalovanú hru, log aj uložené pozície ponechá |
 | `self-update` | vymení samotný launcher |
 | `pack` | z Unity buildov spraví archívy, checksummy a manifest |
 | `mock-release` | vygeneruje falošný release |
@@ -113,8 +115,7 @@ Presun buildov na iné úložisko je preto úprava jedného riadka, nie vydanie 
 |---|---|
 | [Architektúra](docs/architecture.md) | ako je to poskladané a prečo tak |
 | [Manifest](docs/manifest.md) | kontrakt medzi hrou a launcherom, pole po poli |
-| [Vydanie verzie](docs/releasing.md) | od Unity po hráča, s kontrolným zoznamom |
-| [Vydanie launchera](docs/releasing-launcher.md) | dva assety, poradie krokov, self-update |
+| [Nasadenie](docs/deploying.md) | **web aj desktop od Unity po hráča**, s kontrolnými zoznamami |
 | [Vývoj](docs/development.md) | prostredie, testy, Smart App Control |
 | [Zadanie pre UI](docs/ui-spec.md) | okno, stavy, tlačidlá, texty — podklad pre návrh |
 | [Build pipeline](docs/build-pipeline-spec.md) | zadanie pre repo hry |
@@ -157,5 +158,10 @@ v [rozhodnutí](docs/decisions/2026-08-26-smart-app-control.md).
 
 ## Stav
 
-**0.1.0-alpha.** Jadro, balenie, CLI aj okno sú hotové a overené proti skutočnému
-746 MB Unity buildu. Chýba editor skript nasadený v repe hry a stránka na Hube.
+**0.1.1-alpha.** Jadro, balenie, CLI aj okno sú hotové a overené proti skutočnému
+746 MB Unity buildu; hra sa sťahuje z GitHub Releases a launcher je na stiahnutie
+[na Hube](https://fri-world-hub.vercel.app/download).
+
+Otvorené: editor skript z [`tools/game-repo/`](tools/game-repo/) ešte nie je v repe hry,
+logo je zatiaľ dvojfarebný text namiesto obrázka, a **self-update nikdy nebežal v ostrom
+nasadení** — skúška nanečisto je v [Nasadení](docs/deploying.md#67-čo-overiť-pred-prvým-ostrým-self-updatom).

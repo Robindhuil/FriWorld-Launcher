@@ -1,9 +1,13 @@
 # FriWorld Launcher — zadanie pre návrh UI
 
-**Verzia launchera:** 0.1.0-alpha · **Dátum:** 2026-08-26 · **Pre:** Claude Designer
+**Verzia launchera:** 0.1.1-alpha · **Dátum:** 2026-08-26 · **Stav:** navrhnuté a postavené
 
-Dokument je písaný tak, aby sa podľa neho dalo navrhnúť okno bez znalosti kódu.
-Popisuje **čo okno obsahuje, kedy sa čo zobrazí a čo sa nesmie zmeniť.**
+Pôvodne zadanie pre návrh, dnes **záväzný popis okna**. Hovorí, čo okno obsahuje, kedy sa
+čo zobrazí a čo sa nesmie zmeniť — bez znalosti kódu.
+
+Návrh, ktorý z neho vznikol, je v [`ui-handoff.md`](ui-handoff.md); okno v aplikácii ho
+sleduje. Texty v tomto dokumente sú miestami po anglicky, ako boli v zadaní —
+**v aplikácii sú všetky po slovensky**, viď sekciu 8.
 
 ---
 
@@ -74,7 +78,7 @@ Preto:
 Tri pásma zhora nadol:
 
 ```
-┌────────────────────────────────────────────────── ✕ ┐
+┌──────────────────────────────────────────── ⋯ — ✕ ┐
 │                                                     │  hlavička
 │   [ LOGO ]                                          │  logo + verzia
 │   Verzia 0.1.1-alpha                                │
@@ -90,10 +94,13 @@ Tri pásma zhora nadol:
 └─────────────────────────────────────────────────────┘
 ```
 
-**Hlavička** — logo, pod ním riadok o verzii. Vpravo hore zatváranie.
+**Hlavička** — logo, pod ním riadok o verzii. Vpravo hore ponuka `⋯`, minimalizácia
+a zatváranie.
 
 **Stred** — najviac priestoru, väčšinou prázdny. Sem prichádzajú poznámky k verzii, pruh
-priebehu, chybové hlásenie a upozornenie na novší launcher. Naraz je aktívne najviac jedno.
+priebehu, chybové hlásenie, otázka na odinštalovanie a upozornenie na novší launcher.
+Naraz je aktívne najviac jedno — okrem upozornenia na launcher, ktoré má vlastný pruh nad
+zvyškom a smie sa objaviť súbežne s čímkoľvek.
 
 **Akčné pásmo** — vľavo stavový riadok, vpravo tlačidlá. Toto je jediné miesto, kam sa dá
 kliknúť, a musí byť jednoznačné.
@@ -136,7 +143,23 @@ obidve predošlé.
 ### Zatvorenie okna
 
 Vlastné, vpravo hore. Bežné správanie: zvýraznenie pri prejdení myšou, jasný cieľ na
-kliknutie (najmenej 32 × 32 px).
+kliknutie (najmenej 32 × 32 px). Vedľa neho tichšia minimalizácia.
+
+### Ponuka `⋯` — zriedkavé akcie
+
+Vľavo od minimalizácie, rovnaká veľkosť ako ostatné tlačidlá hlavičky. **Zobrazí sa len
+vtedy, keď je hra nainštalovaná.** Rozbalí sa nadol zarovnaná doprava.
+
+| položka | čo robí |
+|---|---|
+| **Otvoriť priečinok s hrou** | otvorí správcu súborov na nainštalovanej hre |
+| **Odinštalovať hru** | tichá červená; vypýta si potvrdenie, nemaže hneď |
+
+Sú tu zámerne, nie v akčnom pásme. Štvrté tlačidlo vedľa hlavného by otupilo to, na ktoré
+sa má kliknúť — a obidve akcie človek za celý život launchera použije nanajvýš raz.
+
+Keď sa priečinok nepodarí otvoriť, launcher to povie vetou v strede okna. Nič sa neotvorí
+potichu a nič nezlyhá potichu.
 
 ---
 
@@ -230,7 +253,37 @@ stav       Cancelled
 hlavné     Install alebo Update
 ```
 
-### 7.8 Upozornenie na novší launcher
+### 7.8 Otázka na odinštalovanie
+
+Po kliknutí na **Odinštalovať hru** v ponuke `⋯`. Nahradí obsah stredu, aj prípadnú chybu.
+
+```
+stred      Odinštalovať hru?
+           Stiahnuté súbory hry sa vymažú. Vrátiť sa to nedá, ale hru
+           sa dá kedykoľvek nainštalovať znova.
+           [ Odinštalovať ]   [ Ponechať ]
+stav       nemení sa
+hlavné     nemení sa
+```
+
+**Ničivá odpoveď je tá tichšia.** „Odinštalovať" je obrysové tlačidlo, „Ponechať" textové;
+hlavnú farbu nenesie ani jedno. Otázka je v okne, nie v systémovom dialógu — všetko ostatné,
+čo launcher hovorí, je tiež tu.
+
+Po odinštalovaní:
+
+```
+verzia     Verzia 0.1.1-alpha k dispozícii
+stred      poznámky k verzii
+           Hra bola odstránená. Na stiahnutie 415.48 MB.
+stav       Odinštalované
+hlavné     Install
+ponuka ⋯   zmizne
+```
+
+Uložené pozície v hre ležia mimo inštalácie, takže dole ide naozaj len hra.
+
+### 7.9 Upozornenie na novší launcher
 
 Samostatný panel v strede, môže sa objaviť **súbežne s ktorýmkoľvek stavom**.
 
@@ -250,12 +303,9 @@ Musí byť **zreteľne tichší** než hlavné tlačidlo — je to poznámka, ni
 
 ## 8. Texty
 
-**Otvorené rozhodnutie, ktoré treba spraviť pred návrhom.**
-
-Launcher má dnes všetky texty **po anglicky**. Cieľovka sú **slovenskí žiaci základných
-a stredných škôl**. To nesedí.
-
-Odporúčam slovenčinu. Návrh prekladov:
+**Rozhodnuté: slovenčina.** Cieľovka sú slovenskí žiaci základných a stredných škôl,
+anglické texty tam nesedeli. Okno je dnes celé po slovensky; anglické podoby nižšie sú
+pôvodné znenia zo zadania a slúžia už len ako mapovanie.
 
 | teraz | po slovensky |
 |---|---|
@@ -275,6 +325,9 @@ Odporúčam slovenčinu. Návrh prekladov:
 | Retry | Skúsiť znova |
 | Cancel | Zrušiť |
 | 415.48 MB to download. | Na stiahnutie 415,48 MB. |
+| Uninstall the game? | Odinštalovať hru? |
+| Open the game folder | Otvoriť priečinok s hrou |
+| Uninstalled | Odinštalované |
 
 Slovenské texty sú **dlhšie než anglické**, typicky o 10–20 %. Tlačidlá musia zniesť
 „Aktualizovať" aj „Skúsiť znova", nielen „Play".

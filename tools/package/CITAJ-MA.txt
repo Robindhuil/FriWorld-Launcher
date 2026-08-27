@@ -93,7 +93,7 @@ AKO VYDAT NOVU VERZIU
 3. Preved launcher.json na novy priecinok
 4. Spusti launcher — ponukne Update
 
-Cely postup aj s kontrolnym zoznamom je v repe launchera: docs/releasing.md
+Cely postup aj s kontrolnym zoznamom je v repe launchera: docs/deploying.md
 
 
 AK NIECO NEJDE

@@ -1,6 +1,6 @@
 # Vývoj
 
-**Verzia:** 0.1.0-alpha · **Dátum:** 2026-08-26
+**Verzia:** 0.1.1-alpha · **Dátum:** 2026-08-26
 
 ---
 
@@ -42,7 +42,7 @@ ostré neprepíše. Priečinok je v `.gitignore`.
 dotnet test
 ```
 
-129 testov. Pipeline **nie je mockovaná okrem siete**: vyrobí sa skutočný archív, skutočne
+172 testov. Pipeline **nie je mockovaná okrem siete**: vyrobí sa skutočný archív, skutočne
 sa spočíta checksum, skutočne sa rozbalí strom aj s právami a skutočne sa vymenia
 priečinky. Jediný rozdiel oproti ostrej prevádzke je `file://` namiesto `https://`.
 

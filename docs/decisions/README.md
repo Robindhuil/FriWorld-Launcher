@@ -3,6 +3,12 @@
 Netriviálne rozhodnutia a pasce, na ktoré by niekto nabehol znova.
 Najnovšia verzia hore.
 
+## Nezaradené
+
+| dátum | rozhodnutie |
+|---|---|
+| 2026-08-27 | [Jeden runbook pre web aj desktop](2026-08-27-jeden-runbook-pre-web-aj-desktop.md) |
+
 ## 0.1.0-alpha
 
 | dátum | rozhodnutie |

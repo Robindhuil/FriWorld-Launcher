@@ -13,11 +13,22 @@ na to číslo.
 _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.1-alpha**._
 
 ### Fixed
+- **Odinštalovanie hry sa nedalo dokončiť.** Položka v ponuke `⋯` otázku zapla, ale
+  v okne nebolo nič, čo by ju vykreslilo — stred sa vyprázdnil a ďalej sa nedalo. Otázka
+  teraz existuje aj vizuálne a chybové hlásenie jej priestor prepustí.
 - **Záloha v zipe hlásila predošlú verziu.** Jej projekt sa skladal ručne a mal verziu
   zadrôtovanú, takže launcher spustený cez zálohu by donekonečna ponúkal aktualizáciu
   sám na seba — a nemohol by ju použiť, lebo viacsúborové nasadenie sa vymeniť nedá.
   `tools/build-release-package.ps1` teraz vyrobí obidva assety, obidva ostampuje verziou
   z `Directory.Build.props` a **sám overí**, že sa zhodujú.
+
+### Changed
+- **Nasadenie webu aj desktopu má jeden runbook** — [`docs/deploying.md`](docs/deploying.md).
+  Nahradil `docs/releasing.md` a `docs/releasing-launcher.md`, ktoré popisovali len desktop,
+  a pohltil postup nahrávania web buildu z repa Hubu. Rozdelený popis znamenal, že sa pri
+  vydaní muselo pamätať, kde ktorá polovica je.
+- `docs/ui-spec.md` doplnené o ponuku `⋯` a otázku na odinštalovanie a označené za
+  záväzný popis okna; jazyk textov už nie je otvorené rozhodnutie.
 
 ## [0.1.1-alpha] - 2026-08-26
 
@@ -99,7 +110,7 @@ _Prvá vydaná verzia. Všetko nižšie vzniklo pred ňou._
   Linux je prepínač v menu, predvolene vypnutý. Skript `bundleVersion` len číta.
 
 - Dokumentácia: [architektúra](docs/architecture.md), [manifest ako kontrakt](docs/manifest.md),
-  [postup vydania](docs/releasing.md) s kontrolným zoznamom a [vývoj](docs/development.md).
+  [postup nasadenia](docs/deploying.md) s kontrolným zoznamom a [vývoj](docs/development.md).
   README prepísané na to, čo projekt naozaj je.
 
 - Simulácia rýchlosti sťahovania pre lokálny zdroj — `FRIWORLD_SIMULATED_BANDWIDTH`
@@ -153,7 +164,7 @@ _Prvá vydaná verzia. Všetko nižšie vzniklo pred ňou._
   že Smart App Control `.exe` odmietne. Adresa v manifeste ukazuje na `.exe`, nikdy na zip —
   výmena je jedna atomická operácia a rozbaľovanie by z nej spravilo niekoľko.
 - Manifest hry teraz nesie aj binárku launchera, takže **self-update je zapnutý**.
-  Postup vydávania je v `docs/releasing-launcher.md` vrátane kontrolného zoznamu na
+  Postup vydávania je v `docs/deploying.md` vrátane kontrolného zoznamu na
   prvú ostrú skúšku.
 
 - Odinštalovanie hry a otvorenie priečinka s hrou. Obidve sú zriedkavé akcie, tak sedia pod
