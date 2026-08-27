@@ -10,11 +10,13 @@ na to číslo.
 
 ## [Unreleased]
 
-_Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.2-alpha**._
+_Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.3-alpha**._
+
+## [0.1.3-alpha] - 2026-08-27
 
 ### Changed
-- **Odinštalovanie a otvorenie priečinka s hrou su v akčnom pásme, nie v ponuke.** Boli
-  schované za `⋯` v hlavičke, kde ich nikto nehľadal. Teš sú tam, kde už ruka je: dva štvorce
+- **Odinštalovanie a otvorenie priečinka s hrou sú v akčnom pásme, nie v ponuke.** Boli
+  schované za `⋯` v hlavičke, kde ich nikto nehľadal. Teraz sú tam, kde už ruka je: dva štvorce
   s ikonami — kľúč pre opravu, priečinok pre otvorenie — a za nimi **Odinštalovať**. Všetky
   tri sa objavia len vtedy, keď je hra nainštalovaná.
 - **Opraviť už nie je popis vedľajšieho tlačidla, ale vlastná ikona.** Dáva zmysel vždy, keď
