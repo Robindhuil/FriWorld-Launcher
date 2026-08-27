@@ -10,7 +10,24 @@ na to číslo.
 
 ## [Unreleased]
 
-_Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.6-alpha**._
+_Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.7-alpha**._
+
+## [0.1.7-alpha] - 2026-08-27
+
+### Changed
+- **Launcher sa po spustení hry už nezatvára, ale skryje — a po zatvorení hry sa vráti.**
+  To, čo človek chce najskôr po dohratí, je zvyčajne práve launcher; zatvorenie znamenalo,
+  že ho musel hľadať druhýkrát. Skryté, nie minimalizované: medzitým sa v ňom nedá nič robiť.
+  Vráti sa a **skontroluje aktualizácie znova**, lebo sedenie môže trvať hodinu.
+  Návrat okna je vo `finally`: čokoľvek vyhodené po skrytí by inak nechalo launcher bežať
+  bez okna a bez spôsobu, ako sa k nemu dostať.
+
+### Added
+- **Naraz beží jedna hra.** `IsGameRunning` sa doteraz kontrolovalo pred aktualizáciou
+  a odinštalovaním, ale nie pred spustením. Dve kópie zdieľajú jeden priečinok s uloženými
+  pozíciami a jedny nastavenia, a tá, ktorá skončí druhá, rozhodne, čo bolo to prvé sedenie
+  hodné. Platí to aj pre `launcher play`, nielen pre okno, a aj vtedy, keď hru niekto spustil
+  mimo launchera.
 
 ## [0.1.6-alpha] - 2026-08-27
 
