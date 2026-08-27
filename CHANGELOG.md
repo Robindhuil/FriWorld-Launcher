@@ -10,7 +10,26 @@ na to číslo.
 
 ## [Unreleased]
 
-_Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.7-alpha.2**._
+_Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.8-alpha**._
+
+## [0.1.8-alpha] - 2026-08-27
+
+### Changed
+- **Otázky na zavretie a na odinštalovanie sú skutočný modal.** Boli to panely v strede okna,
+  ktoré len nahradili obsah — všetko okolo zostávalo klikateľné aj natabovateľné, takže to
+  bola otázka, ktorú sa dalo obísť. Teraz je to zatienené pozadie a karta v strede nad
+  všetkým ostatným.
+  Modal sú **tri sľuby, nie jeden**: je navrchu (poradie v strome), nič za ním sa nedá
+  kliknúť (zatienenie má pozadie, takže kliknutia pohíta) a nič za ním sa nedá dosiahnuť
+  klávesnicou — to posledné zatienenie nespraví, takže obsah pod ním je zakázaný; zakázané
+  prvky tabulátor preskočí. Hlavné tlačidlo je pritom predvolené, takže bez toho by Enter
+  prešiel modalom rovno do inštalácie.
+  Fokus ide pri otvorení na bezpečnú odpoveď, lebo obsah, ktorý ho mal, oň práve zakázaním
+  prišiel.
+  Obidve otázky kreslí jedna karta a delia sa o jeden text a jednu bezpečnú odpoveď — dve
+  naraz by ukazovali nadpis jednej s tlačidlami druhej.
+- Poznámky k verzii a chybové hlásenie zostávajú pod modalom vidieť. Predtým sa skrývali,
+  lebo si s ňou delili miesto; teraz ich zatienenie len potláča, čo je celý zmysel modalu.
 
 ## [0.1.7-alpha.2] - 2026-08-27
 
