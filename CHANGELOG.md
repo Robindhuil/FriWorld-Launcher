@@ -10,7 +10,24 @@ na to číslo.
 
 ## [Unreleased]
 
-_Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.7-alpha**._
+_Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.7-alpha.2**._
+
+## [0.1.7-alpha.2] - 2026-08-27
+
+### Fixed
+- **Launcher sa po zatvorení hry vrátil zaseknutý na „Kontrolujem aktualizácie".** Hlásenia
+  o priebehu sa posielali cez `Dispatcher.Post` vždy, aj keď ich vyvolal samotné UI vlákno.
+  Keď práca dobehla bez toho, aby sa raz uspala — čo sa pri kontrole stane, lenže sa dá
+  odpovedať z cache — výsledok sa zapísal skôr a **zaradené hlásenie ho potom prepísalo späť**
+  na názov fázy a pruh priebehu. Okno tak zostalo stáť na texte, ktorý kontrola nastavuje
+  ešte pred začiatkom.
+  Hlásenie vyvolané na UI vlákne sa teraz aplikuje hneď, takže poradie zostane zachované,
+  a hlásenie, ktoré dorazí, keď už nič nebeží, sa zahodí.
+  Chybu bolo vidieť len tam, kde je kontrola rýchla; preto prežila všetky doterajšie behy.
+
+### Added
+- Test celého cyklu spustenia hry nad skutočným oknom — nainštaluje, spustí, počká na koniec
+  hry a trvá na tom, že sa launcher vráti pripravený. Reprodukoval chybu na oboch platformách.
 
 ## [0.1.7-alpha] - 2026-08-27
 
