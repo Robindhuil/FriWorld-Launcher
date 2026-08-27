@@ -11,6 +11,45 @@ Hotové veci sú v [CHANGELOG.md](../CHANGELOG.md), rozhodnutia v
 
 ---
 
+## Repozitár po anglicky
+
+Dokumentácia je celá po slovensky. Má byť po anglicky.
+
+**Čo sa prekladá:** `README.md`, `CHANGELOG.md`, všetko v `docs/` vrátane záznamov
+o rozhodnutiach, a **správy commitov odteraz**. História commitov sa neprepisuje.
+
+**Čo zostáva po slovensky:** všetko, čo číta hráč. `tools/package/CITAJ-MA.txt`,
+`Spustit-ak-exe-nejde.cmd`, texty v okne, popisy vydaní na GitHube a stránka na Hube.
+Cieľovka sú slovenskí žiaci; to sa týmto nemení a je to celý dôvod, prečo sa
+[preklady v okne](#preklady-slovenčina-a-angličtina) riešia zvlášť.
+
+**Komentáre v kóde už po anglicky sú.** Nie je tam čo robiť.
+
+### Rozsah
+
+| | |
+|---|---|
+| súborov | 20 |
+| slov | ~22 300 |
+| najväčšie | `ui-spec.md` 3 200, `CHANGELOG.md` 3 800, `deploying.md` 2 800 |
+
+### Na čo si dať pozor
+
+- **Jedným prechodom, nie postupne.** Polovične preložený strom je horší než ktorýkoľvek
+  z tých dvoch stavov — nikto nevie, ktorý súbor je aktuálny a ktorý zabudnutý.
+- **Históriu v changelogu preložiť tiež.** Zmiešaný changelog je presne ten polovičný stav,
+  len rozložený v jednom súbore.
+- **Názvy súborov s rozhodnutiami sú po slovensky** (`2026-08-26-bez-podpisu-...`). Dajú sa
+  premenovať v tom istom prechode; odkazy na ne sú v `decisions/README.md` a naprieč
+  dokumentáciou, takže kontrola odkazov to chytí. Odkazy zo správ commitov už nie — tie
+  sa premenovaním rozbijú a spraviť sa s tým nedá nič.
+- **Preklad nie je prepis.** Dokumenty hovoria, **prečo** je niečo tak a nie inak; to je ich
+  celá hodnota a pri prekladaní sa stráca najľahšie.
+- Kontrola odkazov na konci: `docs/` má relatívne odkazy medzi súbormi a `README.md` na ne
+  ukazuje z koreňa.
+
+---
+
 ## 0.2.0-alpha
 
 ### Preklady: slovenčina a angličtina
