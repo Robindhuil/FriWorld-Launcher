@@ -142,8 +142,11 @@ public sealed class LauncherViewModel : ObservableObject
 
     public event EventHandler? MinimiseRequested;
 
-    /// <summary>Raised once the game is up and the launcher has nothing left to do.</summary>
+    /// <summary>Raised when the person asks to close, and only then.</summary>
     public event EventHandler? CloseRequested;
+
+    /// <summary>Raised while the game is running, and again when it stops.</summary>
+    public event EventHandler<bool>? VisibilityRequested;
 
     /// <summary>
     /// Whether to offer minimising. A download of several hundred megabytes takes long enough
@@ -634,6 +637,8 @@ public sealed class LauncherViewModel : ObservableObject
         Busy = true;
         Action = LauncherAction.None;
 
+        var hidden = false;
+
         try
         {
             Status = "Spúšťam hru";
@@ -659,10 +664,18 @@ public sealed class LauncherViewModel : ObservableObject
             Status = "Beží";
             Action = LauncherAction.Play;
 
+            // Out of the way while the game has the screen, back again when it does not. Closing
+            // instead would mean the person has to find the launcher a second time to do the one
+            // thing they are most likely to want next, which is to stop or update.
             if (!_keepOpenAfterLaunch)
             {
-                CloseRequested?.Invoke(this, EventArgs.Empty);
+                hidden = true;
+                VisibilityRequested?.Invoke(this, false);
             }
+
+            await process.WaitForExitAsync().ConfigureAwait(true);
+
+            _log.Info($"The game exited with code {process.ExitCode}.");
         }
         catch (Exception ex)
         {
@@ -670,7 +683,21 @@ public sealed class LauncherViewModel : ObservableObject
         }
         finally
         {
+            // In the finally and not after the wait: anything thrown while the window is hidden
+            // would otherwise leave a launcher with no window and no way to reach it.
+            if (hidden)
+            {
+                VisibilityRequested?.Invoke(this, true);
+            }
+
             Busy = false;
+        }
+
+        // A session can run for an hour, so the launcher that comes back looks at the world again
+        // rather than showing what was true before the game started.
+        if (!Failed)
+        {
+            await RefreshAsync();
         }
     }
 

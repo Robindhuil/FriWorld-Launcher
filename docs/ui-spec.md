@@ -17,8 +17,8 @@ Launcher k hre **FriWorld** — interaktívnej 3D prehliadke Fakulty riadenia a 
 Žilinskej univerzity. Hra je náborový produkt fakulty, cieľovka sú **žiaci základných
 a stredných škôl**.
 
-Launcher robí jedinú vec: stiahne hru, overí ju, nainštaluje a spustí. Po spustení hry sa
-sám zavrie. Beží pár desiatok sekúnd na jedno použitie, takže **musí byť čitateľný na prvý
+Launcher robí jedinú vec: stiahne hru, overí ju, nainštaluje a spustí. Počas hry sa skryje
+a po jej zatvorení sa vráti. Beží pár desiatok sekúnd na jedno použitie, takže **musí byť čitateľný na prvý
 pohľad, nie objavovateľný**.
 
 ---
@@ -398,7 +398,23 @@ o rozrobenej inštalácii.
 
 **Okno, ktoré sa zatvára samo po spustení hry, sa nepýta.** To nie je nikto, kto sa pýta.
 
-### 7.10 Upozornenie na novší launcher
+### 7.10 Hra beží
+
+```
+stav       Beží
+okno       skryté — ani v paneli úloh
+```
+
+Skryté, nie minimalizované: v launcheri sa medzitým nedá nič robiť a položka v paneli úloh,
+ktorá nič nerobí, je len ďalšia vec medzi človekom a hrou.
+
+Keď hra skončí, okno sa vráti a **skontroluje aktualizácie znova** — sedenie môže trvať
+hodinu, tak sa vracia s tým, čo platí teraz, nie s tým, čo platilo pred hraním.
+
+Keď je nastavené `keepOpenAfterLaunch`, okno zostane vidieť so stavom **Beží** a hlavné
+tlačidlo je zakázané, kým hra beží.
+
+### 7.11 Upozornenie na novší launcher
 
 Samostatný panel v strede, môže sa objaviť **súbežne s ktorýmkoľvek stavom**.
 
@@ -476,8 +492,10 @@ Funkčné pravidlá, ktoré návrh nesmie obísť:
    aj po zlyhaní sťahovania.
 3. **Jedno hlavné tlačidlo.** Ostatné sú tichšie a užšie a nikdy nenesú hlavnú farbu.
 4. **Zrušenie je dostupné počas celého sťahovania.**
-5. **Po spustení hry sa okno zavrie.** Výnimka: keď hra spadne do niekoľkých sekúnd,
-   okno zostane a povie to.
+5. **Po spustení hry sa okno skryje a po jej zatvorení sa vráti.** Nezatvára sa: to, čo
+   človek chce najskôr po dohratí, je zvyčajne launcher. Výnimka je hra, ktorá spadne do
+   niekoľkých sekúnd — vtedy okno zostane a povie to.
+6. **Naraz beží jedna hra.** Druhé spustenie sa odmietne.
 
 ---
 

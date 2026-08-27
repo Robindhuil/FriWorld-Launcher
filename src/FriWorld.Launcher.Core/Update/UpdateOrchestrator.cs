@@ -297,6 +297,9 @@ public sealed class UpdateOrchestrator(
     /// Starts the installed build and, once it has survived a short grace period, records that the
     /// version launched and drops the previous install. A build that dies immediately keeps its
     /// predecessor on disk so <see cref="AtomicInstaller.Rollback"/> has something to restore.
+    ///
+    /// Refuses when a copy is already running. Two of them share one save directory and one set of
+    /// settings files, and the second to exit decides what the first one's session was worth.
     /// </summary>
     public async Task<Process> LaunchAsync(
         IProgress<UpdateStatus>? progress = null,
@@ -305,6 +308,11 @@ public sealed class UpdateOrchestrator(
     {
         var installed = _state.Read()
             ?? throw new UpdateException("Nothing is installed yet.");
+
+        if (_launcher.IsGameRunning())
+        {
+            throw new GameIsRunningException("The game is already running.");
+        }
 
         progress?.Report(UpdateStatus.Of(UpdateStage.Launching, "Spúšťam hru"));
 

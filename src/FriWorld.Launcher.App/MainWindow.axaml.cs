@@ -31,9 +31,23 @@ public partial class MainWindow : Window
         _viewModel.MinimiseRequested += (_, _) =>
             Dispatcher.UIThread.Post(() => WindowState = WindowState.Minimized);
 
-        // The launcher's job ends when the game is running, so it gets out of the way. The view
-        // model decides when that is; closing the window is the window's business.
         _viewModel.CloseRequested += (_, _) => Dispatcher.UIThread.Post(Close);
+
+        // Hidden while the game has the screen, shown again when it exits. Hidden rather than
+        // minimised: there is nothing to do in the launcher meanwhile, and a taskbar entry that
+        // does nothing is one more thing between the person and the game.
+        _viewModel.VisibilityRequested += (_, visible) => Dispatcher.UIThread.Post(() =>
+        {
+            if (visible)
+            {
+                Show();
+                Activate();
+            }
+            else
+            {
+                Hide();
+            }
+        });
     }
 
     protected override async void OnLoaded(RoutedEventArgs e)
