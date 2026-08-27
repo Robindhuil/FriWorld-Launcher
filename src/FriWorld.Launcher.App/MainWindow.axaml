@@ -19,7 +19,6 @@
          expects have to be wired by hand. -->
     <Window.KeyBindings>
         <KeyBinding Gesture="Escape" Command="{Binding DismissCommand}" />
-        <KeyBinding Gesture="Enter" Command="{Binding DefaultActionCommand}" />
     </Window.KeyBindings>
 
     <Window.Resources>
@@ -306,7 +305,8 @@
                         <Button Classes="chrome close"
                                 Content="&#x2715;"
                                 Command="{Binding CloseCommand}"
-                                ToolTip.Tip="Zavrieť" />
+                                ToolTip.Tip="Zavrieť"
+                                AutomationProperties.Name="Zavrieť" />
                     </StackPanel>
 
                 </Grid>
@@ -434,6 +434,37 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- Closing. Not destructive — a partial download is kept — but the
+                             launcher is one window with one job, and neither a stray click on the
+                             corner nor a reflex on Escape should end it. -->
+                        <Border IsVisible="{Binding ConfirmingClose}"
+                                CornerRadius="8"
+                                Padding="18,16"
+                                Background="#9E0A0B10"
+                                BorderThickness="1"
+                                BorderBrush="#42FFFFFF">
+                            <StackPanel Spacing="14">
+                                <StackPanel Spacing="5">
+                                    <TextBlock Text="Zavrieť launcher?"
+                                               FontSize="15" FontWeight="SemiBold"
+                                               TextWrapping="Wrap"
+                                               Foreground="{StaticResource TextPrimary}" />
+                                    <TextBlock Text="{Binding CloseQuestionDetail}"
+                                               FontSize="14" LineHeight="22"
+                                               TextWrapping="Wrap"
+                                               Foreground="{StaticResource TextSecondary}" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <Button Classes="ghost"
+                                            Content="Zavrieť"
+                                            Command="{Binding ConfirmCloseCommand}" />
+                                    <Button Classes="link"
+                                            Content="Späť"
+                                            Command="{Binding CancelCloseCommand}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
                         <!-- Progress. One process with a changing phase name, not four screens. -->
                         <StackPanel Spacing="10" MaxWidth="600" HorizontalAlignment="Left"
                                     IsVisible="{Binding ProgressVisible}">
@@ -514,8 +545,12 @@
                                     Content="{Binding SecondaryLabel}"
                                     IsVisible="{Binding SecondaryVisible}"
                                     Command="{Binding SecondaryCommand}" />
+                            <!-- IsDefault, not a window-wide Enter binding: a button that has the
+                                 focus must be the one Enter presses. This only catches Enter that
+                                 nothing else wanted. -->
                             <Button Classes="primary"
                                     Content="{Binding PrimaryLabel}"
+                                    IsDefault="True"
                                     IsEnabled="{Binding PrimaryEnabled}"
                                     Command="{Binding PrimaryCommand}" />
                         </StackPanel>

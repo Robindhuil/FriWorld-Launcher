@@ -66,6 +66,7 @@ public sealed class LauncherViewModel : ObservableObject
     private bool _canCancel;
     private bool _failed;
     private bool _confirmingUninstall;
+    private bool _confirmingClose;
 
     public LauncherViewModel()
     {
@@ -85,14 +86,15 @@ public sealed class LauncherViewModel : ObservableObject
         CancelCommand = new RelayCommand(Cancel, () => CanCancel);
         UpdateLauncherCommand = new RelayCommand(() => _ = UpdateLauncherAsync(), () => !Busy);
         MinimiseCommand = new RelayCommand(() => MinimiseRequested?.Invoke(this, EventArgs.Empty));
-        CloseCommand = new RelayCommand(() => CloseRequested?.Invoke(this, EventArgs.Empty));
+        CloseCommand = new RelayCommand(() => ConfirmingClose = true);
+        ConfirmCloseCommand = new RelayCommand(() => CloseRequested?.Invoke(this, EventArgs.Empty));
+        CancelCloseCommand = new RelayCommand(() => ConfirmingClose = false);
         RevealCommand = new RelayCommand(Reveal, () => IsInstalled);
         AskUninstallCommand = new RelayCommand(() => ConfirmingUninstall = true, () => IsInstalled && !Busy);
         RepairCommand = new RelayCommand(() => _ = RepairAsync(), () => IsInstalled && !Busy);
         RecheckCommand = new RelayCommand(() => _ = RefreshAsync(), () => !Busy);
         OpenLogCommand = new RelayCommand(OpenLog);
         DismissCommand = new RelayCommand(Dismiss);
-        DefaultActionCommand = new RelayCommand(RunPrimary, () => PrimaryEnabled && !ConfirmingUninstall);
         ConfirmUninstallCommand = new RelayCommand(Uninstall, () => !Busy);
         CancelUninstallCommand = new RelayCommand(() => ConfirmingUninstall = false);
     }
@@ -109,7 +111,12 @@ public sealed class LauncherViewModel : ObservableObject
 
     public RelayCommand MinimiseCommand { get; }
 
+    /// <summary>Asks whether to close. Closing is never one key press or one stray click away.</summary>
     public RelayCommand CloseCommand { get; }
+
+    public RelayCommand ConfirmCloseCommand { get; }
+
+    public RelayCommand CancelCloseCommand { get; }
 
     /// <summary>Shows the installed game in the file manager.</summary>
     public RelayCommand RevealCommand { get; }
@@ -123,11 +130,8 @@ public sealed class LauncherViewModel : ObservableObject
     /// <summary>Opens the launcher's own log. The one thing worth having when someone reports a problem.</summary>
     public RelayCommand OpenLogCommand { get; }
 
-    /// <summary>Escape. Backs out of whatever is innermost, and closes only when nothing is.</summary>
+    /// <summary>Escape. Backs out of whatever is innermost, and asks to close only when nothing is.</summary>
     public RelayCommand DismissCommand { get; }
-
-    /// <summary>Enter. The main button, except while a question is waiting for an answer.</summary>
-    public RelayCommand DefaultActionCommand { get; }
 
     /// <summary>Asks about uninstalling. Deleting is never one click away.</summary>
     public RelayCommand AskUninstallCommand { get; }
@@ -207,10 +211,43 @@ public sealed class LauncherViewModel : ObservableObject
                 Raise(nameof(InfoVisible));
                 Raise(nameof(PlainTextVisible));
                 Raise(nameof(FailureVisible));
-                DefaultActionCommand.RaiseCanExecuteChanged();
             }
         }
     }
+
+    /// <summary>
+    /// Whether the closing question is showing.
+    ///
+    /// Closing mid-download is not destructive — a partial file is kept — but the launcher is one
+    /// window with one job, and a stray click on an X in the corner should not end it. The window
+    /// closing itself after the game starts does not go through here; that is not someone asking.
+    /// </summary>
+    public bool ConfirmingClose
+    {
+        get => _confirmingClose;
+        private set
+        {
+            if (SetField(ref _confirmingClose, value))
+            {
+                Raise(nameof(NotesVisible));
+                Raise(nameof(InfoVisible));
+                Raise(nameof(PlainTextVisible));
+                Raise(nameof(FailureVisible));
+                Raise(nameof(CloseQuestionDetail));
+            }
+        }
+    }
+
+    /// <summary>
+    /// The second line of the closing question. It says what closing costs, and the honest answer
+    /// depends on what is running — pretending a download is lost when it resumes would be as bad
+    /// as staying silent when it is.
+    /// </summary>
+    public string CloseQuestionDetail => CanCancel
+        ? "Sťahovanie sa zastaví. Stiahnuté súbory zostanú a nabudúce sa bude pokračovať tam, kde prestalo."
+        : Busy
+            ? "Launcher práve pracuje. Zavretie teraz nechá rozrobenú prácu, ktorú bude treba spraviť znova."
+            : "Hra zostane nainštalovaná.";
 
     public string Status
     {
@@ -260,7 +297,11 @@ public sealed class LauncherViewModel : ObservableObject
     public bool InfoVisible => NotesVisible && !string.IsNullOrEmpty(Detail);
 
     /// <summary>A bare sentence, for states with neither notes nor progress to show.</summary>
-    public bool PlainTextVisible => !Failed && !ProgressVisible && !ConfirmingUninstall && !NotesVisible && !string.IsNullOrEmpty(Detail);
+    public bool PlainTextVisible =>
+        !Failed && !ProgressVisible && !AskingSomething && !NotesVisible && !string.IsNullOrEmpty(Detail);
+
+    /// <summary>Whether a question owns the middle of the window. Two of them can never overlap.</summary>
+    public bool AskingSomething => ConfirmingUninstall || ConfirmingClose;
 
     public string VersionLine
     {
@@ -282,7 +323,7 @@ public sealed class LauncherViewModel : ObservableObject
         }
     }
 
-    public bool NotesVisible => !Failed && !ProgressVisible && !ConfirmingUninstall && !string.IsNullOrEmpty(Notes);
+    public bool NotesVisible => !Failed && !ProgressVisible && !AskingSomething && !string.IsNullOrEmpty(Notes);
 
     public string FailureHeadline
     {
@@ -370,7 +411,7 @@ public sealed class LauncherViewModel : ObservableObject
     /// Whether the failure block is on screen. The uninstall question takes the same space and
     /// must win it, otherwise the two draw on top of each other.
     /// </summary>
-    public bool FailureVisible => Failed && !ConfirmingUninstall;
+    public bool FailureVisible => Failed && !AskingSomething;
 
     public bool LauncherUpdateAvailable => _launcherDownloadPage is not null;
 
@@ -388,6 +429,7 @@ public sealed class LauncherViewModel : ObservableObject
             if (SetField(ref _busy, value))
             {
                 RaiseButtons();
+                Raise(nameof(CloseQuestionDetail));
             }
         }
     }
@@ -400,6 +442,7 @@ public sealed class LauncherViewModel : ObservableObject
             if (SetField(ref _canCancel, value))
             {
                 CancelCommand.RaiseCanExecuteChanged();
+                Raise(nameof(CloseQuestionDetail));
             }
         }
     }
@@ -884,7 +927,6 @@ public sealed class LauncherViewModel : ObservableObject
         Raise(nameof(IsInstalled));
 
         PrimaryCommand.RaiseCanExecuteChanged();
-        DefaultActionCommand.RaiseCanExecuteChanged();
         SecondaryCommand.RaiseCanExecuteChanged();
         UpdateLauncherCommand.RaiseCanExecuteChanged();
         RevealCommand.RaiseCanExecuteChanged();
@@ -915,18 +957,22 @@ public sealed class LauncherViewModel : ObservableObject
     /// </summary>
     private void Dismiss()
     {
-        switch (DismissChoice.ForEscape(ConfirmingUninstall, CanCancel, Busy))
+        switch (DismissChoice.ForEscape(ConfirmingUninstall, ConfirmingClose, CanCancel, Busy))
         {
             case DismissOutcome.KeepTheGame:
                 ConfirmingUninstall = false;
+                break;
+
+            case DismissOutcome.StayOpen:
+                ConfirmingClose = false;
                 break;
 
             case DismissOutcome.CancelTheWork:
                 Cancel();
                 break;
 
-            case DismissOutcome.CloseTheWindow:
-                CloseRequested?.Invoke(this, EventArgs.Empty);
+            case DismissOutcome.AskToClose:
+                ConfirmingClose = true;
                 break;
         }
     }

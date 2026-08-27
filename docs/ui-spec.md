@@ -169,25 +169,30 @@ kliknutie (najmenej 32 × 32 px). Vedľa neho tichšia minimalizácia.
 Vlastný rám okna znamená, že systém neponúke žiadnu klávesovú skratku sám. Dve, ktoré každý
 čaká, sú preto zapojené ručne.
 
-**Enter** stlačí hlavné tlačidlo. **Okrem chvíle, keď je na obrazovke otázka na odinštalovanie**
-— vtedy nerobí nič. Odpoveď na ňu sa dáva myšou alebo Escapom, nikdy nie tým istým Enterom,
-ktorým sa o sekundu skôr spúšťala hra.
+**Tab** posúva fokus po tlačidlách a **Enter stlačí to, na ktorom fokus stojí.** Toto je
+pravidlo, nie detail: fokusový prstenec je sľub o tom, čo Enter spraví, a launcher ho nesmie
+porušiť.
+
+Keď fokus na tlačidle nestojí, Enter stlačí hlavné tlačidlo — cez `IsDefault`, ktoré chytá
+len tie Entery, ktoré si nevzal nikto iný. Nikdy nie cez odchytenie Enteru na celom okne;
+tak to bolo v 0.1.5-alpha a Tab tým prestal mať zmysel.
 
 **Escape** ustupuje od toho, čo je najviac vpredu:
 
 | stav | čo Escape spraví |
 |---|---|
 | otázka na odinštalovanie | odpovie **Ponechať** |
+| otázka na zavretie | odpovie **Späť** |
 | beží sťahovanie | zruší ho, tak ako tlačidlo Zrušiť |
 | rozbaľuje sa alebo inštaluje | **nič** |
-| čokoľvek iné | zavrie okno |
+| čokoľvek iné | **spýta sa**, či zavrieť |
 
-Ten tretí riadok je zámerný. Escape je reflex, a reflex nesmie byť schopný zabiť proces
-uprostred rozbaľovania alebo výmeny priečinkov. Zavrieť sa vtedy stále dá — ale kliknutím,
-čo je rozhodnutie, nie reflex.
+Escape sám nezavrie okno nikdy — len sa spýta. Ten predposledný riadok je zámerný rovnako:
+Escape je reflex, a reflex nesmie zabiť proces uprostred výmeny priečinkov ani vyvolať
+otázku, na ktorú sa vtedy ľahko odpovie áno.
 
-Poradie je [otestované](../tests/FriWorld.Launcher.Core.Tests/DismissChoiceTests.cs) vrátane
-toho, že **počas práce Escape nikdy nezavrie okno**.
+Poradie je [otestované](../tests/FriWorld.Launcher.Core.Tests/DismissChoiceTests.cs), samotné
+smerovanie klávesov [na skutočnom okne](../tests/FriWorld.Launcher.App.Tests/KeyboardTests.cs).
 
 Fokus musí byť vidieť. Predvolený čiarkovaný rámček sa na fotografickom pozadí stratí, takže
 tlačidlá dostávajú biely dvojpixelový obrys — len pri `:focus-visible`, aby sa neobjavoval po
@@ -336,7 +341,31 @@ pásmo      [ INŠTALOVAŤ ]   — štvorce aj Odinštalovať zmizli
 
 Uložené pozície v hre ležia mimo inštalácie, takže dole ide naozaj len hra.
 
-### 7.9 Upozornenie na novší launcher
+### 7.9 Otázka na zavretie
+
+Po kliknutí na `✕` alebo po Escape. Nahradí obsah stredu.
+
+```
+stred      Zavrieť launcher?
+           <čo to stojí — závisí od toho, čo beží>
+           [ Zavrieť ]   [ Späť ]
+stav       nemení sa
+```
+
+Druhý riadok hovorí pravdu o tom, čo sa stratí, a tá sa líši:
+
+| stav | veta |
+|---|---|
+| beží sťahovanie | Sťahovanie sa zastaví. Stiahnuté súbory zostanú a nabudúce sa bude pokračovať tam, kde prestalo. |
+| pracuje sa, nedá sa zrušiť | Launcher práve pracuje. Zavretie teraz nechá rozrobenú prácu, ktorú bude treba spraviť znova. |
+| nič nebeží | Hra zostane nainštalovaná. |
+
+Tvrdiť, že sa stratí sťahovanie, keď sa v skutočnosti obnoví, je rovnako zlé ako mlčať
+o rozrobenej inštalácii.
+
+**Okno, ktoré sa zatvára samo po spustení hry, sa nepýta.** To nie je nikto, kto sa pýta.
+
+### 7.10 Upozornenie na novší launcher
 
 Samostatný panel v strede, môže sa objaviť **súbežne s ktorýmkoľvek stavom**.
 

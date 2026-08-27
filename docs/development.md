@@ -42,7 +42,7 @@ ostré neprepíše. Priečinok je v `.gitignore`.
 dotnet test
 ```
 
-197 testov. Pipeline **nie je mockovaná okrem siete**: vyrobí sa skutočný archív, skutočne
+199 testov. Pipeline **nie je mockovaná okrem siete**: vyrobí sa skutočný archív, skutočne
 sa spočíta checksum, skutočne sa rozbalí strom aj s právami a skutočne sa vymenia
 priečinky. Jediný rozdiel oproti ostrej prevádzke je `file://` namiesto `https://`.
 
@@ -99,12 +99,34 @@ Preto má projekt `AssemblyName` iný, než je jeho meno:
 <AssemblyName>FriWorldLauncherCoreLib</AssemblyName>
 ```
 
-Menné priestory sa nemenia, len súbor na disku. Keď to raz padne znova, odpoveď je to isté:
-ďalšie meno. Padlo to potom aj na samotnej testovacej assembly, takže tá sa volá
-`FriWorldLauncherSuite` — a `InternalsVisibleTo` v `Core` musí sedieť s tým menom, nie
-s menom projektu.
+Menné priestory sa nemenia, len súbor na disku. Padlo to potom aj na samotnej testovacej
+assembly, takže tá sa volá `FriWorldLauncherSuite` — a `InternalsVisibleTo` v `Core` musí
+sedieť s tým menom, nie s menom projektu.
 
-Meno je vec, ktorá sa mení, nie bráni. Na CI to nenastáva, tam Smart App Control nie je.
+### Premenovanie prestalo pomáhať
+
+**27. 8. 2026 sa to zlomilo úplne.** Nové, nikdy nepoužité meno je zablokované okamžite;
+zmena mena už nekupuje nič. Zmerané:
+
+| čo | výsledok |
+|---|---|
+| `dotnet test` | knižnica sa nenačíta, celá sada padne |
+| nové meno assembly | zablokované hneď |
+| build mimo repa (`BaseOutputPath` do `%TEMP%`) | testovacia assembly sa načíta, `FriWorldLauncherCoreLib.dll` nie |
+| `run-under-smart-app-control.ps1` | **funguje ďalej** |
+
+Rozdiel medzi posledným riadkom a ostatnými nie je meno ani priečinok. Je to počet
+assembly: skript zlúči zdroje `Core` a vstupného projektu do **jednej** a spustí ju cez
+`dotnet exec`. Blokuje sa **referencovaná nepodpísaná knižnica načítaná za behu**, nie
+proces ako taký.
+
+**Testy sa preto na tomto stroji spustiť nedajú.** Beží ich CI, na Windows aj Linuxe, kde
+Smart App Control nie je — to je od 0.1.4-alpha aj dôvod, prečo CI existuje. Lokálne zostáva
+`run-under-smart-app-control.ps1` na skúšanie okna a CLI.
+
+Keby to raz začalo prekážať, cesta von je spraviť to isté, čo robí skript: nechať testovací
+projekt kompilovať zdroje `Core` priamo namiesto `ProjectReference`. Zatiaľ to nestojí za
+zložitosť, ktorú by to prinieslo do build súborov.
 
 Z rovnakého dôvodu si `run-under-smart-app-control.ps1` vyrába **nové meno pri každom
 spustení**. Kto chce build medzi spusteniami cachovať, dá `-AssemblyName`.

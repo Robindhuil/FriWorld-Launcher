@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+
+    <!-- xUnit v3 runs each test assembly as its own process, so this one is an exe. It is on v3
+         rather than v2 like the core suite because Avalonia.Headless.XUnit is. -->
+    <OutputType>Exe</OutputType>
+
+    <!-- Same reason as the other two projects: Smart App Control judges unsigned assemblies by
+         name and eventually refuses one it has seen often. See docs/development.md. -->
+    <AssemblyName>FriWorldLauncherWindowSuite</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Headless.XUnit" Version="12.1.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\FriWorld.Launcher.App\FriWorld.Launcher.App.csproj" />
+  </ItemGroup>
+
+</Project>
