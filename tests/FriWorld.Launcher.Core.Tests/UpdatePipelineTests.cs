@@ -19,7 +19,10 @@ public class UpdatePipelineTests
 {
     private const int SmallPayload = 256 * 1024;
 
-    private static async Task<string> BuildRelease(string storeDirectory, string version) =>
+    private static async Task<string> BuildRelease(
+        string storeDirectory,
+        string version,
+        int stubRunsForSeconds = 0) =>
         await MockReleaseBuilder.BuildAsync(
             storeDirectory,
             new MockReleaseBuilder.Options
@@ -27,6 +30,7 @@ public class UpdatePipelineTests
                 Version = version,
                 PayloadBytes = SmallPayload,
                 Platforms = [PlatformKey.Current],
+                StubRunsForSeconds = stubRunsForSeconds,
             });
 
     private static UpdateOrchestrator OrchestratorFor(string manifestPath, string root) =>
@@ -221,16 +225,19 @@ public class UpdatePipelineTests
 
         await OrchestratorFor(await BuildRelease(store, "1.0.0-mock"), root).EnsureLatestAsync();
 
-        var orchestrator = OrchestratorFor(await BuildRelease(store, "1.1.0-mock"), root);
+        // The stub has to outlive the grace period, not merely be slow to start. Relying on the
+        // latter passed on Windows only because cmd.exe takes longer to spin up than the grace,
+        // and lost that race the moment it ran on a shell that starts faster.
+        var orchestrator = OrchestratorFor(await BuildRelease(store, "1.1.0-mock", stubRunsForSeconds: 3), root);
         await orchestrator.EnsureLatestAsync();
 
-        // A grace period this short expires before any process could exit, so the launch counts
-        // as successful — which is the branch under test.
         var process = await orchestrator.LaunchAsync(gracePeriod: TimeSpan.FromMilliseconds(1));
-        await process.WaitForExitAsync();
 
         Assert.True(orchestrator.State.Read()!.LaunchConfirmed);
         Assert.False(Directory.Exists(orchestrator.Paths.GameOld));
+
+        process.Kill(entireProcessTree: true);
+        await process.WaitForExitAsync();
     }
 
     private static string ReadInstalledVersionMarker(string gameDirectory) =>

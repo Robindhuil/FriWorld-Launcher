@@ -25,6 +25,15 @@ _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.4-alpha**._
 - Režim odmietne aj binárku, **ktorú by launcher ticho ignoroval** — krátky sha256, nulovú
   veľkosť, adresu, ktorá nie je https. Vydanie by vyzeralo hotovo a self-update by potichu
   klesol na obyčajný odkaz.
+
+### Fixed
+- **Test potvrdenia spustenia vyhrával preteky, nie test.** Čakal, že mock stub prežije
+  milisekundovú lehotu — čo na Windows platilo len preto, že `cmd.exe` sa spašťa pomaly než
+  to. Na rychlejsom shelli tie preteky prehral. Stub teraz beží tri sekundy, takže lehota
+  vyprší dávno pred ním. Našlo to CI hneď pri prvom behu.
+- Test návratu po zlyhanej výmene launchera je označený ako windowsový. Provokuje zlyhanie
+  zámkom súboru, a mimo Windows sú zámky poradné — presun by prešiel. Preskočenie je
+  zámerné: test, ktorý ticho prejde bez toho, aby niečo skúsil, je horší než žiadny.
 - **CI na GitHub Actions.** `dotnet build -c Release` a `dotnet test` na Windows aj Linuxe pri
   každom push a pull requeste. `PublishedManifestTests` tým prestávajú závisieť na tom, či si
   niekto spomenie ich spustiť — manifest, ktorý by sa nedal prečítať, zhodí build.

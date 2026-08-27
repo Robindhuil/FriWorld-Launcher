@@ -80,7 +80,7 @@ public class SelfUpdateSwapTests
         Assert.Equal("verzia 2", File.ReadAllText(running + LauncherSelfUpdater.SupersededSuffix));
     }
 
-    [Fact]
+    [WindowsOnlyFact]
     public void A_failed_swap_puts_the_running_launcher_back()
     {
         // The dangerous window: the old executable has been renamed aside and the new one cannot
