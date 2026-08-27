@@ -10,7 +10,9 @@ na to číslo.
 
 ## [Unreleased]
 
-_Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.1-alpha**._
+_Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.2-alpha**._
+
+## [0.1.2-alpha] - 2026-08-27
 
 ### Fixed
 - **Odinštalovanie hry sa nedalo dokončiť.** Položka v ponuke `⋯` otázku zapla, ale
