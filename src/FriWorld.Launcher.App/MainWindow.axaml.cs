@@ -36,6 +36,16 @@ public partial class MainWindow : Window
         // Hidden while the game has the screen, shown again when it exits. Hidden rather than
         // minimised: there is nothing to do in the launcher meanwhile, and a taskbar entry that
         // does nothing is one more thing between the person and the game.
+        // Focus follows the modal in: with the content behind it disabled, whatever had the focus
+        // has just lost it, and Tab from nowhere is a worse place to start than the safe answer.
+        _viewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(LauncherViewModel.AskingSomething) && _viewModel.AskingSomething)
+            {
+                Dispatcher.UIThread.Post(() => KeepButton.Focus(NavigationMethod.Tab));
+            }
+        };
+
         _viewModel.VisibilityRequested += (_, visible) => Dispatcher.UIThread.Post(() =>
         {
             if (visible)

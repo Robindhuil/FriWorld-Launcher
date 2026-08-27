@@ -243,8 +243,12 @@
             <!-- Hairline inside the rounded edge. -->
             <Border CornerRadius="10" BorderThickness="1" BorderBrush="#1AFFFFFF" />
 
-            <!-- Layer 3: content. -->
-            <Grid RowDefinitions="Auto,*,Auto" Margin="44,38,44,0">
+            <!-- Layer 3: content.
+                 Disabled rather than merely covered while a question is up. A scrim stops the
+                 clicks; only this also takes the buttons underneath out of the tab order, which
+                 is the half of "modal" that gets forgotten. -->
+            <Grid RowDefinitions="Auto,*,Auto" Margin="44,38,44,0"
+                  IsEnabled="{Binding !AskingSomething}">
 
                 <!-- Header -->
                 <Grid Grid.Row="0" RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto">
@@ -408,68 +412,6 @@
                             </Grid>
                         </Border>
 
-                        <!-- The uninstall question. In the window rather than a dialog,
-                             because everything else this launcher says is here too. The
-                             destructive answer stays the quiet one. -->
-                        <Border IsVisible="{Binding ConfirmingUninstall}"
-                                CornerRadius="8"
-                                Padding="18,16"
-                                Background="#9E1A1206"
-                                BorderThickness="1"
-                                BorderBrush="#5CFBB800">
-                            <StackPanel Spacing="14">
-                                <StackPanel Spacing="5">
-                                    <TextBlock Text="Odinštalovať hru?"
-                                               FontSize="15" FontWeight="SemiBold"
-                                               TextWrapping="Wrap"
-                                               Foreground="{StaticResource TextPrimary}" />
-                                    <TextBlock Text="Stiahnuté súbory hry sa vymažú. Vrátiť sa to nedá, ale hru sa dá kedykoľvek nainštalovať znova."
-                                               FontSize="14" LineHeight="22"
-                                               TextWrapping="Wrap"
-                                               Foreground="{StaticResource TextSecondary}" />
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <Button Classes="ghost"
-                                            Content="Odinštalovať"
-                                            Command="{Binding ConfirmUninstallCommand}" />
-                                    <Button Classes="link"
-                                            Content="Ponechať"
-                                            Command="{Binding CancelUninstallCommand}" />
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Closing. Not destructive — a partial download is kept — but the
-                             launcher is one window with one job, and neither a stray click on the
-                             corner nor a reflex on Escape should end it. -->
-                        <Border IsVisible="{Binding ConfirmingClose}"
-                                CornerRadius="8"
-                                Padding="18,16"
-                                Background="#9E0A0B10"
-                                BorderThickness="1"
-                                BorderBrush="#42FFFFFF">
-                            <StackPanel Spacing="14">
-                                <StackPanel Spacing="5">
-                                    <TextBlock Text="Zavrieť launcher?"
-                                               FontSize="15" FontWeight="SemiBold"
-                                               TextWrapping="Wrap"
-                                               Foreground="{StaticResource TextPrimary}" />
-                                    <TextBlock Text="{Binding CloseQuestionDetail}"
-                                               FontSize="14" LineHeight="22"
-                                               TextWrapping="Wrap"
-                                               Foreground="{StaticResource TextSecondary}" />
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <Button Classes="ghost"
-                                            Content="Zavrieť"
-                                            Command="{Binding ConfirmCloseCommand}" />
-                                    <Button Classes="link"
-                                            Content="Späť"
-                                            Command="{Binding CancelCloseCommand}" />
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-
                         <!-- Progress. One process with a changing phase name, not four screens. -->
                         <StackPanel Spacing="10" MaxWidth="600" HorizontalAlignment="Left"
                                     IsVisible="{Binding ProgressVisible}">
@@ -564,6 +506,58 @@
                 </Border>
 
             </Grid>
+
+            <!-- Layer 4: the modal. Last child, so it is above the lot. -->
+            <Panel IsVisible="{Binding AskingSomething}">
+
+                <!-- The scrim. A background makes it hit-testable, which is what swallows clicks
+                     meant for anything behind it. -->
+                <Panel Background="#B405060A" />
+
+                <Border MaxWidth="470"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        CornerRadius="10"
+                        Padding="26,24"
+                        Background="#F7141721"
+                        BorderThickness="1"
+                        BorderBrush="#33FFFFFF"
+                        BoxShadow="0 20 60 0 #96000000">
+                    <StackPanel Spacing="20">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="{Binding QuestionTitle}"
+                                       FontSize="18" FontWeight="SemiBold"
+                                       TextWrapping="Wrap"
+                                       Foreground="{StaticResource TextPrimary}" />
+                            <TextBlock Text="{Binding QuestionDetail}"
+                                       FontSize="14" LineHeight="22"
+                                       TextWrapping="Wrap"
+                                       Foreground="{StaticResource TextSecondary}" />
+                        </StackPanel>
+
+                        <!-- The answer that undoes nothing is the one on the right, where the hand
+                             goes, and the destructive one stays quiet on the left. -->
+                        <StackPanel Orientation="Horizontal" Spacing="10"
+                                    HorizontalAlignment="Right">
+                            <Button Classes="ghost"
+                                    IsVisible="{Binding ConfirmingUninstall}"
+                                    Content="Odinštalovať"
+                                    Command="{Binding ConfirmUninstallCommand}" />
+                            <Button Classes="ghost"
+                                    IsVisible="{Binding ConfirmingClose}"
+                                    Content="Zavrieť"
+                                    Command="{Binding ConfirmCloseCommand}" />
+                            <Button Classes="secondary"
+                                    x:Name="KeepButton"
+                                    Height="38"
+                                    FontSize="14"
+                                    Content="{Binding SafeAnswerLabel}"
+                                    Command="{Binding CancelQuestionCommand}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Panel>
+
         </Panel>
     </Border>
 

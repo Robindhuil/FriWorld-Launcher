@@ -88,7 +88,6 @@ public sealed class LauncherViewModel : ObservableObject
         MinimiseCommand = new RelayCommand(() => MinimiseRequested?.Invoke(this, EventArgs.Empty));
         CloseCommand = new RelayCommand(() => ConfirmingClose = true);
         ConfirmCloseCommand = new RelayCommand(() => CloseRequested?.Invoke(this, EventArgs.Empty));
-        CancelCloseCommand = new RelayCommand(() => ConfirmingClose = false);
         RevealCommand = new RelayCommand(Reveal, () => IsInstalled);
         AskUninstallCommand = new RelayCommand(() => ConfirmingUninstall = true, () => IsInstalled && !Busy);
         RepairCommand = new RelayCommand(() => _ = RepairAsync(), () => IsInstalled && !Busy);
@@ -96,7 +95,7 @@ public sealed class LauncherViewModel : ObservableObject
         OpenLogCommand = new RelayCommand(OpenLog);
         DismissCommand = new RelayCommand(Dismiss);
         ConfirmUninstallCommand = new RelayCommand(Uninstall, () => !Busy);
-        CancelUninstallCommand = new RelayCommand(() => ConfirmingUninstall = false);
+        CancelQuestionCommand = new RelayCommand(CancelQuestion);
     }
 
     /// <summary>The one prominent button. What it does depends on <see cref="Action"/>.</summary>
@@ -115,8 +114,6 @@ public sealed class LauncherViewModel : ObservableObject
     public RelayCommand CloseCommand { get; }
 
     public RelayCommand ConfirmCloseCommand { get; }
-
-    public RelayCommand CancelCloseCommand { get; }
 
     /// <summary>Shows the installed game in the file manager.</summary>
     public RelayCommand RevealCommand { get; }
@@ -138,7 +135,8 @@ public sealed class LauncherViewModel : ObservableObject
 
     public RelayCommand ConfirmUninstallCommand { get; }
 
-    public RelayCommand CancelUninstallCommand { get; }
+    /// <summary>The answer that undoes nothing, whichever question is asking.</summary>
+    public RelayCommand CancelQuestionCommand { get; }
 
     public event EventHandler? MinimiseRequested;
 
@@ -175,7 +173,11 @@ public sealed class LauncherViewModel : ObservableObject
         _ => "Počkaj chvíľu",
     };
 
-    public bool PrimaryEnabled => Action != LauncherAction.None && !Busy;
+    /// <summary>
+    /// Also false while a question is up. The main button is the default one, so without this a
+    /// press of Enter would go straight through the modal and start whatever is behind it.
+    /// </summary>
+    public bool PrimaryEnabled => Action != LauncherAction.None && !Busy && !AskingSomething;
 
     /// <summary>
     /// The secondary button exists for one thing only: keeping the build already installed when
@@ -210,10 +212,7 @@ public sealed class LauncherViewModel : ObservableObject
         {
             if (SetField(ref _confirmingUninstall, value))
             {
-                Raise(nameof(NotesVisible));
-                Raise(nameof(InfoVisible));
-                Raise(nameof(PlainTextVisible));
-                Raise(nameof(FailureVisible));
+                RaiseQuestion();
             }
         }
     }
@@ -232,11 +231,7 @@ public sealed class LauncherViewModel : ObservableObject
         {
             if (SetField(ref _confirmingClose, value))
             {
-                Raise(nameof(NotesVisible));
-                Raise(nameof(InfoVisible));
-                Raise(nameof(PlainTextVisible));
-                Raise(nameof(FailureVisible));
-                Raise(nameof(CloseQuestionDetail));
+                RaiseQuestion();
             }
         }
     }
@@ -301,10 +296,22 @@ public sealed class LauncherViewModel : ObservableObject
 
     /// <summary>A bare sentence, for states with neither notes nor progress to show.</summary>
     public bool PlainTextVisible =>
-        !Failed && !ProgressVisible && !AskingSomething && !NotesVisible && !string.IsNullOrEmpty(Detail);
+        !Failed && !ProgressVisible && !NotesVisible && !string.IsNullOrEmpty(Detail);
 
-    /// <summary>Whether a question owns the middle of the window. Two of them can never overlap.</summary>
+    /// <summary>
+    /// Whether a question is on screen. It is shown as a real modal — everything behind it is
+    /// dimmed, unclickable and out of the tab order — so only ever one at a time.
+    /// </summary>
     public bool AskingSomething => ConfirmingUninstall || ConfirmingClose;
+
+    public string QuestionTitle => ConfirmingUninstall ? "Odinštalovať hru?" : "Zavrieť launcher?";
+
+    public string QuestionDetail => ConfirmingUninstall
+        ? "Stiahnuté súbory hry sa vymažú. Vrátiť sa to nedá, ale hru sa dá kedykoľvek nainštalovať znova."
+        : CloseQuestionDetail;
+
+    /// <summary>Named for what it does, not for "no": the button has to say what happens.</summary>
+    public string SafeAnswerLabel => ConfirmingUninstall ? "Ponechať" : "Späť";
 
     public string VersionLine
     {
@@ -326,7 +333,7 @@ public sealed class LauncherViewModel : ObservableObject
         }
     }
 
-    public bool NotesVisible => !Failed && !ProgressVisible && !AskingSomething && !string.IsNullOrEmpty(Notes);
+    public bool NotesVisible => !Failed && !ProgressVisible && !string.IsNullOrEmpty(Notes);
 
     public string FailureHeadline
     {
@@ -410,11 +417,7 @@ public sealed class LauncherViewModel : ObservableObject
         }
     }
 
-    /// <summary>
-    /// Whether the failure block is on screen. The uninstall question takes the same space and
-    /// must win it, otherwise the two draw on top of each other.
-    /// </summary>
-    public bool FailureVisible => Failed && !AskingSomething;
+    public bool FailureVisible => Failed;
 
     public bool LauncherUpdateAvailable => _launcherDownloadPage is not null;
 
@@ -956,6 +959,18 @@ public sealed class LauncherViewModel : ObservableObject
         Detail = new UpdateStatus(UpdateStage.Downloading, PhaseName, download.Fraction, download).DetailLine;
     }
 
+    private void RaiseQuestion()
+    {
+        Raise(nameof(AskingSomething));
+        Raise(nameof(QuestionTitle));
+        Raise(nameof(QuestionDetail));
+        Raise(nameof(CloseQuestionDetail));
+        Raise(nameof(SafeAnswerLabel));
+        Raise(nameof(PrimaryEnabled));
+
+        PrimaryCommand.RaiseCanExecuteChanged();
+    }
+
     private void RaiseButtons()
     {
         Raise(nameof(PrimaryLabel));
@@ -1014,6 +1029,12 @@ public sealed class LauncherViewModel : ObservableObject
                 ConfirmingClose = true;
                 break;
         }
+    }
+
+    private void CancelQuestion()
+    {
+        ConfirmingUninstall = false;
+        ConfirmingClose = false;
     }
 
     private void OpenLog()
