@@ -12,14 +12,14 @@
     }
   },
   "launcher": {
-    "version": "0.1.5-alpha.2",
+    "version": "0.1.6-alpha",
     "downloadUrl": "https://github.com/Robindhuil/FriWorld-Launcher/releases/latest",
-    "notes": "Enter stlaci tlacidlo s fokusom. Otazka pred zavretim okna.",
+    "notes": "Okno sa prisposobi velkosti obrazovky.",
     "platforms": {
       "win-x64": {
-        "url": "https://github.com/Robindhuil/FriWorld-Launcher/releases/download/v0.1.5-alpha.2/FriWorldLauncher.exe",
-        "sha256": "810d2bc5f27b04da1abe6b21b5526d0561354309a5d357eb1758180b847e69eb",
-        "size": 52768505
+        "url": "https://github.com/Robindhuil/FriWorld-Launcher/releases/download/v0.1.6-alpha/FriWorldLauncher.exe",
+        "sha256": "864ad5cf194dbc7551cc411de3a37b933d377ee97400c3cfbd4c775dcf333568",
+        "size": 52772957
       }
     }
   }
