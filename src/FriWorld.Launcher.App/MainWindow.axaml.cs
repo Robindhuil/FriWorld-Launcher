@@ -3,10 +3,13 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
+using System.Linq;
 using FriWorld.Launcher.App.ViewModels;
+using FriWorld.Launcher.Core.Platform;
 
 namespace FriWorld.Launcher.App;
 
@@ -23,6 +26,7 @@ public partial class MainWindow : Window
         DataContext = _viewModel;
 
         ApplyCustomCursor();
+        FitToScreen();
 
         _viewModel.MinimiseRequested += (_, _) =>
             Dispatcher.UIThread.Post(() => WindowState = WindowState.Minimized);
@@ -55,6 +59,33 @@ public partial class MainWindow : Window
         {
             BeginMoveDrag(e);
         }
+    }
+
+    /// <summary>
+    /// Sizes the window for the screen it is about to open on, and scales its contents by the
+    /// same factor.
+    ///
+    /// Done before the window is shown, because a window that resizes itself once it is already
+    /// on screen is a flicker people notice. That means <see cref="Screens.Primary"/> rather than
+    /// the screen this window is on — the window has no position yet — which suits the centred
+    /// startup position anyway.
+    /// </summary>
+    private void FitToScreen()
+    {
+        var screen = Screens.Primary ?? Screens.All.FirstOrDefault();
+
+        // WorkingArea is in physical pixels and the window is measured in logical ones, so the
+        // display scaling has to come out before the two can be compared.
+        var scaling = screen?.Scaling ?? 1.0;
+
+        var scale = screen is not null && scaling > 0
+            ? WindowFit.ScaleFor(screen.WorkingArea.Width / scaling, screen.WorkingArea.Height / scaling)
+            : 1.0;
+
+        Scaler.LayoutTransform = new ScaleTransform(scale, scale);
+
+        Width = WindowFit.DesignWidth * scale;
+        Height = WindowFit.DesignHeight * scale;
     }
 
     private void ApplyCustomCursor()

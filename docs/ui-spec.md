@@ -27,8 +27,9 @@ pohľad, nie objavovateľný**.
 
 | vlastnosť | hodnota |
 |---|---|
-| veľkosť | **980 × 720** |
-| zmena veľkosti | **nie** — pevná |
+| návrhová veľkosť | **980 × 720** |
+| skutočná veľkosť | podľa obrazovky, viac nižšie |
+| zmena veľkosti užívateľom | **nie** — pevná |
 | systémový rám | **žiadny** |
 | systémová lišta s názvom | **žiadna** |
 | zatváranie | **vlastné tlačidlo** |
@@ -36,6 +37,38 @@ pohľad, nie objavovateľný**.
 | pozícia pri štarte | stred obrazovky |
 
 Okno musí ísť **ťahať za pozadie** — bez systémovej lišty inak niet za čo chytiť.
+
+### Veľkosť podľa obrazovky
+
+**Všetko v okne je navrhnuté v jednotkách 980 × 720** — veľkosti písma, výšky tlačidiel,
+odsadenia. Menšia obrazovka preto neznamená iné rozloženie, ale **celé okno zmenšené jedným
+faktorom**. Pomer strán sa nikdy nemení.
+
+Faktor sa ráta z pracovnej plochy obrazovky, teda bez panela úloh:
+
+| medza | hodnota | prečo |
+|---|---|---|
+| najviac šírky | 50 % | širšie a okno prestáva pôsobiť ako okno |
+| najviac výšky | 65 % | výška je na notebookoch tá, ktorá dochádza skôr |
+| najmenej | 0,70 | nižšie už stavový riadok klesá pod 10,5 px |
+| najviac | 1,00 | väčšie nemá čo ukázať a render by zmäkol |
+
+Medze sú odvodené z plochy **2103 × 1183**, kde bola návrhová veľkosť posúdená ako správna.
+Ležia kúsok nad tým, čo tá plocha potrebuje, aby jej okno zostalo plné aj po odrátaní panela.
+
+| pracovná plocha | okno |
+|---|---|
+| 2103 × 1183 a viac | 980 × 720 |
+| 1920 × 1032 | 913 × 671 |
+| 1600 × 852 | 754 × 554 |
+| 1366 × 728 | 686 × 504 |
+| 1024 × 728 | 686 × 504 |
+
+Spodná medza smie žiadať viac, než obrazovka má; vtedy ustúpi, aby sa okno na plochu zmestilo.
+Okno bez systémovej lišty sa nedá pritiahnuť späť, keď raz pretečie cez okraj.
+
+Počíta sa raz, **ešte pred zobrazením okna** — okno, ktoré sa zmenší až keď už je na
+obrazovke, je bliknutie, ktoré si človek všimne.
 
 **Otvorené:** má byť aj tlačidlo minimalizácie? Pri sťahovaní 400 MB si človek pravdepodobne
 bude chcieť medzitým robiť niečo iné. Odporúčam áno, vľavo od zatvárania, tichšie.

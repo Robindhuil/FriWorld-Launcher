@@ -8,7 +8,6 @@
         x:DataType="vm:LauncherViewModel"
         Title="FriWorld"
         Icon="/Assets/icon.png"
-        Width="980" Height="720"
         CanResize="False"
         WindowDecorations="None"
         Background="Transparent"
@@ -210,8 +209,13 @@
         </Style>
     </Window.Styles>
 
+    <!-- Everything below is laid out at the design size, 980 x 720, and the whole of it is
+         scaled by one factor to suit the screen. LayoutTransformControl rather than a render
+         transform, so the window measures to the scaled size instead of being clipped. -->
+    <LayoutTransformControl x:Name="Scaler">
+
     <!-- Rounded outer edge. The window itself is transparent so the corners are real. -->
-    <Border CornerRadius="10" ClipToBounds="True" Background="#0B0C11">
+    <Border Width="980" Height="720" CornerRadius="10" ClipToBounds="True" Background="#0B0C11">
         <Panel>
 
             <!-- Layer 1: the render. Slightly desaturated and darkened so it stays a
@@ -562,4 +566,5 @@
         </Panel>
     </Border>
 
+    </LayoutTransformControl>
 </Window>
