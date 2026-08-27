@@ -316,7 +316,7 @@
 
                         <!-- Failure. The word "CHYBA" carries the meaning, not the colour —
                              colour alone excludes anyone who cannot see the difference. -->
-                        <Border IsVisible="{Binding Failed}"
+                        <Border IsVisible="{Binding FailureVisible}"
                                 CornerRadius="8"
                                 Padding="18,16"
                                 Background="#9E3C0E0C"
@@ -340,6 +340,37 @@
                                                Foreground="{StaticResource TextSecondary}" />
                                 </StackPanel>
                             </Grid>
+                        </Border>
+
+                        <!-- The uninstall question. In the window rather than a dialog,
+                             because everything else this launcher says is here too. The
+                             destructive answer stays the quiet one. -->
+                        <Border IsVisible="{Binding ConfirmingUninstall}"
+                                CornerRadius="8"
+                                Padding="18,16"
+                                Background="#9E1A1206"
+                                BorderThickness="1"
+                                BorderBrush="#5CFBB800">
+                            <StackPanel Spacing="14">
+                                <StackPanel Spacing="5">
+                                    <TextBlock Text="Odinštalovať hru?"
+                                               FontSize="15" FontWeight="SemiBold"
+                                               TextWrapping="Wrap"
+                                               Foreground="{StaticResource TextPrimary}" />
+                                    <TextBlock Text="Stiahnuté súbory hry sa vymažú. Vrátiť sa to nedá, ale hru sa dá kedykoľvek nainštalovať znova."
+                                               FontSize="14" LineHeight="22"
+                                               TextWrapping="Wrap"
+                                               Foreground="{StaticResource TextSecondary}" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <Button Classes="ghost"
+                                            Content="Odinštalovať"
+                                            Command="{Binding ConfirmUninstallCommand}" />
+                                    <Button Classes="link"
+                                            Content="Ponechať"
+                                            Command="{Binding CancelUninstallCommand}" />
+                                </StackPanel>
+                            </StackPanel>
                         </Border>
 
                         <!-- Progress. One process with a changing phase name, not four screens. -->

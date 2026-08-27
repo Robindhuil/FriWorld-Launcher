@@ -183,6 +183,7 @@ public sealed class LauncherViewModel : ObservableObject
                 Raise(nameof(NotesVisible));
                 Raise(nameof(InfoVisible));
                 Raise(nameof(PlainTextVisible));
+                Raise(nameof(FailureVisible));
             }
         }
     }
@@ -336,9 +337,16 @@ public sealed class LauncherViewModel : ObservableObject
                 Raise(nameof(PlainTextVisible));
                 Raise(nameof(NotesVisible));
                 Raise(nameof(StatusDot));
+                Raise(nameof(FailureVisible));
             }
         }
     }
+
+    /// <summary>
+    /// Whether the failure block is on screen. The uninstall question takes the same space and
+    /// must win it, otherwise the two draw on top of each other.
+    /// </summary>
+    public bool FailureVisible => Failed && !ConfirmingUninstall;
 
     public bool LauncherUpdateAvailable => _launcherDownloadPage is not null;
 
