@@ -69,16 +69,16 @@ public class PlaySessionTests
 
         model.PrimaryCommand.Execute(null);
 
-        // The stub runs for two seconds; the window is hidden for that long and no longer.
-        await Settle(() => !window.IsVisible, TimeSpan.FromSeconds(15));
-        Assert.False(window.IsVisible, "the launcher never got out of the way");
+        // The stub outlives the five second grace period, so the launcher gets as far as hiding.
+        await Settle(() => !window.IsVisible, TimeSpan.FromSeconds(30));
+        Assert.False(window.IsVisible, $"the launcher never got out of the way: {Describe(model)}");
 
         await Settle(
             () => window.IsVisible && !model.Busy && model.Action != LauncherAction.None,
-            TimeSpan.FromSeconds(30));
+            TimeSpan.FromSeconds(60));
 
-        Assert.True(window.IsVisible, "the launcher never came back");
-        Assert.False(model.Busy, "the launcher came back still working");
+        Assert.True(window.IsVisible, $"the launcher never came back: {Describe(model)}");
+        Assert.False(model.Busy, $"the launcher came back still working: {Describe(model)}");
 
         // The bug: it came back showing the text the check sets before it starts, and stayed.
         Assert.True(model.Status == "Pripravené", Describe(model));

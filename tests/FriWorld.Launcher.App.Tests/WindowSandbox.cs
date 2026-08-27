@@ -28,8 +28,9 @@ internal static class WindowSandbox
     [ModuleInitializer]
     internal static void BuildTheMockRelease()
     {
-        // The stub stays alive for a couple of seconds, so a test can watch the launcher go away
-        // while it runs and come back when it stops.
+        // Longer than the launch grace period, which is five seconds: a game that stops inside it
+        // counts as one that failed to start, and the launcher deliberately stays put and says so.
+        // The round trip under test only happens for a game that outlives it.
         Manifest = MockReleaseBuilder.BuildAsync(
             Path.Combine(Home, "store"),
             new MockReleaseBuilder.Options
@@ -37,7 +38,7 @@ internal static class WindowSandbox
                 Version = "1.0.0-mock",
                 PayloadBytes = 4096,
                 Platforms = [PlatformKey.Current],
-                StubRunsForSeconds = 2,
+                StubRunsForSeconds = 8,
             }).GetAwaiter().GetResult();
 
         Environment.SetEnvironmentVariable(LauncherConfiguration.ManifestUrlVariable, Manifest);
