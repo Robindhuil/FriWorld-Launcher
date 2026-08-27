@@ -15,6 +15,9 @@ _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.5-alpha.2**._
 ## [0.1.5-alpha.2] - 2026-08-27
 
 ### Fixed
+- **Test zbieral progress do obyčajného `List`** z callbackov, ktoré `Progress<T>` púšťa na
+  thread poole. Dva naraz zoznam poškodia a zhodia celý test host — na Windows zriedka, na
+  Linuxe spoľahlivo. Našlo to CI.
 - **Enter obchádzal fokus.** 0.1.5-alpha odchátával Enter na celom okne a spúšťal hlavné
   tlačidlo bez ohľadu na to, kde Tab skončil — posúvanie fokusu tak nerobilo nič a prstenec
   klamal o tom, čo Enter spraví. Enter teraz stlačí tlačidlo, ktoré má fokus; hlavné tlačidlo

@@ -249,8 +249,12 @@ public class UpdatePipelineTests
         using var temp = new TempDirectory("e2e-progress");
         var manifest = await BuildRelease(temp.Combine("store"), "1.0.0-mock");
 
-        var stages = new List<UpdateStage>();
-        var progress = new Progress<UpdateStatus>(s => stages.Add(s.Stage));
+        // Progress<T> without a captured SynchronizationContext runs its callbacks on the thread
+        // pool, and two of them can land at once. A plain List corrupts itself when that happens
+        // and takes the whole test host down with an ArgumentOutOfRangeException — rarely on
+        // Windows, reliably on Linux.
+        var stages = new System.Collections.Concurrent.ConcurrentQueue<UpdateStage>();
+        var progress = new Progress<UpdateStatus>(s => stages.Enqueue(s.Stage));
 
         var orchestrator = OrchestratorFor(manifest, temp.Combine("root"));
         await orchestrator.EnsureLatestAsync(progress);
