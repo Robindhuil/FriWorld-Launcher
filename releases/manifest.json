@@ -12,14 +12,14 @@
     }
   },
   "launcher": {
-    "version": "0.1.5-alpha",
+    "version": "0.1.5-alpha.2",
     "downloadUrl": "https://github.com/Robindhuil/FriWorld-Launcher/releases/latest",
-    "notes": "Klavesnica: Enter spusti, Escape ustupi.",
+    "notes": "Enter stlaci tlacidlo s fokusom. Otazka pred zavretim okna.",
     "platforms": {
       "win-x64": {
-        "url": "https://github.com/Robindhuil/FriWorld-Launcher/releases/download/v0.1.5-alpha/FriWorldLauncher.exe",
-        "sha256": "a8161035172498e6dfa4f7bee6ac043dd0aa5e9358ac279d50841264c9ce3c54",
-        "size": 52764399
+        "url": "https://github.com/Robindhuil/FriWorld-Launcher/releases/download/v0.1.5-alpha.2/FriWorldLauncher.exe",
+        "sha256": "810d2bc5f27b04da1abe6b21b5526d0561354309a5d357eb1758180b847e69eb",
+        "size": 52768505
       }
     }
   }
