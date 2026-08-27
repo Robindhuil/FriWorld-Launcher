@@ -16,7 +16,7 @@
     <Product>FriWorld Launcher</Product>
     <Company>Crimsoned Rose</Company>
     <!-- Launcher versions independently of the game's bundleVersion. -->
-    <Version>0.1.3-alpha</Version>
+    <Version>0.1.4-alpha</Version>
   </PropertyGroup>
 
 </Project>

@@ -10,7 +10,24 @@ na to číslo.
 
 ## [Unreleased]
 
-_Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.3-alpha**._
+_Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.4-alpha**._
+
+## [0.1.4-alpha] - 2026-08-27
+
+### Added
+- **`pack --launcher-only`** prepíše iba sekciu `launcher` v manifeste, ktorý už existuje.
+  Vydanie launchera sa hry netyká, a všetok build hry býva dovtedy dávno zmazaný, takže
+  celý `pack` nemá z čoho čítať — sekcia sa upravovala ručne, čím sa stratívala jediná
+  záruka, ktorú balenie má: že sa manifest po zápise prečíta späť. Úprava sa robi nad
+  JSON stromom, takže v súbore zostane aj to, čomu launcher nerozumie — tolerovať neznáme
+  polia pri čítaní nemá cenu, ak ich nástroje ticho zahadzujú.
+  `--drop-launcher` sekciu odstráni; to je bezpečný návrat.
+- Režim odmietne aj binárku, **ktorú by launcher ticho ignoroval** — krátky sha256, nulovú
+  veľkosť, adresu, ktorá nie je https. Vydanie by vyzeralo hotovo a self-update by potichu
+  klesol na obyčajný odkaz.
+- **CI na GitHub Actions.** `dotnet build -c Release` a `dotnet test` na Windows aj Linuxe pri
+  každom push a pull requeste. `PublishedManifestTests` tým prestávajú závisieť na tom, či si
+  niekto spomenie ich spustiť — manifest, ktorý by sa nedal prečítať, zhodí build.
 
 ## [0.1.3-alpha] - 2026-08-27
 
