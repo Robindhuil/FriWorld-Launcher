@@ -6,6 +6,13 @@
 robiť. Účel je, aby sa pri tom nezačínalo od nuly a nenarazilo sa na to, na čo sme prišli
 už pri stavbe zvyšku.
 
+| sekcia | čo v nej je |
+|---|---|
+| [Repozitár po anglicky](#repozitár-po-anglicky) | dokumentácia má byť v angličtine |
+| [0.2.0-alpha](#020-alpha) | najbližšie funkcie |
+| [Návrhy](#návrhy-ktoré-čakajú-na-zaradenie) | dáva zmysel, nemá termín |
+| [Bez verzie](#bez-verzie) | čaká na niekoho iného alebo na rozhodnutie mimo kódu |
+
 Hotové veci sú v [CHANGELOG.md](../CHANGELOG.md), rozhodnutia v
 [decisions/](decisions/README.md).
 
@@ -113,6 +120,74 @@ z fakulty práve vtedy, keď sa aj tak čaká na sťahovanie.
   pár riadkov a bez toho je to prvok, ktorý časti ľudí prekáža.
 - Obrázky sa načítavajú do pamäte naraz alebo lenivo. Pri 2,7 MB PNG je rozdiel citeľný
   a launcher má bežať aj na školskom počítači.
+
+---
+
+## Návrhy, ktoré čakajú na zaradenie
+
+Nie sú v žiadnej verzii. Zoradené podľa toho, čo prinesú.
+
+### Inštalácia v triede
+
+Učiteľ, ktorý chce hru na tridsiatich počítačoch v učebni, dnes stiahne **30 × 415 MB cez
+jedno školské pripojenie**. To je 12 GB a buď to trvá hodinu, alebo to sieť odmietne.
+
+**Launcher to už vie.** `FRIWORLD_MANIFEST_URL` aj `manifestUrl` v `launcher.json` berú
+cestu na disku, nielen adresu — viď [Konfigurácia](architecture.md#konfigurácia). A `pack`
+bez `--base-url` píše holé názvy súborov, ktoré sa rátajú voči umiestneniu manifestu. Stačí
+teda priečinok:
+
+```
+USB kľúč alebo sieťový disk
+  manifest.json
+  FriWorld-<verzia>-win-x64.zip
+  FriWorldLauncher.exe
+  launcher.json          manifestUrl ukazuje na manifest vedľa
+```
+
+Jedno stiahnutie, tridsať inštalácií z lokálneho zdroja.
+
+**Chýba len postup.** Patrí do [`deploying.md`](deploying.md) ako vlastná sekcia, písaná pre
+učiteľa, nie pre vývojára. Prípadne skript, ktorý ten priečinok poskladá z už vydaného
+releasu. Kód sa nemení.
+
+Otvorené je, či má launcher po takej inštalácii ostať na lokálnom zdroji, alebo sa má
+prepnúť na sieťový manifest — prvé znamená, že hra sa už nikdy neaktualizuje sama, druhé, že
+sa pri prvom spustení stiahne to isté, čomu sme sa práve vyhli.
+
+### Vydanie jedným príkazom
+
+Vydanie je dnes desať krokov v dvoch repozitároch: zdvihnúť verziu, zbuildiť balíček,
+`gh release create`, `pack --launcher-only`, stiahnuť binárku z GitHubu a overiť hash,
+commitnúť manifest, pushnúť, upraviť odkaz na Hube, pushnúť.
+
+Presne táto trieda chyby už raz udrela — zip hlásil predošlú verziu.
+`build-release-package.ps1` odvtedy overuje, že obidva assety nesú tú istú verziu, ale
+zvyšok reťaze nekontroluje nič.
+
+`tools/release-launcher.ps1 -Version <verzia>` by to spravil naraz, vrátane overenia hashu
+proti súboru **stiahnutému z GitHubu** — nie proti lokálnej kópii. Na konci vypíše, čo
+zostáva spraviť ručne na Hube.
+
+Kontrolný zoznam pre launcher v [`deploying.md`](deploying.md#12-kontrolný-zoznam) je
+zoznam toho, čo by taký skript mal robiť.
+
+### Tri vety, ktoré okno nehovorí
+
+| kde | čo chýba |
+|---|---|
+| pred inštaláciou | koľko hra zaberie **po rozbalení** (~750 MB), nie len čo sa stiahne (415 MB). Na školskom počítači rozhoduje práve to číslo, a `DiskSpace.Require` ho už počíta. |
+| otázka na odinštalovanie | že **uložené pozície zostanú**. Hovorí, že hru sa dá nainštalovať znova; nehovorí to, čo hráča naozaj zaujíma. |
+| nikde | ako dostať FriWorld z počítača **úplne**. Odinštalovanie zmaže hru a cache, ale nechá `launcher/`, denník a `installed.json`. CLI má `clean --yes`, okno nemá nič — a na zdieľanom školskom počítači je to reálna požiadavka. |
+
+Je to jeden commit. Prvé dve sú texty, tretie je tlačidlo nad existujúcim príkazom.
+
+### Drobnosti
+
+| čo | poznámka |
+|---|---|
+| denník rastie donekonečna | reálne 1,6 kB za deň používania, takže to nikoho nedobehne skoro; strop je päť riadkov |
+| `KeepOpenAfterLaunch` | nastavenie v `launcher.json`, o ktorom sa nikde nepíše. Buď zdokumentovať v `CITAJ-MA.txt`, alebo zahodiť |
 
 ---
 
