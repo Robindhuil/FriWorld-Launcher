@@ -358,9 +358,9 @@ stav       nemení sa
 hlavné     nemení sa
 ```
 
-**Ničivá odpoveď je tá tichšia.** „Odinštalovať" je obrysové tlačidlo, „Ponechať" textové;
-hlavnú farbu nenesie ani jedno. Otázka je v okne, nie v systémovom dialógu — všetko ostatné,
-čo launcher hovorí, je tiež tu.
+**Ničivá odpoveď je tá tichšia** a stojí vľavo; bezpečná je vpravo, kam ide ruka. Hlavnú
+farbu nenesie ani jedna. Otázka je v okne, nie v systémovom dialógu — všetko ostatné, čo
+launcher hovorí, je tiež tu. Ako presne vyzerá, je v sekcii 7.11.
 
 Po odinštalovaní:
 
@@ -414,7 +414,43 @@ hodinu, tak sa vracia s tým, čo platí teraz, nie s tým, čo platilo pred hra
 Keď je nastavené `keepOpenAfterLaunch`, okno zostane vidieť so stavom **Beží** a hlavné
 tlačidlo je zakázané, kým hra beží.
 
-### 7.11 Upozornenie na novší launcher
+### 7.11 Ako otázka vyzerá
+
+Obidve otázky — odinštalovanie aj zavretie — kreslí **jeden modal**. Naraz je na obrazovke
+najviac jeden; dve karty by ukazovali nadpis jednej s tlačidlami druhej.
+
+```
+┌──────────────────────────────────────────────────────┐
+│░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
+│░░░░░░░┌────────────────────────────────────┐░░░░░░░░░│
+│░░░░░░░│ Zavrieť launcher?                  │░░░░░░░░░│
+│░░░░░░░│ Hra zostane nainštalovaná.         │░░░░░░░░░│
+│░░░░░░░│                                    │░░░░░░░░░│
+│░░░░░░░│            [ Zavrieť ]  [ Späť ]   │░░░░░░░░░│
+│░░░░░░░└────────────────────────────────────┘░░░░░░░░░│
+│░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
+└──────────────────────────────────────────────────────┘
+```
+
+Karta je v strede okna, najviac 470 široká, nad všetkým ostatným. Pozadie za ňou stmavne.
+
+**Modal sú tri sľuby, nie jeden:**
+
+| sľub | čo ho drží |
+|---|---|
+| je navrchu | poradie v strome — je posledný |
+| nič za ním sa nedá kliknúť | zatienenie má pozadie, takže kliknutia pohíta |
+| nič za ním sa nedá dosiahnuť klávesnicou | obsah pod ním je **zakázaný** — zakázané prvky tabulátor preskočí |
+
+Ten tretí sa najľahšie zabudne. Hlavné tlačidlo je predvolené, takže bez neho by Enter
+prešiel modalom rovno do inštalácie.
+
+Fokus sa pri otvorení presunie na **bezpečnú odpoveď** — obsah, ktorý ho mal, oň práve
+zakázaním prišiel, a Tab z ničoho je horšie miesto na začiatok.
+
+Escape otázku zruší, nikdy na ňu neodpovie áno.
+
+### 7.12 Upozornenie na novší launcher
 
 Samostatný panel v strede, môže sa objaviť **súbežne s ktorýmkoľvek stavom**.
 
