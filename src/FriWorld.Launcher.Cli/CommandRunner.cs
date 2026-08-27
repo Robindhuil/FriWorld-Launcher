@@ -108,6 +108,11 @@ public static class CommandRunner
     /// </summary>
     private static async Task<int> Pack(CommandLineOptions options, CancellationToken ct)
     {
+        if (options.Has("launcher-only"))
+        {
+            return PackLauncherOnly(options);
+        }
+
         var input = options.Value("input")
             ?? throw new PackagingException("--input is required: the folder holding the platform subfolders.");
         var version = options.Value("version")
@@ -139,6 +144,48 @@ public static class CommandRunner
         Console.WriteLine();
         Console.WriteLine("Upload the archives and the manifest, then check it end to end with:");
         Console.WriteLine($"  launcher check --manifest \"{result.ManifestPath}\"");
+
+        return 0;
+    }
+
+    /// <summary>
+    /// Rewrites only the launcher section of an existing manifest.
+    ///
+    /// A launcher release leaves the game alone, and by then the game's build output is usually
+    /// long deleted, so there is nothing for a full pack to read. Editing the file by hand works
+    /// but loses the read-back that packing does; this keeps it.
+    /// </summary>
+    private static int PackLauncherOnly(CommandLineOptions options)
+    {
+        var manifestPath = options.Value("manifest")
+            ?? throw new PackagingException(
+                "--launcher-only needs --manifest, the manifest file to edit in place.");
+
+        if (options.Value("input") is not null || options.Value("version") is not null)
+        {
+            throw new PackagingException(
+                "--launcher-only edits an existing manifest, so --input and --version do not apply. " +
+                "Drop them, or drop --launcher-only to build a whole release.");
+        }
+
+        var launcher = options.Has("drop-launcher") ? null : ParseLauncherRelease(options);
+
+        if (launcher is null && !options.Has("drop-launcher"))
+        {
+            throw new PackagingException(
+                "Nothing to write. Give --launcher-version and --launcher-url, " +
+                "or --drop-launcher to remove the section.");
+        }
+
+        LauncherSectionWriter.Write(manifestPath, launcher);
+
+        Console.WriteLine();
+        Console.WriteLine(launcher is null
+            ? $"Removed the launcher section from {Path.GetFullPath(manifestPath)}"
+            : $"Wrote launcher {launcher.Version} into {Path.GetFullPath(manifestPath)}");
+        Console.WriteLine();
+        Console.WriteLine("Publish it last, after the binary is actually reachable, then:");
+        Console.WriteLine($"  launcher check --manifest \"{manifestPath}\"");
 
         return 0;
     }
@@ -590,6 +637,13 @@ public static class CommandRunner
               --launcher-file <p>=<f>  Launcher binary per platform; enables self-update
               --launcher-base-url <u>  https folder the launcher binaries are served from
               --min-launcher <tag>     Refuse this release on older launchers
+
+            pack --launcher-only
+              Rewrites only the launcher section of a manifest that already exists, for when the
+              launcher is released on its own and the game's build output is long gone.
+              --manifest <path>        Manifest file to edit in place (required)
+              --drop-launcher          Remove the section instead; the safe rollback
+              plus the --launcher-* options above
 
             mock-release
               --out <path>             Output folder (default mock/store)

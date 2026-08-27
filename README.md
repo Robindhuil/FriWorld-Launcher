@@ -54,7 +54,7 @@ src/
   FriWorld.Launcher.Core/   všetka mechanika, bez UI
   FriWorld.Launcher.Cli/    bezhlavý front end — všetko sa dá odladiť bez okna
   FriWorld.Launcher.App/    Avalonia okno
-tests/                      172 testov
+tests/                      184 testov
 tools/
   game-repo/                súbory, ktoré patria do repa hry
 docs/
@@ -83,6 +83,7 @@ dotnet run --project src/FriWorld.Launcher.Cli -- help
 | `uninstall --yes` | zmaže nainštalovanú hru, log aj uložené pozície ponechá |
 | `self-update` | vymení samotný launcher |
 | `pack` | z Unity buildov spraví archívy, checksummy a manifest |
+| `pack --launcher-only` | prepíše len sekciu `launcher` v existujúcom manifeste |
 | `mock-release` | vygeneruje falošný release |
 | `clean --yes` | zmaže celý inštalačný koreň |
 

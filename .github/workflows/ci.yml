@@ -1,0 +1,37 @@
+# The test suite is the only thing standing between a hand-edited manifest and every launcher in
+# the wild, so it must not depend on anyone remembering to run it.
+#
+# Windows is the platform that ships. Linux runs too, because the code claims to support it and an
+# untested claim is not one — the archive, execute bit and path handling differ there.
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - run: dotnet restore
+
+      # Warnings are errors for nullability, so a build that passes here is a real signal.
+      - run: dotnet build --no-restore -c Release
+
+      # PublishedManifestTests read releases/manifest.json out of the checkout, which is the point:
+      # a manifest that would not parse fails the build rather than reaching anyone.
+      - run: dotnet test --no-build -c Release --logger "console;verbosity=normal"

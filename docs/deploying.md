@@ -352,19 +352,22 @@ dotnet run --project src/FriWorld.Launcher.Cli -- pack \
 
 Potom `manifest.json` do `releases/` a pushnúť.
 
-**Keď build hry nie je po ruke** — a po vydaní hry býva `Build/` už zmazaný — `pack` sa
-spustiť nedá, lebo chce vstup. Vtedy sa v `releases/manifest.json` upraví **iba sekcia
-`launcher`**: `version`, `notes`, `url`, `sha256` a `size`. Sekcia hry sa nedotýka, hra sa
-nevydáva.
+**Keď build hry nie je po ruke** — a po vydaní hry býva `Build/` už zmazaný — použije sa
+`--launcher-only`. Prepíše **iba sekciu `launcher`** v manifeste, ktorý už existuje; sekcie
+hry sa nedotkne a nechá v súbore aj to, čomu sám nerozumie:
 
 ```bash
-sha256sum dist/launcher/<verzia>/FriWorldLauncher.exe
-stat -c %s dist/launcher/<verzia>/FriWorldLauncher.exe
+dotnet run --project src/FriWorld.Launcher.Cli -- pack --launcher-only   --manifest releases/manifest.json   --launcher-version <verzia>   --launcher-notes "Jedna veta."   --launcher-url "https://github.com/Robindhuil/FriWorld-Launcher/releases/latest"   --launcher-file "win-x64=dist/launcher/<verzia>/FriWorldLauncher.exe"   --launcher-base-url "https://github.com/Robindhuil/FriWorld-Launcher/releases/download/v<verzia>"
 ```
 
-Hodnoty overuj proti **súboru stiahnutému z GitHubu**, nie proti lokálnej kópii — zaujíma
-nás, čo dostane hráč. Ručná úprava obchádza to, že `pack` si manifest po zápise prečíta
-späť, tak sa to musí nahradiť dvomi vecami:
+Sha256 aj veľkosť si spočíta sám zo súboru a manifest si po zápise **prečíta späť**, takže
+sa nevydá niečo, čo by launcher odmietol. Odmietne aj binárku, ktorú by launcher ticho
+ignoroval — krátky sha256, nulovú veľkosť alebo adresu, ktorá nie je https.
+
+`--drop-launcher` sekciu odstráni. To je bezpečný návrat: bez nej launcher len ukáže odkaz
+na stiahnutie.
+
+Potom to ešte over proti tomu, čo dostane hráč — nie proti lokálnej kópii:
 
 ```bash
 dotnet test                                     # PublishedManifestTests číta releases/manifest.json
