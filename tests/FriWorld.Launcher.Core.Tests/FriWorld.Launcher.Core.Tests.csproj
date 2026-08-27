@@ -5,6 +5,15 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+
+    <!--
+      Not the project name, for the same reason Core carries one: Smart App Control judges unsigned
+      assemblies by name, and once it decides against one every rebuild under that name fails to
+      load. It did that to FriWorldLauncher.dll, then FriWorld.Launcher.Core.dll, then this. The
+      whole suite goes down with it, so the name is a thing that gets changed, not defended.
+      InternalsVisibleTo in Core has to match whatever this says.
+    -->
+    <AssemblyName>FriWorldLauncherSuite</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

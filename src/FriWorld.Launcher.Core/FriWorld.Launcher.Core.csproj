@@ -13,7 +13,8 @@
 
   <ItemGroup>
     <!-- The path-traversal guard and the progress throttle are internal but worth testing directly. -->
-    <InternalsVisibleTo Include="FriWorld.Launcher.Core.Tests" />
+    <!-- Matches AssemblyName in the test project, which is not its project name. See there. -->
+    <InternalsVisibleTo Include="FriWorldLauncherSuite" />
   </ItemGroup>
 
 </Project>

@@ -42,7 +42,7 @@ ostré neprepíše. Priečinok je v `.gitignore`.
 dotnet test
 ```
 
-184 testov. Pipeline **nie je mockovaná okrem siete**: vyrobí sa skutočný archív, skutočne
+197 testov. Pipeline **nie je mockovaná okrem siete**: vyrobí sa skutočný archív, skutočne
 sa spočíta checksum, skutočne sa rozbalí strom aj s právami a skutočne sa vymenia
 priečinky. Jediný rozdiel oproti ostrej prevádzke je `file://` namiesto `https://`.
 
@@ -100,7 +100,11 @@ Preto má projekt `AssemblyName` iný, než je jeho meno:
 ```
 
 Menné priestory sa nemenia, len súbor na disku. Keď to raz padne znova, odpoveď je to isté:
-ďalšie meno.
+ďalšie meno. Padlo to potom aj na samotnej testovacej assembly, takže tá sa volá
+`FriWorldLauncherSuite` — a `InternalsVisibleTo` v `Core` musí sedieť s tým menom, nie
+s menom projektu.
+
+Meno je vec, ktorá sa mení, nie bráni. Na CI to nenastáva, tam Smart App Control nie je.
 
 Z rovnakého dôvodu si `run-under-smart-app-control.ps1` vyrába **nové meno pri každom
 spustení**. Kto chce build medzi spusteniami cachovať, dá `-AssemblyName`.

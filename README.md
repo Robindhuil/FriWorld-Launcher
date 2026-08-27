@@ -54,7 +54,7 @@ src/
   FriWorld.Launcher.Core/   všetka mechanika, bez UI
   FriWorld.Launcher.Cli/    bezhlavý front end — všetko sa dá odladiť bez okna
   FriWorld.Launcher.App/    Avalonia okno
-tests/                      184 testov
+tests/                      197 testov
 tools/
   game-repo/                súbory, ktoré patria do repa hry
 docs/

@@ -164,6 +164,35 @@ obidve predošlé.
 Vlastné, vpravo hore. Bežné správanie: zvýraznenie pri prejdení myšou, jasný cieľ na
 kliknutie (najmenej 32 × 32 px). Vedľa neho tichšia minimalizácia.
 
+### Klávesnica
+
+Vlastný rám okna znamená, že systém neponúke žiadnu klávesovú skratku sám. Dve, ktoré každý
+čaká, sú preto zapojené ručne.
+
+**Enter** stlačí hlavné tlačidlo. **Okrem chvíle, keď je na obrazovke otázka na odinštalovanie**
+— vtedy nerobí nič. Odpoveď na ňu sa dáva myšou alebo Escapom, nikdy nie tým istým Enterom,
+ktorým sa o sekundu skôr spúšťala hra.
+
+**Escape** ustupuje od toho, čo je najviac vpredu:
+
+| stav | čo Escape spraví |
+|---|---|
+| otázka na odinštalovanie | odpovie **Ponechať** |
+| beží sťahovanie | zruší ho, tak ako tlačidlo Zrušiť |
+| rozbaľuje sa alebo inštaluje | **nič** |
+| čokoľvek iné | zavrie okno |
+
+Ten tretí riadok je zámerný. Escape je reflex, a reflex nesmie byť schopný zabiť proces
+uprostred rozbaľovania alebo výmeny priečinkov. Zavrieť sa vtedy stále dá — ale kliknutím,
+čo je rozhodnutie, nie reflex.
+
+Poradie je [otestované](../tests/FriWorld.Launcher.Core.Tests/DismissChoiceTests.cs) vrátane
+toho, že **počas práce Escape nikdy nezavrie okno**.
+
+Fokus musí byť vidieť. Predvolený čiarkovaný rámček sa na fotografickom pozadí stratí, takže
+tlačidlá dostávajú biely dvojpixelový obrys — len pri `:focus-visible`, aby sa neobjavoval po
+kliknutí myšou.
+
 ### Ponuka `⋯` — akcie launchera
 
 **Vľavo hore**, rovnaká veľkosť ako tlačidlá hlavičky vpravo. Rozbalí sa nadol zarovnaná

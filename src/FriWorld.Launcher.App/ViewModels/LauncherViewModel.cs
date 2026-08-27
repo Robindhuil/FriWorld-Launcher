@@ -91,6 +91,8 @@ public sealed class LauncherViewModel : ObservableObject
         RepairCommand = new RelayCommand(() => _ = RepairAsync(), () => IsInstalled && !Busy);
         RecheckCommand = new RelayCommand(() => _ = RefreshAsync(), () => !Busy);
         OpenLogCommand = new RelayCommand(OpenLog);
+        DismissCommand = new RelayCommand(Dismiss);
+        DefaultActionCommand = new RelayCommand(RunPrimary, () => PrimaryEnabled && !ConfirmingUninstall);
         ConfirmUninstallCommand = new RelayCommand(Uninstall, () => !Busy);
         CancelUninstallCommand = new RelayCommand(() => ConfirmingUninstall = false);
     }
@@ -120,6 +122,12 @@ public sealed class LauncherViewModel : ObservableObject
 
     /// <summary>Opens the launcher's own log. The one thing worth having when someone reports a problem.</summary>
     public RelayCommand OpenLogCommand { get; }
+
+    /// <summary>Escape. Backs out of whatever is innermost, and closes only when nothing is.</summary>
+    public RelayCommand DismissCommand { get; }
+
+    /// <summary>Enter. The main button, except while a question is waiting for an answer.</summary>
+    public RelayCommand DefaultActionCommand { get; }
 
     /// <summary>Asks about uninstalling. Deleting is never one click away.</summary>
     public RelayCommand AskUninstallCommand { get; }
@@ -199,6 +207,7 @@ public sealed class LauncherViewModel : ObservableObject
                 Raise(nameof(InfoVisible));
                 Raise(nameof(PlainTextVisible));
                 Raise(nameof(FailureVisible));
+                DefaultActionCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -875,6 +884,7 @@ public sealed class LauncherViewModel : ObservableObject
         Raise(nameof(IsInstalled));
 
         PrimaryCommand.RaiseCanExecuteChanged();
+        DefaultActionCommand.RaiseCanExecuteChanged();
         SecondaryCommand.RaiseCanExecuteChanged();
         UpdateLauncherCommand.RaiseCanExecuteChanged();
         RevealCommand.RaiseCanExecuteChanged();
@@ -891,6 +901,33 @@ public sealed class LauncherViewModel : ObservableObject
         if (path is null || !SystemFileManager.TryReveal(path))
         {
             Detail = "Priečinok s hrou sa nepodarilo otvoriť.";
+        }
+    }
+
+    /// <summary>
+    /// What Escape does, innermost first: answer the uninstall question with "keep", stop a
+    /// download, or close the window.
+    ///
+    /// It deliberately does nothing while the launcher is working on something it cannot stop.
+    /// Escape is a reflex, and a reflex must not be able to kill a process midway through
+    /// unpacking or swapping directories. Closing then stays possible, but only by choosing to
+    /// click the button.
+    /// </summary>
+    private void Dismiss()
+    {
+        switch (DismissChoice.ForEscape(ConfirmingUninstall, CanCancel, Busy))
+        {
+            case DismissOutcome.KeepTheGame:
+                ConfirmingUninstall = false;
+                break;
+
+            case DismissOutcome.CancelTheWork:
+                Cancel();
+                break;
+
+            case DismissOutcome.CloseTheWindow:
+                CloseRequested?.Invoke(this, EventArgs.Empty);
+                break;
         }
     }
 
