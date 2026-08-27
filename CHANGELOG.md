@@ -12,6 +12,25 @@ na to číslo.
 
 _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.2-alpha**._
 
+### Fixed
+- **Smart App Control zablokoval `FriWorld.Launcher.Core.dll` a vzal so sebou celú testovaciu
+  sadu** — všetkých 172 testov padlo na `FileLoadException` pri načítaní tej istej knižnice.
+  Verdikt sa podľa mena zhoršuje časom, presne ako predtým pri `FriWorldLauncher.dll`, tak
+  má projekt `AssemblyName` `FriWorldLauncherCoreLib`. Menné priestory sa nemenia.
+
+### Added
+- `PublishedManifestTests` čítajú `releases/manifest.json` tak, ako ho číta launcher. Keď sa
+  sekcia `launcher` upraví ručne — čo sa deje vždy, keď je build hry už zmazaný — nie je inak
+  nič, čo by manifest overilo pred zverejnením. Kontroluje sa aj to, že binárka launchera je
+  na https.
+
+### Changed
+- `run-under-smart-app-control.ps1` si vyrába nové meno assembly pri každom spustení, lebo
+  aj `FriWorldLauncherSingle` sa nakoniec zablokovalo, a stampuje ho verziou
+  z `Directory.Build.props`. Predtým hlásil natvrdo `0.1.0-alpha`, takže si sám na seba
+  ponúkal aktualizáciu.
+- `docs/deploying.md` popisuje aj vydanie launchera bez buildu hry po ruke.
+
 ## [0.1.2-alpha] - 2026-08-27
 
 ### Fixed

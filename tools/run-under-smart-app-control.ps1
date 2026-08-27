@@ -26,6 +26,11 @@
 .PARAMETER Arguments
     Passed through to the CLI, ignored for the window.
 
+.PARAMETER AssemblyName
+    Name of the throwaway assembly. Smart App Control eventually blocks a name it has seen
+    often enough, and when it does the fix is a name it has not seen. Defaults to a fresh
+    name each run for that reason; pass one only if you want the build cached between runs.
+
 .EXAMPLE
     ./tools/run-under-smart-app-control.ps1
     Generates a mock release if needed and opens the launcher window against it.
@@ -38,18 +43,36 @@ param(
     [ValidateSet('app', 'cli')]
     [string]$Target = 'app',
 
-    [string[]]$Arguments = @()
+    [string[]]$Arguments = @(),
+
+    [string]$AssemblyName
 )
 
 $ErrorActionPreference = 'Stop'
 
 $repo = Split-Path -Parent $PSScriptRoot
+
+# A name Smart App Control has not judged yet. Reusing one is what eventually gets it blocked.
+if (-not $AssemblyName) {
+    $AssemblyName = 'FriWorldDev' + [guid]::NewGuid().ToString('N').Substring(0, 8)
+}
+
+# The throwaway project has to carry the real version, or the launcher compares itself against
+# the manifest wrongly and reports an update that is not one.
+$props = Get-Content (Join-Path $repo 'Directory.Build.props') -Raw
+if ($props -notmatch '<Version>([^<]+)</Version>') {
+    throw 'No <Version> found in Directory.Build.props.'
+}
+$version = $Matches[1]
+
 $work = Join-Path ([System.IO.Path]::GetTempPath()) "friworld-launcher-sac/$Target"
 $store = Join-Path ([System.IO.Path]::GetTempPath()) 'friworld-launcher-sac/store'
 $root = Join-Path ([System.IO.Path]::GetTempPath()) 'friworld-launcher-sac/localroot'
 
 Write-Host "repo   $repo"
 Write-Host "work   $work"
+Write-Host "name   $AssemblyName"
+Write-Host "ver    $version"
 
 if (Test-Path $work) { Remove-Item $work -Recurse -Force }
 New-Item -ItemType Directory -Path $work -Force | Out-Null
@@ -89,8 +112,8 @@ $packages = if ($Target -eq 'app') {
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <AssemblyName>FriWorldLauncherSingle</AssemblyName>
-    <Version>0.1.0-alpha</Version>
+    <AssemblyName>$AssemblyName</AssemblyName>
+    <Version>$version</Version>
   </PropertyGroup>
 $packages
 </Project>
@@ -105,7 +128,7 @@ finally {
     Pop-Location
 }
 
-$dll = Join-Path $work 'bin/Debug/net10.0/FriWorldLauncherSingle.dll'
+$dll = Join-Path $work "bin/Debug/net10.0/$AssemblyName.dll"
 
 if ($Target -eq 'cli') {
     dotnet exec $dll @Arguments

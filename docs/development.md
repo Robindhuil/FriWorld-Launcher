@@ -91,6 +91,20 @@ konzistentne. Stalo sa to `FriWorldLauncher.dll` v testovacom balíčku — po p
 `FriWorldLauncherHost.dll` to zase išlo. Preto sa na túto barlu nedá spoliehať; je to
 pomôcka pri vývoji, nie riešenie pre používateľa.
 
+Stalo sa to potom **aj `FriWorld.Launcher.Core.dll`**, a to zobralo so sebou celú testovaciu
+sadu naraz — všetkých 172 testov padlo na `FileLoadException` pri načítaní tej istej knižnice.
+Preto má projekt `AssemblyName` iný, než je jeho meno:
+
+```xml
+<AssemblyName>FriWorldLauncherCoreLib</AssemblyName>
+```
+
+Menné priestory sa nemenia, len súbor na disku. Keď to raz padne znova, odpoveď je to isté:
+ďalšie meno.
+
+Z rovnakého dôvodu si `run-under-smart-app-control.ps1` vyrába **nové meno pri každom
+spustení**. Kto chce build medzi spusteniami cachovať, dá `-AssemblyName`.
+
 ---
 
 ## Ako si pozrieť stavy, ktoré normálne prebehnú príliš rýchlo

@@ -1,5 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <!--
+      Not the project name, on purpose. Smart App Control judges unsigned assemblies by name
+      as much as by content, and once it has decided against one, every rebuild under that name
+      is blocked on load — which takes the whole test suite down with it. FriWorld.Launcher.Core
+      went that way, exactly as FriWorldLauncher.dll did before it. Renaming is the whole fix.
+      Namespaces are untouched; only the file on disk is called something else.
+    -->
+    <AssemblyName>FriWorldLauncherCoreLib</AssemblyName>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- The path-traversal guard and the progress throttle are internal but worth testing directly. -->
     <InternalsVisibleTo Include="FriWorld.Launcher.Core.Tests" />

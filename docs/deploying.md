@@ -352,6 +352,27 @@ dotnet run --project src/FriWorld.Launcher.Cli -- pack \
 
 Potom `manifest.json` do `releases/` a pushnúť.
 
+**Keď build hry nie je po ruke** — a po vydaní hry býva `Build/` už zmazaný — `pack` sa
+spustiť nedá, lebo chce vstup. Vtedy sa v `releases/manifest.json` upraví **iba sekcia
+`launcher`**: `version`, `notes`, `url`, `sha256` a `size`. Sekcia hry sa nedotýka, hra sa
+nevydáva.
+
+```bash
+sha256sum dist/launcher/<verzia>/FriWorldLauncher.exe
+stat -c %s dist/launcher/<verzia>/FriWorldLauncher.exe
+```
+
+Hodnoty overuj proti **súboru stiahnutému z GitHubu**, nie proti lokálnej kópii — zaujíma
+nás, čo dostane hráč. Ručná úprava obchádza to, že `pack` si manifest po zápise prečíta
+späť, tak sa to musí nahradiť dvomi vecami:
+
+```bash
+dotnet test                                     # PublishedManifestTests číta releases/manifest.json
+dotnet run --project src/FriWorld.Launcher.Cli -- check --manifest releases/manifest.json
+```
+
+`check` musí vypísať hru bez zmeny a riadok o novšom launcheri.
+
 `--launcher-base-url` **musí byť https**. Launcher sa tým súborom nahradí, takže je tu
 pravidlo prísnejšie než pri archíve hry: manifest zo zneužitého spojenia nesmie vedieť
 podstrčiť spustiteľný súbor.

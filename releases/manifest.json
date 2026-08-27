@@ -12,14 +12,14 @@
     }
   },
   "launcher": {
-    "version": "0.1.1-alpha",
+    "version": "0.1.2-alpha",
     "downloadUrl": "https://github.com/Robindhuil/FriWorld-Launcher/releases/latest",
-    "notes": "Odinstalovanie hry, otvorenie priecinka a oprava zapisu do logu.",
+    "notes": "Oprava odinstalovania hry.",
     "platforms": {
       "win-x64": {
-        "url": "https://github.com/Robindhuil/FriWorld-Launcher/releases/download/v0.1.1-alpha/FriWorldLauncher.exe",
-        "sha256": "2daa3614128690e0f23724eb8a8b66ea031ecbd2ca23495a39a46c898349aae6",
-        "size": 52755047
+        "url": "https://github.com/Robindhuil/FriWorld-Launcher/releases/download/v0.1.2-alpha/FriWorldLauncher.exe",
+        "sha256": "426443b8748dd0df517ee3568e94efbf1128bd0bc315cb87527c896ca2884b21",
+        "size": 52759138
       }
     }
   }
