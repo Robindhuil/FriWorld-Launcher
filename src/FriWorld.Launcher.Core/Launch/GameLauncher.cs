@@ -70,8 +70,22 @@ public sealed class GameLauncher(LauncherPaths paths, ILauncherLog? log = null)
     }
 
     /// <summary>
-    /// Reports whether a process is already running out of the install directory. Updating while
-    /// the game runs would fail on Windows, where open files cannot be renamed away.
+    /// Where the list of running executables comes from.
+    ///
+    /// A seam, and it exists for one reason: a mock game is a shell script, so the process the
+    /// operating system actually runs is the interpreter and nothing it reports lives under the
+    /// install directory. The real scan can never see it, which makes every rule built on this
+    /// untestable against a mock. A real Unity build is an executable in that directory and is
+    /// seen normally.
+    /// </summary>
+    public Func<IEnumerable<string>> RunningExecutables { get; set; } = ScanRunningExecutables;
+
+    /// <summary>
+    /// Reports whether a process is already running out of the install directory.
+    ///
+    /// Two answers hang on this. Updating while the game runs would fail on Windows, where open
+    /// files cannot be renamed away; and a second copy of the game would share one save directory
+    /// with the first, where whichever exits last decides what the other's session was worth.
     /// </summary>
     public bool IsGameRunning()
     {
@@ -82,6 +96,19 @@ public sealed class GameLauncher(LauncherPaths paths, ILauncherLog? log = null)
 
         var installRoot = Path.GetFullPath(paths.Game);
 
+        foreach (var executablePath in RunningExecutables())
+        {
+            if (executablePath.StartsWith(installRoot, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static IEnumerable<string> ScanRunningExecutables()
+    {
         foreach (var process in Process.GetProcesses())
         {
             using (process)
@@ -98,15 +125,12 @@ public sealed class GameLauncher(LauncherPaths paths, ILauncherLog? log = null)
                     continue;
                 }
 
-                if (executablePath is not null &&
-                    executablePath.StartsWith(installRoot, StringComparison.OrdinalIgnoreCase))
+                if (executablePath is not null)
                 {
-                    return true;
+                    yield return executablePath;
                 }
             }
         }
-
-        return false;
     }
 
     public Process Start(string executablePath, IEnumerable<string>? arguments = null)

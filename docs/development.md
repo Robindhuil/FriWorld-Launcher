@@ -42,7 +42,7 @@ ostré neprepíše. Priečinok je v `.gitignore`.
 dotnet test
 ```
 
-216 testov. Pipeline **nie je mockovaná okrem siete**: vyrobí sa skutočný archív, skutočne
+218 testov. Pipeline **nie je mockovaná okrem siete**: vyrobí sa skutočný archív, skutočne
 sa spočíta checksum, skutočne sa rozbalí strom aj s právami a skutočne sa vymenia
 priečinky. Jediný rozdiel oproti ostrej prevádzke je `file://` namiesto `https://`.
 

@@ -28,6 +28,10 @@ _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.7-alpha**._
   pozíciami a jedny nastavenia, a tá, ktorá skončí druhá, rozhodne, čo bolo to prvé sedenie
   hodné. Platí to aj pre `launcher play`, nielen pre okno, a aj vtedy, keď hru niekto spustil
   mimo launchera.
+- Zoznam bežiacich procesov je v `GameLauncher` za spojom. Mock hra je shell skript, takže
+  proces, ktorý operačný systém naozaj beží, je interpreter a skutočné snímanie ho pod
+  inštaláciou nikdy neuvidí — čím by bolo každé pravidlo postavené na tomto neoveraťateľné.
+  Skutočný Unity build je spustiteľný súbor v tom priečinku a vidí sa bežne.
 
 ## [0.1.6-alpha] - 2026-08-27
 
