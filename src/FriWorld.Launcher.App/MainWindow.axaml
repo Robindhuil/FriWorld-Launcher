@@ -215,7 +215,8 @@
     <LayoutTransformControl x:Name="Scaler">
 
     <!-- Rounded outer edge. The window itself is transparent so the corners are real. -->
-    <Border Width="980" Height="720" CornerRadius="10" ClipToBounds="True" Background="#0B0C11">
+    <Border x:Name="DesignRoot"
+            Width="980" Height="720" CornerRadius="10" ClipToBounds="True" Background="#0B0C11">
         <Panel>
 
             <!-- Layer 1: the render. Slightly desaturated and darkened so it stays a

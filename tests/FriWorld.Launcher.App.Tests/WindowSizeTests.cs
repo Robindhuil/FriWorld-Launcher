@@ -53,7 +53,8 @@ public class WindowSizeTests
         var window = Open();
         var expected = ExpectedScale(window);
 
-        var scaler = window.GetVisualDescendants().OfType<LayoutTransformControl>().Single();
+        // By name, not by type: LayoutTransformControl's own template contains another one.
+        var scaler = Named<LayoutTransformControl>(window, "Scaler");
         var transform = Assert.IsType<ScaleTransform>(scaler.LayoutTransform);
 
         Assert.Equal(expected, transform.ScaleX, 3);
@@ -67,14 +68,13 @@ public class WindowSizeTests
         // 980 x 720, every size in the XAML quietly starts meaning something else.
         var window = Open();
 
-        var root = window.GetVisualDescendants()
-            .OfType<LayoutTransformControl>()
-            .Single()
-            .GetVisualDescendants()
-            .OfType<Border>()
-            .First();
+        var root = Named<Border>(window, "DesignRoot");
 
         Assert.Equal(WindowFit.DesignWidth, root.Width);
         Assert.Equal(WindowFit.DesignHeight, root.Height);
     }
+
+    private static T Named<T>(MainWindow window, string name)
+        where T : Control =>
+        window.GetVisualDescendants().OfType<T>().Single(c => c.Name == name);
 }
