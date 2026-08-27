@@ -10,7 +10,31 @@ na to číslo.
 
 ## [Unreleased]
 
-_Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.5-alpha**._
+_Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.5-alpha.2**._
+
+## [0.1.5-alpha.2] - 2026-08-27
+
+### Fixed
+- **Enter obchádzal fokus.** 0.1.5-alpha odchátával Enter na celom okne a spúšťal hlavné
+  tlačidlo bez ohľadu na to, kde Tab skončil — posúvanie fokusu tak nerobilo nič a prstenec
+  klamal o tom, čo Enter spraví. Enter teraz stlačí tlačidlo, ktoré má fokus; hlavné tlačidlo
+  ho chytá cez `IsDefault`, čo platí len pre Enter, ktorý si nevzal nikto iný.
+
+### Added
+- **Otázka pred zavretím okna.** `✕` aj Escape sa najprv spýtajú. Druhý riadok otázky
+  hovorí, čo to naozaj stojí — že sa sťahovanie obnoví, že rozrobenú inštaláciu bude treba
+  spraviť znova, alebo že hra zostane nainštalovaná. Okno, ktoré sa zatvára samo po spustení
+  hry, sa nepýta; to nie je nikto, kto sa pýta.
+- Escape tým prestal zatvárať okno úplne — len sa pýta, a počas rozbaľovania ani to nie.
+- **Testy nad skutočným oknom** (`Avalonia.Headless`). Smerovanie kláves sa z kódu vyčítať
+  nedá — či Enter dostane zafokusované tlačidlo alebo predvolené, je vlastnosť Avalonie —
+  a hádanie práve vydalo launcher, v ktorom Tab posúval fokus a Enter ho ignoroval.
+
+### Changed
+- Smart App Control **prestal púšťať testy na vývojovom stroji úplne**. Nové meno assembly
+  už nepomáha; blokuje sa každá referencovaná nepodpísaná knižnica načítaná za behu.
+  `run-under-smart-app-control.ps1` beží ďalej, lebo zlučuje všetko do jednej assembly.
+  Testy bežia na CI. Zmerané v `docs/development.md`.
 
 ## [0.1.5-alpha] - 2026-08-27
 
