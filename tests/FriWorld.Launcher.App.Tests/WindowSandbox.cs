@@ -22,21 +22,30 @@ internal static class WindowSandbox
 
     private static int _counter;
 
+    /// <summary>The mock release every window in this suite is pointed at.</summary>
+    internal static string Manifest { get; private set; } = string.Empty;
+
     [ModuleInitializer]
     internal static void BuildTheMockRelease()
     {
-        var manifest = MockReleaseBuilder.BuildAsync(
+        // The stub stays alive for a couple of seconds, so a test can watch the launcher go away
+        // while it runs and come back when it stops.
+        Manifest = MockReleaseBuilder.BuildAsync(
             Path.Combine(Home, "store"),
             new MockReleaseBuilder.Options
             {
                 Version = "1.0.0-mock",
                 PayloadBytes = 4096,
                 Platforms = [PlatformKey.Current],
+                StubRunsForSeconds = 2,
             }).GetAwaiter().GetResult();
 
-        Environment.SetEnvironmentVariable(LauncherConfiguration.ManifestUrlVariable, manifest);
+        Environment.SetEnvironmentVariable(LauncherConfiguration.ManifestUrlVariable, Manifest);
         FreshInstallRoot();
     }
+
+    /// <summary>The install root the next window will use.</summary>
+    internal static string CurrentInstallRoot { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gives the next window its own install root, and with it its own single-instance lock.
@@ -45,8 +54,9 @@ internal static class WindowSandbox
     /// process — so sharing a root would leave every window after the first reporting that another
     /// launcher is running, and the tests would quietly be exercising a state nobody meant.
     /// </summary>
-    internal static void FreshInstallRoot() =>
-        Environment.SetEnvironmentVariable(
-            LauncherPaths.RootOverrideVariable,
-            Path.Combine(Home, $"install-{Interlocked.Increment(ref _counter)}"));
+    internal static void FreshInstallRoot()
+    {
+        CurrentInstallRoot = Path.Combine(Home, $"install-{Interlocked.Increment(ref _counter)}");
+        Environment.SetEnvironmentVariable(LauncherPaths.RootOverrideVariable, CurrentInstallRoot);
+    }
 }
