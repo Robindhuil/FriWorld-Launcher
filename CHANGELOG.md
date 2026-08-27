@@ -10,7 +10,22 @@ na to číslo.
 
 ## [Unreleased]
 
-_Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.5-alpha.2**._
+_Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.6-alpha**._
+
+## [0.1.6-alpha] - 2026-08-27
+
+### Added
+- **Okno sa prispôsobí obrazovke.** 980 × 720 bolo pevných, čo na menšom displeji zaberalo
+  väčšiu časť plochy, než launcher potrebuje.
+  Nemeňuje sa rozloženie, ale **celé okno jedným faktorom** — písmo, tlačidlá aj odsadenia
+  spolu s rámom. Všetko vnútri zostáva navrhnuté v jednotkách 980 × 720 a pomer strán sa
+  nemení; dva rôzne faktory by render aj písmo rozťahovali.
+  Medze sú najviac 50 % šírky a 65 % výšky pracovnej plochy, najmenej 0,70 a najviac 1,00 —
+  odvodené z plochy 2103 × 1183, kde bola návrhová veľkosť posúdená ako správna, a položené
+  kúsok nad ňu, aby jej okno zostalo plné aj po odrátaní panela úloh.
+  Spodná medza ustúpi, keď by okno pretieklo cez okraj: okno bez systémovej lišty sa nedá
+  pritiahnuť späť.
+  Počíta sa raz, ešte pred zobrazením — okno, ktoré sa zmenší až na obrazovke, je bliknutie.
 
 ## [0.1.5-alpha.2] - 2026-08-27
 
