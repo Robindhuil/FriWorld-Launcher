@@ -908,6 +908,13 @@ public sealed class LauncherViewModel : ObservableObject
 
     private void Apply(UpdateStatus status)
     {
+        // Nothing is running, so this report is from something that already finished. Applying it
+        // would put a phase name and a progress bar back over the answer.
+        if (!Busy)
+        {
+            return;
+        }
+
         PhaseName = status.Message;
         Status = StatusLineFor(status);
         PercentText = status.PercentText;
@@ -937,6 +944,11 @@ public sealed class LauncherViewModel : ObservableObject
 
     private void ApplyDownload(DownloadProgress download)
     {
+        if (!Busy)
+        {
+            return;
+        }
+
         ProgressIndeterminate = download.Fraction is null;
         Progress = (download.Fraction ?? 0) * 100;
         ProgressVisible = true;
@@ -1045,13 +1057,40 @@ public sealed class LauncherViewModel : ObservableObject
     }
 
     /// <summary>Marshals progress reports onto the UI thread.</summary>
+    /// <summary>
+    /// Marshals progress reports onto the UI thread — and applies them straight away when it is
+    /// already on it.
+    ///
+    /// Posting unconditionally is what broke the launcher after a game session. A report raised on
+    /// the UI thread went into the queue, and when the work that raised it finished without ever
+    /// suspending, the result was written first and the queued report then put the phase name and
+    /// the progress bar back over it. The window sat on "Kontrolujem aktualizácie" for good.
+    /// </summary>
     private sealed class UiProgress(LauncherViewModel owner) : IProgress<UpdateStatus>
     {
-        public void Report(UpdateStatus value) => Dispatcher.UIThread.Post(() => owner.Apply(value));
+        public void Report(UpdateStatus value)
+        {
+            if (Dispatcher.UIThread.CheckAccess())
+            {
+                owner.Apply(value);
+                return;
+            }
+
+            Dispatcher.UIThread.Post(() => owner.Apply(value));
+        }
     }
 
     private sealed class UiDownloadProgress(LauncherViewModel owner) : IProgress<DownloadProgress>
     {
-        public void Report(DownloadProgress value) => Dispatcher.UIThread.Post(() => owner.ApplyDownload(value));
+        public void Report(DownloadProgress value)
+        {
+            if (Dispatcher.UIThread.CheckAccess())
+            {
+                owner.ApplyDownload(value);
+                return;
+            }
+
+            Dispatcher.UIThread.Post(() => owner.ApplyDownload(value));
+        }
     }
 }
