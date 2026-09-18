@@ -38,14 +38,14 @@ public sealed class UpdateOrchestrator(
         IProgress<UpdateStatus>? progress = null,
         CancellationToken ct = default)
     {
-        progress?.Report(UpdateStatus.Of(UpdateStage.CheckingForUpdate, "Kontrolujem aktualizácie"));
+        progress?.Report(UpdateStatus.Of(UpdateStage.CheckingForUpdate));
         _log.Info($"Reading the manifest from {source.Description}");
 
         var manifest = await source.GetLatestAsync(ct).ConfigureAwait(false);
 
         if (!manifest.TryGetPackage(PlatformKey.CurrentWithFallbacks, out var key, out var package))
         {
-            throw new UpdateException(
+            throw new NoBuildForPlatformException(
                 $"Release {manifest.Version} has no build for {PlatformKey.Current}. " +
                 $"It offers: {string.Join(", ", manifest.Platforms.Keys)}.");
         }
@@ -106,7 +106,9 @@ public sealed class UpdateOrchestrator(
         {
             throw new LauncherTooOldException(
                 $"This release needs launcher {check.Manifest.MinLauncherVersion} or newer. " +
-                $"This launcher is {LauncherVersion.Current}.");
+                $"This launcher is {LauncherVersion.Current}.",
+                check.Manifest.MinLauncherVersion,
+                LauncherVersion.Current);
         }
 
         if (_launcher.IsGameRunning())
@@ -139,7 +141,7 @@ public sealed class UpdateOrchestrator(
         // The archive is only useful until the install succeeds; a gigabyte of cache is not.
         TryDelete(archivePath);
 
-        progress?.Report(UpdateStatus.Of(UpdateStage.Ready, "Pripravené"));
+        progress?.Report(UpdateStatus.Of(UpdateStage.Ready, check.LatestVersion));
         _log.Info($"Installed {installed.Version} ({installed.Platform}).");
 
         return installed;
@@ -154,7 +156,7 @@ public sealed class UpdateOrchestrator(
         var downloadProgress = new Progress<DownloadProgress>(p => progress?.Report(
             new UpdateStatus(
                 UpdateStage.Downloading,
-                "Sťahujem",
+                check.LatestVersion,
                 p.Fraction,
                 p)));
 
@@ -167,9 +169,9 @@ public sealed class UpdateOrchestrator(
         UpdateCheck check, string archivePath, IProgress<UpdateStatus>? progress, CancellationToken ct)
     {
         var verifyProgress = new Progress<double>(f => progress?.Report(
-            new UpdateStatus(UpdateStage.Verifying, "Overujem stiahnuté", f)));
+            new UpdateStatus(UpdateStage.Verifying, check.LatestVersion, f)));
 
-        progress?.Report(UpdateStatus.Of(UpdateStage.Verifying, "Overujem stiahnuté"));
+        progress?.Report(UpdateStatus.Of(UpdateStage.Verifying, check.LatestVersion));
 
         await Sha256Verifier
             .VerifyOrDeleteAsync(archivePath, check.Package.Sha256, verifyProgress, ct)
@@ -180,14 +182,14 @@ public sealed class UpdateOrchestrator(
         UpdateCheck check, string archivePath, IProgress<UpdateStatus>? progress, CancellationToken ct)
     {
         var extractProgress = new Progress<double>(f => progress?.Report(
-            new UpdateStatus(UpdateStage.Extracting, "Rozbaľujem", f)));
+            new UpdateStatus(UpdateStage.Extracting, check.LatestVersion, f)));
 
-        progress?.Report(UpdateStatus.Of(UpdateStage.Extracting, "Rozbaľujem"));
+        progress?.Report(UpdateStatus.Of(UpdateStage.Extracting, check.LatestVersion));
 
         var extractor = ArchiveExtractors.For(check.Package.ResolvedFormat);
         await extractor.ExtractAsync(archivePath, paths.GameNew, extractProgress, ct).ConfigureAwait(false);
 
-        progress?.Report(UpdateStatus.Of(UpdateStage.Installing, "Inštalujem"));
+        progress?.Report(UpdateStatus.Of(UpdateStage.Installing, check.LatestVersion));
         _installer.Promote();
     }
 
@@ -262,7 +264,7 @@ public sealed class UpdateOrchestrator(
 
         if (!check.UpdateRequired)
         {
-            progress?.Report(UpdateStatus.Of(UpdateStage.UpToDate, $"Máš najnovšiu verziu {check.LatestVersion}"));
+            progress?.Report(UpdateStatus.Of(UpdateStage.UpToDate, check.LatestVersion));
             return check;
         }
 
@@ -314,7 +316,7 @@ public sealed class UpdateOrchestrator(
             throw new GameIsRunningException("The game is already running.");
         }
 
-        progress?.Report(UpdateStatus.Of(UpdateStage.Launching, "Spúšťam hru"));
+        progress?.Report(UpdateStatus.Of(UpdateStage.Launching, installed.Version));
 
         var executable = _launcher.ResolveExecutable(paths.Game, installed.Exec);
         var process = _launcher.Start(executable);
@@ -378,4 +380,17 @@ public class UpdateException(string message, Exception? inner = null)
 public sealed class GameIsRunningException(string message) : UpdateException(message);
 
 /// <summary>The manifest declares a launcher version floor this launcher is below.</summary>
-public sealed class LauncherTooOldException(string message) : UpdateException(message);
+public sealed class LauncherTooOldException(
+    string message,
+    string? required = null,
+    string? current = null) : UpdateException(message)
+{
+    /// <summary>The oldest launcher the release accepts.</summary>
+    public string? Required { get; } = required;
+
+    /// <summary>The version doing the asking.</summary>
+    public string? Current { get; } = current;
+}
+
+/// <summary>The release carries nothing that runs on this machine.</summary>
+public sealed class NoBuildForPlatformException(string message) : UpdateException(message);

@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using FriWorld.Launcher.Core.Localization;
 using FriWorld.Launcher.Core.Platform;
 
 namespace FriWorld.Launcher.Core.Manifest;
@@ -18,8 +19,15 @@ public sealed record LauncherRelease
     /// <summary>Page a person is sent to when the launcher cannot replace itself.</summary>
     public string DownloadUrl { get; init; } = string.Empty;
 
-    /// <summary>Optional one-liner about why it is worth updating.</summary>
+    /// <summary>Optional one-liner about why it is worth updating, in Slovak.</summary>
     public string? Notes { get; init; }
+
+    /// <summary>The same one-liner in English. Optional, exactly like the release's own.</summary>
+    public string? NotesEn { get; init; }
+
+    /// <summary>The note to show, falling back to Slovak when there is no English one.</summary>
+    public string? NotesFor(Language language) =>
+        language == Language.English ? NotesEn ?? Notes : Notes;
 
     /// <summary>
     /// The launcher binary per platform key. Optional: without it the update is a link, with it

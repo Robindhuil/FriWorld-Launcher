@@ -7,6 +7,7 @@ using FriWorld.Launcher.Core;
 using FriWorld.Launcher.Core.Diagnostics;
 using FriWorld.Launcher.Core.Install;
 using FriWorld.Launcher.Core.Launch;
+using FriWorld.Launcher.Core.Localization;
 using FriWorld.Launcher.Core.Manifest;
 using FriWorld.Launcher.Core.Net;
 using FriWorld.Launcher.Core.Platform;
@@ -42,6 +43,18 @@ public sealed class LauncherViewModel : ObservableObject
     private readonly Lock _workGate = new();
     private readonly bool _keepOpenAfterLaunch;
 
+    private Texts _texts;
+
+    /// <summary>
+    /// How to say the failure on screen again, when the language changes under it.
+    ///
+    /// A delegate rather than the exception, because not every failure comes from one — being
+    /// told another launcher is running does not — and because the sites differ in what they do
+    /// with the status line. It is dropped the moment <see cref="Failed"/> goes false, so a
+    /// failure that has been cleared cannot come back in the other language.
+    /// </summary>
+    private Action? _resayFailure;
+
     private SingleInstanceLock? _instanceLock;
     private CancellationTokenSource? _work;
     private UpdateCheck? _check;
@@ -49,7 +62,7 @@ public sealed class LauncherViewModel : ObservableObject
     private string? _launcherDownloadPage;
 
     private LauncherAction _action = LauncherAction.None;
-    private string _status = "Spúšťam";
+    private string _status;
     private string _phaseName = string.Empty;
     private string _percentText = string.Empty;
     private string _detail = string.Empty;
@@ -72,6 +85,8 @@ public sealed class LauncherViewModel : ObservableObject
     {
         var configuration = LauncherConfiguration.Resolve();
         _keepOpenAfterLaunch = LauncherSettingsFile.Load().KeepOpenAfterLaunch;
+        _texts = configuration.Texts;
+        _status = _texts.Starting;
         _log = configuration.Log;
         _paths = configuration.Paths;
         _instanceLock = SingleInstanceLock.TryAcquire(configuration.Paths);
@@ -96,6 +111,7 @@ public sealed class LauncherViewModel : ObservableObject
         DismissCommand = new RelayCommand(Dismiss);
         ConfirmUninstallCommand = new RelayCommand(Uninstall, () => !Busy);
         CancelQuestionCommand = new RelayCommand(CancelQuestion);
+        SwitchLanguageCommand = new RelayCommand(SwitchLanguage);
     }
 
     /// <summary>The one prominent button. What it does depends on <see cref="Action"/>.</summary>
@@ -138,6 +154,17 @@ public sealed class LauncherViewModel : ObservableObject
     /// <summary>The answer that undoes nothing, whichever question is asking.</summary>
     public RelayCommand CancelQuestionCommand { get; }
 
+    /// <summary>Swaps the window between Slovak and English, and remembers which.</summary>
+    public RelayCommand SwitchLanguageCommand { get; }
+
+    /// <summary>
+    /// Everything the window says, in the language it is currently saying it in.
+    ///
+    /// Bound directly by the fixed labels — tooltips, headings, the buttons that always read the
+    /// same. Replacing this object is what re-labels them, so the switch has one thing to do.
+    /// </summary>
+    public Texts Texts => _texts;
+
     public event EventHandler? MinimiseRequested;
 
     /// <summary>Raised when the person asks to close, and only then.</summary>
@@ -166,11 +193,11 @@ public sealed class LauncherViewModel : ObservableObject
 
     public string PrimaryLabel => Action switch
     {
-        LauncherAction.Install => "Inštalovať",
-        LauncherAction.Update => "Aktualizovať",
-        LauncherAction.Play => "Hrať",
-        LauncherAction.Retry => "Skúsiť znova",
-        _ => "Počkaj chvíľu",
+        LauncherAction.Install => _texts.Install,
+        LauncherAction.Update => _texts.Update,
+        LauncherAction.Play => _texts.Play,
+        LauncherAction.Retry => _texts.TryAgain,
+        _ => _texts.JustAMoment,
     };
 
     /// <summary>
@@ -186,7 +213,7 @@ public sealed class LauncherViewModel : ObservableObject
     /// </summary>
     public string SecondaryLabel => Action switch
     {
-        LauncherAction.Update => $"Hrať {_check?.InstalledVersion}",
+        LauncherAction.Update => _texts.PlayVersion(_check?.InstalledVersion),
         _ => string.Empty,
     };
 
@@ -242,10 +269,10 @@ public sealed class LauncherViewModel : ObservableObject
     /// as staying silent when it is.
     /// </summary>
     public string CloseQuestionDetail => CanCancel
-        ? "Sťahovanie sa zastaví. Stiahnuté súbory zostanú a nabudúce sa bude pokračovať tam, kde prestalo."
+        ? _texts.ClosingStopsTheDownload
         : Busy
-            ? "Launcher práve pracuje. Zavretie teraz nechá rozrobenú prácu, ktorú bude treba spraviť znova."
-            : "Hra zostane nainštalovaná.";
+            ? _texts.ClosingLosesWorkInProgress
+            : _texts.TheGameStaysInstalled;
 
     public string Status
     {
@@ -304,14 +331,14 @@ public sealed class LauncherViewModel : ObservableObject
     /// </summary>
     public bool AskingSomething => ConfirmingUninstall || ConfirmingClose;
 
-    public string QuestionTitle => ConfirmingUninstall ? "Odinštalovať hru?" : "Zavrieť launcher?";
+    public string QuestionTitle => ConfirmingUninstall ? _texts.UninstallTheGame : _texts.CloseTheLauncher;
 
     public string QuestionDetail => ConfirmingUninstall
-        ? "Stiahnuté súbory hry sa vymažú. Vrátiť sa to nedá, ale hru sa dá kedykoľvek nainštalovať znova."
+        ? _texts.UninstallQuestionDetail
         : CloseQuestionDetail;
 
     /// <summary>Named for what it does, not for "no": the button has to say what happens.</summary>
-    public string SafeAnswerLabel => ConfirmingUninstall ? "Ponechať" : "Späť";
+    public string SafeAnswerLabel => ConfirmingUninstall ? _texts.Keep : _texts.Back;
 
     public string VersionLine
     {
@@ -408,6 +435,11 @@ public sealed class LauncherViewModel : ObservableObject
         {
             if (SetField(ref _failed, value))
             {
+                if (!value)
+                {
+                    _resayFailure = null;
+                }
+
                 Raise(nameof(InfoVisible));
                 Raise(nameof(PlainTextVisible));
                 Raise(nameof(NotesVisible));
@@ -425,7 +457,7 @@ public sealed class LauncherViewModel : ObservableObject
     public bool LauncherUpdateIsAutomatic => _launcherBinary is not null && _selfUpdater.BlockedReason() is null;
 
     public string LauncherUpdateAction =>
-        LauncherUpdateIsAutomatic ? "Aktualizovať a reštartovať" : "Otvoriť stránku so stiahnutím";
+        LauncherUpdateIsAutomatic ? _texts.UpdateAndRestart : _texts.OpenTheDownloadPage;
 
     public bool Busy
     {
@@ -461,7 +493,14 @@ public sealed class LauncherViewModel : ObservableObject
     {
         if (_instanceLock is null)
         {
-            Fail(new UpdateException("Už beží iný launcher."));
+            _log.Warn("Another launcher already holds the lock; this one will not act.");
+
+            SayFailure(() =>
+            {
+                ShowFailure(_texts.AnotherLauncherIsRunning, string.Empty);
+                Status = _texts.AnotherLauncherIsRunning;
+            });
+
             Action = LauncherAction.None;
             return;
         }
@@ -474,7 +513,7 @@ public sealed class LauncherViewModel : ObservableObject
             _check = await Run(ct => _orchestrator.CheckAsync(new UiProgress(this), ct));
 
             ApplyLauncherUpdate(_check);
-            Notes = _check.Manifest.Notes ?? string.Empty;
+            Notes = _check.Manifest.NotesFor(_texts.Language) ?? string.Empty;
             ProgressVisible = false;
 
             if (_check.LauncherTooOld)
@@ -506,28 +545,24 @@ public sealed class LauncherViewModel : ObservableObject
         switch (Action)
         {
             case LauncherAction.Play:
-                VersionLine = $"Verzia {check.LatestVersion}";
-                Status = "Pripravené";
+                VersionLine = _texts.Version(check.LatestVersion);
+                Status = _texts.Ready;
                 Detail = string.Empty;
                 break;
 
             case LauncherAction.Update:
-                VersionLine = $"Verzia {check.InstalledVersion} nainštalovaná · " +
-                              $"{check.LatestVersion} k dispozícii";
-                Status = $"Aktualizovať na {check.LatestVersion}?";
-                Detail = $"Zatiaľ môžeš hrať {check.InstalledVersion}.";
+                VersionLine = _texts.InstalledAndAvailable(check.InstalledVersion, check.LatestVersion);
+                Status = _texts.UpdateToVersion(check.LatestVersion);
+                Detail = _texts.CanPlayMeanwhile(check.InstalledVersion);
                 break;
 
             case LauncherAction.Install:
-                VersionLine = $"Verzia {check.LatestVersion} k dispozícii";
-                Status = "Nenainštalované";
-                Detail = $"Na stiahnutie {Size(check.Package.Size)}.";
+                VersionLine = _texts.VersionAvailable(check.LatestVersion);
+                Status = _texts.NotInstalled;
+                Detail = _texts.ToDownload(check.Package.Size);
                 break;
         }
     }
-
-    /// <summary>Slovak writes a decimal comma; a dot reads as a thousands separator.</summary>
-    private static string Size(long bytes) => DiskSpace.Format(bytes).Replace('.', ',');
 
     private void RunPrimary()
     {
@@ -580,8 +615,8 @@ public sealed class LauncherViewModel : ObservableObject
             await Run(ct => _orchestrator.InstallAsync(check, new UiProgress(this), ct));
             _check = check with { Installed = _orchestrator.State.Read() };
 
-            VersionLine = $"Verzia {check.LatestVersion}";
-            Status = "Pripravené";
+            VersionLine = _texts.Version(check.LatestVersion);
+            Status = _texts.Ready;
             Detail = string.Empty;
             ProgressVisible = false;
             Action = LauncherAction.Play;
@@ -610,12 +645,12 @@ public sealed class LauncherViewModel : ObservableObject
 
         try
         {
-            Status = "Opravujem inštaláciu";
+            Status = _texts.RepairingTheInstallation;
             var installed = await Run(ct => _orchestrator.RepairAsync(new UiProgress(this), ct));
             _check = _check is null ? null : _check with { Installed = installed };
 
-            VersionLine = $"Verzia {installed.Version}";
-            Status = "Opravené a pripravené";
+            VersionLine = _texts.Version(installed.Version);
+            Status = _texts.RepairedAndReady;
             Detail = string.Empty;
             ProgressVisible = false;
             Action = LauncherAction.Play;
@@ -644,7 +679,7 @@ public sealed class LauncherViewModel : ObservableObject
 
         try
         {
-            Status = "Spúšťam hru";
+            Status = _texts.StartingTheGame;
 
             // LaunchAsync already waits out the grace period that confirms the build can start,
             // so by the time it returns the answer is known and the previous install is gone.
@@ -654,17 +689,18 @@ public sealed class LauncherViewModel : ObservableObject
             {
                 // The game stopped within seconds of starting. Staying open is the whole point
                 // here: this is the one moment when the launcher has something useful to say.
-                ShowFailure(
-                    "Hra sa hneď zavrela.",
-                    $"Skončila s kódom {process.ExitCode} pár sekúnd po spustení. " +
-                    "Môže pomôcť oprava inštalácie.");
+                var exitCode = process.ExitCode;
+
+                SayFailure(() => ShowFailure(
+                    _texts.GameClosedImmediatelyHeadline,
+                    _texts.GameClosedImmediatelyAdvice(exitCode)));
 
                 Action = LauncherAction.Play;
                 _log.Warn($"The game exited with code {process.ExitCode} during the grace period.");
                 return;
             }
 
-            Status = "Beží";
+            Status = _texts.Running;
             Action = LauncherAction.Play;
 
             // Out of the way while the game has the screen, back again when it does not. Closing
@@ -714,7 +750,7 @@ public sealed class LauncherViewModel : ObservableObject
         {
             if (_launcherDownloadPage is { } page && !SystemBrowser.TryOpen(page))
             {
-                Detail = $"Prehliadač sa nepodarilo otvoriť. Stránka je {page}";
+                Detail = _texts.BrowserWouldNotOpen(page);
             }
 
             return;
@@ -727,12 +763,12 @@ public sealed class LauncherViewModel : ObservableObject
 
         try
         {
-            PhaseName = "Sťahujem nový launcher";
+            PhaseName = _texts.DownloadingTheNewLauncher;
             ProgressVisible = true;
 
             staged = await Run(ct => _selfUpdater.StageAsync(_launcherBinary!, new UiDownloadProgress(this), ct));
 
-            Status = "Reštartujem";
+            Status = _texts.Restarting;
 
             // Released before the successor starts. It takes the same lock as its first act, and
             // this process is still alive at that moment — holding on would make the new launcher
@@ -772,7 +808,7 @@ public sealed class LauncherViewModel : ObservableObject
 
     private void Cancel()
     {
-        Status = "Ruším";
+        Status = _texts.Cancelling;
 
         // Guarded because the work can finish between the button appearing and the click landing,
         // and cancelling a disposed source throws — from a command handler, that ends the process.
@@ -825,20 +861,22 @@ public sealed class LauncherViewModel : ObservableObject
         CanCancel = false;
         ProgressVisible = true;
         ProgressIndeterminate = true;
-        PhaseName = "Kontrolujem aktualizácie";
+        PhaseName = _texts.CheckingForUpdates;
         PercentText = string.Empty;
-        Status = "Kontrolujem aktualizácie";
-        Detail = "Zisťujem, čo je na serveri.";
+        Status = _texts.CheckingForUpdates;
+        Detail = _texts.AskingTheServer;
     }
 
     private void ShowLauncherTooOld(UpdateCheck check)
     {
-        ShowFailure(
-            "Tento launcher je príliš starý.",
-            $"Vydanie {check.LatestVersion} potrebuje launcher " +
-            $"{check.Manifest.MinLauncherVersion} alebo novší.");
+        SayFailure(() =>
+        {
+            ShowFailure(
+                _texts.LauncherTooOldHeadline,
+                _texts.ReleaseNeedsNewerLauncher(check.LatestVersion, check.Manifest.MinLauncherVersion));
 
-        Status = "Launcher je príliš starý";
+            Status = _texts.LauncherTooOldStatus;
+        });
 
         // Whatever is installed still runs; only updating the game is off the table.
         Action = LauncherActions.AfterCheck(check);
@@ -849,8 +887,8 @@ public sealed class LauncherViewModel : ObservableObject
         Failed = false;
         Notes = string.Empty;
         ProgressVisible = false;
-        Status = "Zrušené";
-        Detail = "Čiastočne stiahnuté súbory sme nechali, nabudúce sa bude pokračovať tam, kde si prestal.";
+        Status = _texts.Cancelled;
+        Detail = _texts.PartialDownloadKept;
         Action = LauncherActions.AfterInterruption(_check, _orchestrator.State.Read() is not null);
     }
 
@@ -864,10 +902,14 @@ public sealed class LauncherViewModel : ObservableObject
     {
         _log.Error("Launcher operation failed.", exception);
 
-        var message = FailureMessages.Describe(exception);
-        ShowFailure(message.Headline, message.Advice ?? string.Empty);
+        var message = FailureMessages.Describe(exception, _texts);
 
-        Status = message.Headline;
+        SayFailure(() =>
+        {
+            var said = FailureMessages.Describe(exception, _texts);
+            ShowFailure(said.Headline, said.Advice ?? string.Empty);
+            Status = said.Headline;
+        });
 
         Action = message.Recoverable
             ? LauncherActions.AfterInterruption(_check, _orchestrator.State.Read() is not null)
@@ -875,8 +917,17 @@ public sealed class LauncherViewModel : ObservableObject
 
         if (_orchestrator.State.Read() is { } installed && string.IsNullOrEmpty(VersionLine))
         {
-            VersionLine = $"Verzia {installed.Version} nainštalovaná";
+            VersionLine = _texts.VersionInstalled(installed.Version);
         }
+    }
+
+    /// <summary>Shows a failure, and keeps the means to show the same one in the other language.</summary>
+    private void SayFailure(Action say)
+    {
+        say();
+
+        // After the call: Failed going true is what arms it, and Failed going false disarms it.
+        _resayFailure = say;
     }
 
     private void ShowFailure(string headline, string advice)
@@ -900,8 +951,8 @@ public sealed class LauncherViewModel : ObservableObject
         {
             _launcherDownloadPage = launcher.DownloadUrl;
             _launcherBinary = check.LauncherBinary;
-            LauncherUpdateTitle = $"K dispozícii je launcher {launcher.Version}.";
-            LauncherUpdateNote = launcher.Notes ?? string.Empty;
+            LauncherUpdateTitle = _texts.LauncherAvailable(launcher.Version);
+            LauncherUpdateNote = launcher.NotesFor(_texts.Language) ?? string.Empty;
         }
 
         Raise(nameof(LauncherUpdateAvailable));
@@ -918,13 +969,13 @@ public sealed class LauncherViewModel : ObservableObject
             return;
         }
 
-        PhaseName = status.Message;
+        PhaseName = status.Message(_texts);
         Status = StatusLineFor(status);
         PercentText = status.PercentText;
         ProgressIndeterminate = status.Fraction is null;
         Progress = (status.Fraction ?? 0) * 100;
         ProgressVisible = status.Stage is not (UpdateStage.UpToDate or UpdateStage.Ready);
-        Detail = status.DetailLine;
+        Detail = status.DetailLine(_texts);
     }
 
     /// <summary>
@@ -933,15 +984,15 @@ public sealed class LauncherViewModel : ObservableObject
     /// </summary>
     private string StatusLineFor(UpdateStatus status)
     {
-        var version = _check?.LatestVersion;
+        var version = status.Version ?? _check?.LatestVersion;
 
         return status.Stage switch
         {
-            UpdateStage.Downloading => $"Sťahujem {version}",
-            UpdateStage.Verifying => "Overujem stiahnuté",
-            UpdateStage.Extracting or UpdateStage.Installing => $"Inštalujem {version}",
-            UpdateStage.Launching => "Spúšťam hru",
-            _ => status.Message,
+            UpdateStage.Downloading => _texts.DownloadingVersion(version),
+            UpdateStage.Verifying => _texts.VerifyingTheDownload,
+            UpdateStage.Extracting or UpdateStage.Installing => _texts.InstallingVersion(version),
+            UpdateStage.Launching => _texts.StartingTheGame,
+            _ => status.Message(_texts),
         };
     }
 
@@ -956,7 +1007,7 @@ public sealed class LauncherViewModel : ObservableObject
         Progress = (download.Fraction ?? 0) * 100;
         ProgressVisible = true;
         PercentText = download.Fraction is { } f ? $"{f * 100:0} %" : string.Empty;
-        Detail = new UpdateStatus(UpdateStage.Downloading, PhaseName, download.Fraction, download).DetailLine;
+        Detail = new UpdateStatus(UpdateStage.Downloading, null, download.Fraction, download).DetailLine(_texts);
     }
 
     private void RaiseQuestion()
@@ -996,7 +1047,7 @@ public sealed class LauncherViewModel : ObservableObject
 
         if (path is null || !SystemFileManager.TryReveal(path))
         {
-            Detail = "Priečinok s hrou sa nepodarilo otvoriť.";
+            Detail = _texts.GameFolderWouldNotOpen;
         }
     }
 
@@ -1037,11 +1088,57 @@ public sealed class LauncherViewModel : ObservableObject
         ConfirmingClose = false;
     }
 
+    /// <summary>
+    /// Swaps the window to the other language and remembers the choice for next time.
+    ///
+    /// The whole window is said again, not merely relabelled. Half of what is on screen is held
+    /// as a finished sentence — the status line, a failure, the release notes — and a switch that
+    /// only changed the buttons would leave a window speaking both languages at once, which is
+    /// the one thing this feature exists to prevent.
+    /// </summary>
+    private void SwitchLanguage()
+    {
+        _texts = Texts.For(_texts.Language.Other());
+        LanguagePreference.Write(_paths, _texts.Language);
+        _log.Info($"The window switched to {_texts.Language.Code()}.");
+
+        Resay();
+    }
+
+    /// <summary>Puts whatever the window is showing into words again, in the current language.</summary>
+    private void Resay()
+    {
+        if (Failed && _resayFailure is { } sayItAgain)
+        {
+            sayItAgain();
+        }
+        else if (!Busy && _check is { } check)
+        {
+            // Busy states are left alone on purpose: the next progress report is a fraction of a
+            // second away and writes the phase name, the status line and the detail in one go.
+            Describe(check);
+        }
+
+        if (_check is { } latest)
+        {
+            Notes = latest.Manifest.NotesFor(_texts.Language) ?? string.Empty;
+            ApplyLauncherUpdate(latest);
+        }
+
+        // A change notification with no name on it is how everything computed on demand — the
+        // button labels, the question, and every fixed label bound through Texts — is re-read.
+        Raise(null);
+        Raise(nameof(Texts));
+        Raise(nameof(LauncherUpdateAction));
+        RaiseButtons();
+        RaiseQuestion();
+    }
+
     private void OpenLog()
     {
         if (!SystemFileManager.TryReveal(_paths.LogFile))
         {
-            Detail = "Denník launchera sa nepodarilo otvoriť.";
+            Detail = _texts.LogWouldNotOpen;
         }
     }
 
@@ -1055,12 +1152,12 @@ public sealed class LauncherViewModel : ObservableObject
             _orchestrator.Uninstall();
             _check = _check is null ? null : _check with { Installed = null };
 
-            VersionLine = _check is null ? string.Empty : $"Verzia {_check.LatestVersion} k dispozícii";
-            Notes = _check?.Manifest.Notes ?? string.Empty;
-            Status = "Odinštalované";
+            VersionLine = _check is null ? string.Empty : _texts.VersionAvailable(_check.LatestVersion);
+            Notes = _check?.Manifest.NotesFor(_texts.Language) ?? string.Empty;
+            Status = _texts.Uninstalled;
             Detail = _check is null
-                ? "Hra bola odstránená."
-                : $"Hra bola odstránená. Na stiahnutie {Size(_check.Package.Size)}.";
+                ? _texts.TheGameWasRemoved
+                : _texts.TheGameWasRemovedAndCanBeDownloaded(_check.Package.Size);
             Failed = false;
             ProgressVisible = false;
 

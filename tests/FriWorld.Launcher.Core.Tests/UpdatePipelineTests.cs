@@ -170,7 +170,7 @@ public class UpdatePipelineTests
 
         var orchestrator = OrchestratorFor(manifestPath, temp.Combine("root"));
 
-        var error = await Assert.ThrowsAsync<UpdateException>(() => orchestrator.CheckAsync());
+        var error = await Assert.ThrowsAsync<NoBuildForPlatformException>(() => orchestrator.CheckAsync());
         Assert.Contains("some-unreal-platform-x64", error.Message, StringComparison.Ordinal);
     }
 

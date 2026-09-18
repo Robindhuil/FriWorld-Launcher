@@ -61,6 +61,24 @@ Uloziska hraca su inde — v AppData\LocalLow\Crimsoned Rose\FriWorld — takze
 odinstalovanie hry o ne nepride.
 
 
+JAZYK
+-----
+
+Okno sa otvori po slovensky. Prepnut na anglictinu sa da v ponuke "..." vlavo
+hore — polozka sa vola English. Volba sa pamata, takze nabuduce sa okno otvori
+v tom jazyku, v akom bolo naposledy.
+
+Ked ma stroj startovat rovno po anglicky (napriklad pocitac na dni otvorenych
+dveri), da sa to napisat do launcher.json vedla tohto textu:
+
+  "language": "en"
+
+Prepnutie v okne je nad tymto nastavenim — kto si jazyk prepne, tomu to zostane.
+
+Konzolovy front end a launcher.log su po anglicky vzdy. Cita ich ten, kto nieco
+opravuje, nie hrac.
+
+
 ODKIAL BERIE HRU
 ----------------
 
@@ -88,6 +106,7 @@ AKO VYDAT NOVU VERZIU
        --input "E:/UNITY/FriWorld/Build/<verzia>" ^
        --version <verzia> ^
        --notes "Co je nove." ^
+       --notes-en "What is new." ^
        --out "C:/Users/robob/Documents/FriWorld-Release/<verzia>"
 
 3. Preved launcher.json na novy priecinok

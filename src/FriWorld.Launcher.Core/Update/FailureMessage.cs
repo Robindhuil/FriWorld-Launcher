@@ -1,6 +1,7 @@
 using System.Net.Http;
 using FriWorld.Launcher.Core.Install;
 using FriWorld.Launcher.Core.Launch;
+using FriWorld.Launcher.Core.Localization;
 using FriWorld.Launcher.Core.Manifest;
 using FriWorld.Launcher.Core.Verify;
 
@@ -18,84 +19,99 @@ public readonly record struct FailureMessage(string Headline, string? Advice, bo
 /// resolved" tells a player nothing they can act on. This is the one place that translation
 /// happens, so the window and the console front end cannot describe the same failure differently.
 ///
-/// The text is Slovak because it is read by players — schoolchildren, in this game's case.
-/// Developer-facing output such as the CLI's help stays English; the split is by audience,
-/// not by project.
+/// Nothing here ever puts an exception's own message on screen. Those messages are English —
+/// they are written for whoever reads the log — and pasting one after a Slovak headline produced
+/// exactly the half-translated sentence this launcher used to show. What a player needs out of
+/// them is the data, not the wording, so the exceptions that carry data carry it as fields and
+/// the sentence is built in the language being spoken.
 /// </summary>
 public static class FailureMessages
 {
-    public static FailureMessage Describe(Exception exception) => exception switch
+    public static FailureMessage Describe(Exception exception, Texts texts) => exception switch
     {
         GameIsRunningException => new(
-            "Hra už beží.",
-            "Zavri ju a skús to znova.",
+            texts.GameIsRunningHeadline,
+            texts.GameIsRunningAdvice,
             true),
 
         LauncherTooOldException e => new(
-            "Tento launcher je príliš starý.",
-            e.Message + " Stiahni si novší.",
+            texts.LauncherTooOldHeadline,
+            texts.LauncherTooOldAdvice(e.Required, e.Current),
+            false),
+
+        NoBuildForPlatformException => new(
+            texts.NoBuildForThisComputer,
+            null,
             false),
 
         InsufficientDiskSpaceException e => new(
-            "Nedostatok voľného miesta.",
-            e.Message + " Treba miesto na stiahnutie aj rozbalenie naraz.",
+            texts.NotEnoughSpaceHeadline,
+            texts.NotEnoughSpaceAdvice(e.RequiredBytes, e.AvailableBytes, e.DriveName),
             true),
 
         HashMismatchException => new(
-            "Stiahnutý súbor je poškodený.",
-            "Nesedel kontrolný súčet, tak sme ho zmazali. Zvyčajne pomôže skúsiť to znova.",
+            texts.CorruptedDownloadHeadline,
+            texts.CorruptedDownloadAdvice,
             true),
 
         ManifestException => new(
-            "Nepodarilo sa prečítať informácie o verzii.",
-            "Server odpovedal, ale niečím, čomu tento launcher nerozumie.",
+            texts.ManifestUnreadableHeadline,
+            texts.ManifestUnreadableAdvice,
             false),
 
         GameLaunchException e => new(
-            "Hru sa nepodarilo spustiť.",
-            e.Message + " Môže pomôcť oprava inštalácie.",
+            texts.GameWouldNotStartHeadline,
+            texts.GameWouldNotStartAdvice(e.Problem, e.Path),
             true),
 
         LauncherUpdateException e => new(
-            "Launcher sa nedokázal aktualizovať.",
-            e.Message,
+            texts.LauncherUpdateFailedHeadline,
+            texts.LauncherUpdateFailedAdvice(e.Problem, e.Path),
             false),
 
-        UpdateException e => new(
-            e.Message,
-            null,
+        UpdateException => new(
+            texts.SomethingWentWrongHeadline,
+            texts.TryAgainAdvice,
             true),
 
         HttpRequestException => new(
-            "Nepodarilo sa spojiť so serverom.",
-            "Skontroluj pripojenie a skús to znova.",
+            texts.CouldNotReachTheServerHeadline,
+            texts.CouldNotReachTheServerAdvice,
             true),
 
         OperationCanceledException => new(
-            "Zrušené.",
+            texts.Cancelled,
             null,
             true),
 
         UnauthorizedAccessException => new(
-            "Launcher nemá právo zapisovať tam, kam inštaluje.",
-            "Skontroluj práva k priečinku, alebo spusti launcher z iného miesta.",
+            texts.NoWritePermissionHeadline,
+            texts.NoWritePermissionAdvice,
             false),
 
-        IOException e => new(
-            "Súbor sa nepodarilo zapísať.",
-            e.Message,
+        IOException => new(
+            texts.FileNotWrittenHeadline,
+            texts.TryAgainAdvice,
             true),
 
         _ => new(
-            "Niečo sa pokazilo.",
-            exception.Message,
+            texts.SomethingWentWrongHeadline,
+            texts.TryAgainAdvice,
             true),
     };
 
-    /// <summary>The headline and advice as one line, for the console.</summary>
+    /// <summary>
+    /// The headline and advice as one line, for the console.
+    ///
+    /// The console is a developer's, so it gets English and the exception's own message with it:
+    /// there the wording is the point, and losing it would mean reaching for the log to learn
+    /// what a one-line command already knew.
+    /// </summary>
     public static string Flatten(Exception exception)
     {
-        var message = Describe(exception);
-        return message.Advice is null ? message.Headline : $"{message.Headline} {message.Advice}";
+        var message = Describe(exception, Texts.English);
+        var summary = message.Advice is null ? message.Headline : $"{message.Headline} {message.Advice}";
+
+        return string.IsNullOrWhiteSpace(exception.Message) ? summary : $"{summary} ({exception.Message})";
     }
 }

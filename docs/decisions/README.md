@@ -3,6 +3,12 @@
 Netriviálne rozhodnutia a pasce, na ktoré by niekto nabehol znova.
 Najnovšia verzia hore.
 
+## 0.2.0-alpha
+
+| dátum | rozhodnutie |
+|---|---|
+| 2026-09-18 | [Obidva jazyky v jednom riadku, a Core prestáva hovoriť vetami](2026-09-18-obidva-jazyky-v-jednom-riadku.md) |
+
 ## 0.1.4-alpha – 0.1.8-alpha
 
 | dátum | rozhodnutie |

@@ -1,9 +1,16 @@
 using FriWorld.Launcher.Core.Install;
+using FriWorld.Launcher.Core.Localization;
 using FriWorld.Launcher.Core.Update;
 
 namespace FriWorld.Launcher.Cli;
 
-/// <summary>Renders <see cref="UpdateStatus"/> as a single rewriting console line.</summary>
+/// <summary>
+/// Renders <see cref="UpdateStatus"/> as a single rewriting console line.
+///
+/// English, always. This front end exists for whoever is building or debugging the launcher, and
+/// its output ends up in issue reports and CI logs; a phase name that changed language with a
+/// preference file would make those harder to read for no one's benefit.
+/// </summary>
 public sealed class ConsoleProgressPrinter : IProgress<UpdateStatus>
 {
     private readonly Lock _gate = new();
@@ -43,7 +50,7 @@ public sealed class ConsoleProgressPrinter : IProgress<UpdateStatus>
 
     private static string Compose(UpdateStatus status)
     {
-        var text = status.Message;
+        var text = status.Message(Texts.English);
 
         if (status.Download is { } download)
         {

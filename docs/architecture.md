@@ -241,12 +241,32 @@ vedieť ukázať inam bez editovania nasadeného súboru.
 {
   "manifestUrl": "https://…/manifest.json",
   "installRoot": "instalacia",
+  "language": "sk",
   "keepOpenAfterLaunch": false
 }
 ```
 
 Relatívna cesta v súbore sa počíta **od launchera**, nie od pracovného priečinka —
 zástupca môže sedieť kdekoľvek.
+
+### Jazyk
+
+Poradie je to isté, s jedným krokom navyše — voľbou, ktorú si niekto spravil v okne:
+
+1. `FRIWORLD_LANGUAGE` (`sk` alebo `en`)
+2. `language.txt` v inštalačnom koreni — to, čo si človek prepol v okne
+3. `language` v `launcher.json`
+4. slovenčina
+
+Zapamätaná voľba je **nad** súborom zámerne. Súbor hovorí, v čom sa má stroj spustiť —
+tak sa počítač na deň otvorených dverí nastaví na angličtinu bez toho, aby sa jej niekto
+dotkol. Prepínač v okne je človek, ktorý povie, čo chce, a predvoľba, ktorú by reštart
+ticho zahodil, by za ponúknutie nestála.
+
+Systémová kultúra sa **nečíta**. Celé riešenie sa buildí s `InvariantGlobalization`, takže
+by na slovenských Windows odpovedala to isté čo na anglických; a stroje, na ktorých toto
+beží, sú školské počítače, ktoré sú slovenské. Zlý odhad by znamenal slovenské dieťa pred
+anglickým oknom, čo je horšie než neodhadovať.
 
 ---
 

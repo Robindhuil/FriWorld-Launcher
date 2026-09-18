@@ -257,10 +257,13 @@ dotnet run --project src/FriWorld.Launcher.Cli -- pack \
   --input "<cesta k Build/<verzia>>" \
   --version <verzia> \
   --notes "Čo je nové, jedna až tri vety." \
+  --notes-en "The same, in English." \
   --base-url "https://github.com/Robindhuil/FriWorld/releases/download/v<verzia>"
 ```
 
-Vznikne `dist/<verzia>/` s archívom a `manifest.json`. Balič sám vynechá Unity priečinky
+Vznikne `dist/<verzia>/` s archívom a `manifest.json`. `--notes-en` je nepovinné; bez neho
+ukáže anglické okno slovenskú poznámku, čo je lepšie než prázdne miesto, ale nie je to to,
+čo návšteva má vidieť. Balič sám vynechá Unity priečinky
 označené `DoNotShip`, nastaví execute bit v tar.gz a manifest si po zápise **prečíta späť**,
 takže sa nevydá súbor, ktorý by launcher odmietol.
 
@@ -345,6 +348,7 @@ dotnet run --project src/FriWorld.Launcher.Cli -- pack \
   --base-url "https://github.com/Robindhuil/FriWorld/releases/download/v<verzia hry>" \
   --launcher-version <verzia launchera> \
   --launcher-notes "Čo je v ňom nové." \
+  --launcher-notes-en "The same, in English." \
   --launcher-url "https://github.com/Robindhuil/FriWorld-Launcher/releases/latest" \
   --launcher-file "win-x64=dist/launcher/<verzia>/FriWorldLauncher.exe" \
   --launcher-base-url "https://github.com/Robindhuil/FriWorld-Launcher/releases/download/v<verzia>"

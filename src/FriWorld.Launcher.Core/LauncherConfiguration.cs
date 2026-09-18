@@ -1,4 +1,5 @@
 using FriWorld.Launcher.Core.Diagnostics;
+using FriWorld.Launcher.Core.Localization;
 using FriWorld.Launcher.Core.Net;
 using FriWorld.Launcher.Core.Platform;
 using FriWorld.Launcher.Core.Sources;
@@ -14,6 +15,9 @@ public sealed class LauncherConfiguration
 {
     public const string ManifestUrlVariable = "FRIWORLD_MANIFEST_URL";
 
+    /// <summary>Forces the language for one run, the way the manifest URL can be forced.</summary>
+    public const string LanguageVariable = "FRIWORLD_LANGUAGE";
+
     /// <summary>
     /// Placeholder until the real storage exists.
     ///
@@ -25,11 +29,16 @@ public sealed class LauncherConfiguration
     /// </summary>
     public const string DefaultManifestUrl = "https://friworld.example/releases/manifest.json";
 
-    public LauncherConfiguration(Uri manifestUrl, LauncherPaths paths, ILauncherLog log)
+    public LauncherConfiguration(
+        Uri manifestUrl,
+        LauncherPaths paths,
+        ILauncherLog log,
+        Language language = Languages.Default)
     {
         ManifestUrl = manifestUrl;
         Paths = paths;
         Log = log;
+        Language = language;
     }
 
     public Uri ManifestUrl { get; }
@@ -37,6 +46,12 @@ public sealed class LauncherConfiguration
     public LauncherPaths Paths { get; }
 
     public ILauncherLog Log { get; }
+
+    /// <summary>The language this run speaks to a player in.</summary>
+    public Language Language { get; }
+
+    /// <summary>Everything the window says, in <see cref="Language"/>.</summary>
+    public Texts Texts => Texts.For(Language);
 
     /// <summary>
     /// Resolves configuration from, most specific first: the explicit argument, the environment,
@@ -49,7 +64,8 @@ public sealed class LauncherConfiguration
     public static LauncherConfiguration Resolve(
         string? manifestUrlOverride = null,
         string? rootOverride = null,
-        Action<string>? logMirror = null)
+        Action<string>? logMirror = null,
+        string? languageOverride = null)
     {
         var settings = LauncherSettingsFile.Load();
 
@@ -72,8 +88,39 @@ public sealed class LauncherConfiguration
         var paths = root is null ? LauncherPaths.Default() : new LauncherPaths(ResolveAgainstExecutable(root));
         var log = new FileLauncherLog(paths.LogFile, logMirror);
 
-        return new LauncherConfiguration(url, paths, log);
+        var language = ResolveLanguage(
+            languageOverride,
+            Environment.GetEnvironmentVariable(LanguageVariable),
+            LanguagePreference.Read(paths),
+            settings.Language);
+
+        return new LauncherConfiguration(url, paths, log, language);
     }
+
+    /// <summary>
+    /// Picks the language, most specific first: the explicit argument, the environment, the
+    /// choice someone made in the window, then <c>launcher.json</c>, then Slovak.
+    ///
+    /// The remembered choice beats the settings file on purpose. The file says what a deployment
+    /// starts in; the switch in the window is a person saying what they want, and a preference
+    /// that a restart quietly undid would not be worth offering.
+    ///
+    /// There is deliberately no guess at the system language. The whole solution builds with
+    /// <c>InvariantGlobalization</c>, so the culture APIs would answer "invariant" on a Slovak
+    /// Windows as readily as on an English one — and the machines this runs on are school
+    /// computers, which are Slovak. Guessing badly here would mean a Slovak child opening an
+    /// English window, which is worse than not guessing at all.
+    /// </summary>
+    internal static Language ResolveLanguage(
+        string? languageOverride,
+        string? fromEnvironment,
+        Language? remembered,
+        string? fromSettingsFile) =>
+        Languages.TryParse(languageOverride)
+        ?? Languages.TryParse(fromEnvironment)
+        ?? remembered
+        ?? Languages.TryParse(fromSettingsFile)
+        ?? Languages.Default;
 
     private static string? Coalesce(params string?[] candidates) =>
         candidates.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));

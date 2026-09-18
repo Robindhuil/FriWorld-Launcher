@@ -1,6 +1,6 @@
 # Plánované
 
-**Verzia launchera:** 0.1.8-alpha · **Dátum:** 2026-08-27
+**Verzia launchera:** 0.1.8-alpha · **Dátum:** 2026-09-18
 
 Čo sa má spraviť a čo o tom už vieme. Nie zadanie — zadanie vznikne, keď sa na tom začne
 robiť. Účel je, aby sa pri tom nezačínalo od nuly a nenarazilo sa na to, na čo sme prišli
@@ -27,8 +27,9 @@ o rozhodnutiach, a **správy commitov odteraz**. História commitov sa neprepisu
 
 **Čo zostáva po slovensky:** všetko, čo číta hráč. `tools/package/CITAJ-MA.txt`,
 `Spustit-ak-exe-nejde.cmd`, texty v okne, popisy vydaní na GitHube a stránka na Hube.
-Cieľovka sú slovenskí žiaci; to sa týmto nemení a je to celý dôvod, prečo sa
-[preklady v okne](#preklady-slovenčina-a-angličtina) riešia zvlášť.
+Cieľovka sú slovenskí žiaci; to sa týmto nemení a je to celý dôvod, prečo sa preklady
+v okne riešili zvlášť — a už sú hotové, viď
+[rozhodnutie](decisions/2026-09-18-obidva-jazyky-v-jednom-riadku.md).
 
 **Komentáre v kóde už po anglicky sú.** Nie je tam čo robiť.
 
@@ -58,40 +59,6 @@ Cieľovka sú slovenskí žiaci; to sa týmto nemení a je to celý dôvod, pre�
 ---
 
 ## 0.2.0-alpha
-
-### Preklady: slovenčina a angličtina
-
-Okno je dnes celé po slovensky, natvrdo. Cieľovka sú slovenskí žiaci, takže slovenčina
-zostáva predvolená; angličtina je pre kohokoľvek mimo, a pre fakultu, keď hru ukazuje
-zahraničným návštevám.
-
-**Čo treba rozhodnúť skôr, než sa začne písať:**
-
-| otázka | prečo je otvorená |
-|---|---|
-| kto vyberá jazyk | systémová kultúra, `launcher.json`, alebo prepínač v okne — a či sa voľba pamätá |
-| čo s `notes` v manifeste | poznámky k verzii píše človek pri vydaní, launcher ich prekladať nevie; buď jeden text, alebo pole na jazyk v manifeste |
-| kde žijú texty | `.resx`, alebo obyčajná trieda so slovníkom |
-
-To druhé je zásah do [manifestu](manifest.md), teda do kontraktu medzi repami. Ak sa
-pridáva, tak radšej hneď — neznáme polia staré launchery ignorujú, ale len dovtedy, kým to
-dáva správny výsledok.
-
-**Na čo si dať pozor:**
-
-- **Core dnes nesie slovenské texty**, čo pri jednom jazyku nikomu neprekážalo:
-  `FailureMessage`, `UpdateStatus`, `UpdateOrchestrator`, `WindowFit`. Buď sa `Core` očistí
-  na kódy a preklad ostane v `App`, alebo nesie zdroje aj on. Prvé je čistejšie a znamená
-  prejsť každé miesto, kde `Core` dnes hovorí vetou.
-- **Formátovanie čísel je dnes hack.** `Size()` vo view modeli nahrádza bodku čiarkou, lebo
-  slovenčina píše desatinnú čiarku. S dvomi jazykmi to musí ísť cez kultúru — a `Core` má
-  `InvariantGlobalization`, čo treba vypnúť alebo obísť vedome.
-- **Slovenské texty sú o 10–20 % dlhšie.** Tlačidlá musia zniesť „Aktualizovať" aj „Update"
-  bez toho, aby sa akčné pásmo pretrhlo; pri piatich tlačidlách naraz je to najtesnejšie.
-- Chybové hlásenia majú dva riadky — čo sa stalo a čo s tým — a **obidva sa prekladajú**.
-  Preložiť len prvý je horšie než nepreložiť nič.
-
----
 
 ### Pozadie ako slideshow
 

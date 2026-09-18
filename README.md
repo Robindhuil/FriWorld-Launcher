@@ -103,7 +103,8 @@ spustiteľného súboru → predvoľba.
 ```json
 {
   "manifestUrl": "https://…/manifest.json",
-  "installRoot": "instalacia"
+  "installRoot": "instalacia",
+  "language": "sk"
 }
 ```
 
@@ -111,6 +112,7 @@ spustiteľného súboru → predvoľba.
 |---|---|
 | `FRIWORLD_MANIFEST_URL` | odkiaľ sa číta manifest — URL alebo cesta na disku |
 | `FRIWORLD_LAUNCHER_ROOT` | kam sa inštaluje |
+| `FRIWORLD_LANGUAGE` | jazyk okna, `sk` alebo `en`; konzola je anglická vždy |
 
 Presun buildov na iné úložisko je preto úprava jedného riadka, nie vydanie nového launchera.
 

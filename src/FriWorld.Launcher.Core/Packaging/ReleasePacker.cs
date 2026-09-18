@@ -26,6 +26,8 @@ public static class ReleasePacker
 
         public string? Notes { get; init; }
 
+        public string? NotesEn { get; init; }
+
         /// <summary>
         /// Prefix for the archive urls in the manifest. Leave null to write bare file names, which
         /// keeps the manifest valid wherever the folder is uploaded.
@@ -130,6 +132,7 @@ public static class ReleasePacker
             Version = options.Version,
             Released = DateTimeOffset.UtcNow,
             Notes = options.Notes,
+            NotesEn = options.NotesEn,
             Platforms = packages,
             Launcher = options.Launcher,
             MinLauncherVersion = options.MinLauncherVersion,

@@ -125,6 +125,7 @@ public static class CommandRunner
                 OutputDirectory = options.Value("out", Path.Combine("dist", version)),
                 Version = version,
                 Notes = options.Value("notes"),
+                NotesEn = options.Value("notes-en"),
                 BaseUrl = options.Value("base-url"),
                 ExecOverrides = ParseExecOverrides(options),
                 Launcher = ParseLauncherRelease(options),
@@ -230,6 +231,7 @@ public static class CommandRunner
             Version = version ?? LauncherVersion.Current,
             DownloadUrl = url ?? string.Empty,
             Notes = options.Value("launcher-notes"),
+            NotesEn = options.Value("launcher-notes-en"),
             Platforms = HashLauncherBinaries(files, options.Value("launcher-base-url")),
         };
 
@@ -341,9 +343,16 @@ public static class CommandRunner
                           $"({check.Package.ResolvedFormat})");
         Console.WriteLine($"exec          {check.Package.Exec}");
 
+        // Both notes are printed, labelled: this command is how anyone checks a release before
+        // it goes out, and a missing English note is the easiest thing to miss.
         if (!string.IsNullOrWhiteSpace(check.Manifest.Notes))
         {
-            Console.WriteLine($"notes         {check.Manifest.Notes}");
+            Console.WriteLine($"notes (sk)    {check.Manifest.Notes}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(check.Manifest.NotesEn))
+        {
+            Console.WriteLine($"notes (en)    {check.Manifest.NotesEn}");
         }
 
         Console.WriteLine();
@@ -582,7 +591,12 @@ public static class CommandRunner
 
         if (!string.IsNullOrWhiteSpace(launcher.Notes))
         {
-            Console.WriteLine($"  {launcher.Notes}");
+            Console.WriteLine($"  sk: {launcher.Notes}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(launcher.NotesEn))
+        {
+            Console.WriteLine($"  en: {launcher.NotesEn}");
         }
 
         Console.WriteLine($"  {launcher.DownloadUrl}");
@@ -617,6 +631,8 @@ public static class CommandRunner
             Options
               --manifest <url|path>    Manifest location. Overrides FRIWORLD_MANIFEST_URL.
               --root <path>            Install root. Overrides FRIWORLD_LAUNCHER_ROOT.
+                                       The window's language is FRIWORLD_LANGUAGE (sk|en);
+                                       this front end is English either way.
               --verbose                Mirror the log to stderr and print stack traces
               --wait                   run and play: stay alive until the game exits
 
@@ -628,12 +644,14 @@ public static class CommandRunner
               --input <path>           Folder with one subfolder per platform key (required)
               --version <tag>          The game's bundleVersion (required)
               --out <path>             Output folder (default dist/<version>)
-              --notes <text>           Release note shown in the launcher
+              --notes <text>           Release note shown in the launcher, in Slovak
+              --notes-en <text>        The same note in English; omit and the Slovak one shows
               --base-url <url>         Prefix for archive urls; omit to write bare file names
               --exec <platform>=<path> Override the detected executable; may repeat
               --launcher-version <tag> Newest launcher, for the update notice
               --launcher-url <url>     Download page for the newest launcher
-              --launcher-notes <text>  One-liner about the newest launcher
+              --launcher-notes <text>  One-liner about the newest launcher, in Slovak
+              --launcher-notes-en <t>  The same one-liner in English
               --launcher-file <p>=<f>  Launcher binary per platform; enables self-update
               --launcher-base-url <u>  https folder the launcher binaries are served from
               --min-launcher <tag>     Refuse this release on older launchers

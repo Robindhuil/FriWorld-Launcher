@@ -20,7 +20,9 @@ public sealed class GameLauncher(LauncherPaths paths, ILauncherLog? log = null)
     {
         if (string.IsNullOrWhiteSpace(exec))
         {
-            throw new GameLaunchException("The manifest does not say which file to run.");
+            throw new GameLaunchException(
+                GameLaunchProblem.ExecutableNotNamed,
+                "The manifest does not say which file to run.");
         }
 
         var path = Path.GetFullPath(Path.Combine(installDirectory, exec));
@@ -37,13 +39,16 @@ public sealed class GameLauncher(LauncherPaths paths, ILauncherLog? log = null)
             }
 
             throw new GameLaunchException(
+                GameLaunchProblem.ExecutableMissing,
                 $"'{exec}' is an app bundle and no executable was found at Contents/MacOS/{bundleName}. " +
-                "The manifest should name the binary inside the bundle.");
+                "The manifest should name the binary inside the bundle.",
+                inner);
         }
 
         if (!File.Exists(path))
         {
-            throw new GameLaunchException($"The game executable is missing: {path}");
+            throw new GameLaunchException(
+                GameLaunchProblem.ExecutableMissing, $"The game executable is missing: {path}", path);
         }
 
         return path;
@@ -161,11 +166,36 @@ public sealed class GameLauncher(LauncherPaths paths, ILauncherLog? log = null)
         _log.Info($"Starting {executablePath}");
 
         return Process.Start(info)
-            ?? throw new GameLaunchException($"The operating system did not start {executablePath}.");
+            ?? throw new GameLaunchException(
+                GameLaunchProblem.SystemRefused,
+                $"The operating system did not start {executablePath}.",
+                executablePath);
     }
 
     private static bool IsBatchScript(string path) =>
         Path.GetExtension(path).ToLowerInvariant() is ".cmd" or ".bat";
 }
 
-public sealed class GameLaunchException(string message) : Exception(message);
+/// <summary>Which of the ways starting the game can fail this was. The window turns it into a sentence.</summary>
+public enum GameLaunchProblem
+{
+    Other,
+    ExecutableNotNamed,
+    ExecutableMissing,
+    SystemRefused,
+}
+
+/// <summary>
+/// The game could not be started. The message is English, for the log; <see cref="Problem"/> and
+/// <see cref="Path"/> are what the window builds a sentence from, in the player's language.
+/// </summary>
+public sealed class GameLaunchException(
+    GameLaunchProblem problem,
+    string message,
+    string? path = null) : Exception(message)
+{
+    public GameLaunchProblem Problem { get; } = problem;
+
+    /// <summary>The file the failure is about, when there is one.</summary>
+    public string? Path { get; } = path;
+}

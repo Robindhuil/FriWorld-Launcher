@@ -13,6 +13,44 @@ na to číslo.
 _Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.8-alpha**; ďalšie funkcie idú
 ako **0.2.0-alpha** — čo sa chystá, je v [docs/roadmap.md](docs/roadmap.md)._
 
+### Added
+- **Okno hovorí po slovensky aj po anglicky.** Slovenčina zostáva predvolená — cieľovka sú
+  slovenskí žiaci — angličtina je na prepnutie v ponuke `⋯`, pomenovaná jazykom, **do
+  ktorého** prepína. Voľba sa pamätá v `language.txt` v inštalačnom koreni, nie
+  v `launcher.json`: ten patrí nasadeniu a môže sedieť tam, kam launcher nesmie zapisovať.
+  Poradie je `FRIWORLD_LANGUAGE`, zapamätaná voľba, `language` v `launcher.json`, slovenčina.
+  Systémová kultúra sa **nečíta** — s `InvariantGlobalization` by na slovenských Windows
+  odpovedala to isté čo na anglických, a zlý odhad by znamenal slovenské dieťa pred
+  anglickým oknom.
+- Prepnutie **povie celé okno znova**, nielen popisky. Stavový riadok, riadok verzie aj
+  poznámky k verzii sú hotové vety napísané vtedy, keď sa niečo stalo; prepínač, ktorý by
+  prepísal len tlačidlá, by nechal okno hovoriť dvomi jazykmi naraz.
+- Manifest má `notesEn` vedľa `notes`, a `pack` k tomu `--notes-en`. Poznámky píše človek pri
+  vydaní, launcher ich prekladať nevie. Keď anglické znenie chýba, ukáže sa slovenské —
+  poznámka v zlom jazyku povie viac než prázdne „ČO JE NOVÉ".
+- `LocalizationTests` prechádza zoznam textov reflexiou a padá na prázdnom reťazci, na
+  slovenskom písmene v anglickom texte aj na vete, ktorá vyšla v obidvoch jazykoch rovnako.
+  To posledné je skopírovaný riadok, nie preklad.
+
+### Fixed
+- **Chybové hlásenia ukazovali hráčovi pol prekladu.** Nadpis bol slovenský a za neho sa
+  lepilo `e.Message`, teda anglická veta z výnimky: „Nedostatok voľného miesta. Need about
+  1,7 GB free on C:\ …". Hlásenie výnimky teraz zostáva anglické a ide **do denníka**;
+  výnimky nesú údaje — čísla, verzie, cesty, kód problému — a vetu si okno postaví v jazyku,
+  ktorým práve hovorí.
+- Konzolový front end hlásil fázy po slovensky („Pripravené" uprostred anglického výpisu).
+  Je to nástroj pre toho, kto niečo opravuje, a jeho výstup končí v hláseniach chýb a v CI —
+  teraz je anglický celý.
+- Desatinná čiarka už nie je natvrdo. Bola na dvoch miestach ako `Replace('.', ',')`, čím by
+  bolo každé anglické číslo nesprávne; oddeľovač je teraz súčasť prekladu.
+
+### Changed
+- `UpdateStatus` nesie fázu a verziu, nie vetu. Ten istý kód beží pod oknom, ktoré hovorí
+  jedným z dvoch jazykov, a pod konzolou, ktorá je vždy anglická.
+- `check` vypisuje obidve znenia poznámok (`notes (sk)`, `notes (en)`). Tento príkaz je to,
+  čím sa vydanie kontroluje pred vypustením, a chýbajúca anglická poznámka sa prehliadne
+  najľahšie.
+
 ## [0.1.8-alpha] - 2026-08-27
 
 ### Changed

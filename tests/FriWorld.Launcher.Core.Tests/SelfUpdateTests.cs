@@ -1,6 +1,8 @@
 using FriWorld.Launcher.Core;
 using FriWorld.Launcher.Core.Install;
 using FriWorld.Launcher.Core.Launch;
+using System.Net.Http;
+using FriWorld.Launcher.Core.Localization;
 using FriWorld.Launcher.Core.Manifest;
 using FriWorld.Launcher.Core.Net;
 using FriWorld.Launcher.Core.Platform;
@@ -154,20 +156,26 @@ public class SelfUpdateTests
     public void Cleaning_up_a_missing_superseded_file_does_nothing_bad() =>
         Updater().CleanUpSupersededExecutable();
 
-    [Theory]
-    [InlineData(typeof(GameIsRunningException), "Hra už beží.")]
-    [InlineData(typeof(LauncherTooOldException), "Tento launcher je príliš starý.")]
-    public void Known_failures_are_described_in_words_a_player_can_act_on(Type type, string headline)
+    public static TheoryData<Exception, string, string> KnownFailures => new()
     {
-        var exception = (Exception)Activator.CreateInstance(type, "raw technical text")!;
+        { new GameIsRunningException("raw technical text"), "Hra už beží.", "The game is already running." },
+        { new LauncherTooOldException("raw technical text"), "Tento launcher je príliš starý.", "This launcher is too old." },
+        { new HttpRequestException("raw technical text"), "Nepodarilo sa spojiť so serverom.", "The server could not be reached." },
+    };
 
-        Assert.Equal(headline, FailureMessages.Describe(exception).Headline);
+    [Theory]
+    [MemberData(nameof(KnownFailures))]
+    public void Known_failures_are_described_in_words_a_player_can_act_on(
+        Exception exception, string slovak, string english)
+    {
+        Assert.Equal(slovak, FailureMessages.Describe(exception, Texts.Slovak).Headline);
+        Assert.Equal(english, FailureMessages.Describe(exception, Texts.English).Headline);
     }
 
     [Fact]
     public void A_hash_mismatch_is_described_as_recoverable()
     {
-        var message = FailureMessages.Describe(new HashMismatchException("sha mismatch"));
+        var message = FailureMessages.Describe(new HashMismatchException("sha mismatch"), Texts.Slovak);
 
         Assert.True(message.Recoverable);
         Assert.Contains("poškoden", message.Headline, StringComparison.OrdinalIgnoreCase);
@@ -176,22 +184,65 @@ public class SelfUpdateTests
     [Fact]
     public void Running_out_of_space_explains_why_it_needs_so_much()
     {
-        var message = FailureMessages.Describe(new InsufficientDiskSpaceException("need 3 GB"));
+        var message = FailureMessages.Describe(new InsufficientDiskSpaceException("need 3 GB"), Texts.Slovak);
 
         Assert.False(string.IsNullOrWhiteSpace(message.Advice));
         Assert.True(message.Recoverable);
     }
 
     [Fact]
+    public void Running_out_of_space_puts_the_real_numbers_in_the_player_s_language()
+    {
+        var exception = new InsufficientDiskSpaceException(
+            "Need about 1.5 GB free on C:\\ ...", 1_610_612_736, 536_870_912, "C:\\");
+
+        Assert.Contains("1,5 GB", FailureMessages.Describe(exception, Texts.Slovak).Advice);
+        Assert.Contains("1.5 GB", FailureMessages.Describe(exception, Texts.English).Advice);
+    }
+
+    [Fact]
     public void A_launcher_too_old_failure_is_not_worth_retrying() =>
-        Assert.False(FailureMessages.Describe(new LauncherTooOldException("x")).Recoverable);
+        Assert.False(FailureMessages.Describe(new LauncherTooOldException("x"), Texts.Slovak).Recoverable);
+
+    [Fact]
+    public void A_launcher_too_old_failure_names_both_versions()
+    {
+        var exception = new LauncherTooOldException("raw", "0.3.0-alpha", "0.1.8-alpha");
+        var advice = FailureMessages.Describe(exception, Texts.English).Advice;
+
+        Assert.Contains("0.3.0-alpha", advice);
+        Assert.Contains("0.1.8-alpha", advice);
+    }
 
     [Fact]
     public void An_unknown_failure_still_says_something()
     {
-        var message = FailureMessages.Describe(new InvalidOperationException("internal detail"));
+        var message = FailureMessages.Describe(new InvalidOperationException("internal detail"), Texts.Slovak);
 
         Assert.Equal("Niečo sa pokazilo.", message.Headline);
-        Assert.Equal("internal detail", message.Advice);
+        Assert.False(string.IsNullOrWhiteSpace(message.Advice));
+    }
+
+    [Fact]
+    public void A_failure_never_shows_a_player_the_exception_s_own_english()
+    {
+        // The bug this exists for: the advice used to be a Slovak sentence with the exception's
+        // English message pasted in front of it, so a player read half a translation.
+        Exception[] failures =
+        [
+            new InvalidOperationException("internal detail"),
+            new UpdateException("Release 1.0 has no build for win-x64."),
+            new GameLaunchException(GameLaunchProblem.ExecutableNotNamed, "The manifest does not say which file to run."),
+            new LauncherUpdateException(LauncherUpdateProblem.Other, "Installing the new launcher failed: access denied."),
+            new IOException("The process cannot access the file."),
+        ];
+
+        foreach (var failure in failures)
+        {
+            var message = FailureMessages.Describe(failure, Texts.Slovak);
+
+            Assert.DoesNotContain(failure.Message, message.Headline);
+            Assert.DoesNotContain(failure.Message, message.Advice ?? string.Empty);
+        }
     }
 }

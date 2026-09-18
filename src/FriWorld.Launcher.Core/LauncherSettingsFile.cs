@@ -21,6 +21,16 @@ public sealed record LauncherSettingsFile
     public string? InstallRoot { get; init; }
 
     /// <summary>
+    /// Which language the window comes up in: <c>sk</c> or <c>en</c>. Absent means Slovak.
+    ///
+    /// This belongs to the deployment, not to the person — it is how a machine set up for an open
+    /// day or a foreign visitor starts in English without anyone touching it. Someone flipping
+    /// the switch in the window overrides it for themselves, and their choice is remembered
+    /// separately, because this file may well sit somewhere they cannot write.
+    /// </summary>
+    public string? Language { get; init; }
+
+    /// <summary>
     /// Keeps the window open after the game starts. Off by default: the launcher's job is done
     /// once the game is running, and a second window on the taskbar is just clutter.
     ///

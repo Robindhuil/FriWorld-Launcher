@@ -239,6 +239,12 @@ doľava. Je vidieť vždy.
 |---|---|
 | **Skontrolovať znova** | znovu sa opýta manifestu; zakázané, kým launcher pracuje |
 | **Otvoriť denník launchera** | otvorí `launcher.log` v správcovi súborov |
+| **English / Slovenčina** | prepne jazyk okna a zapamätá si to |
+
+Prepínač jazyka je pomenovaný jazykom, **do ktorého prepína**, nie tým, ktorý je vidieť —
+položka, ktorá v slovenskom okne hovorí „Slovenčina", nepovie nikomu nič. Je v ponuke a nie
+v akčnom pásme preto, že sa naň klikne asi tak často ako na denník, a akčné pásmo je
+najtesnejší riadok v okne.
 
 Delenie je zámerné a drží sa ho aj to, čo pribudne: **v ponuke sú akcie na launcheri,
 v akčnom pásme akcie na hre.** Ponuka je vľavo hore práve preto, aby nebola po ceste
@@ -469,11 +475,30 @@ Musí byť **zreteľne tichší** než hlavné tlačidlo — je to poznámka, ni
 
 ## 8. Texty
 
-**Rozhodnuté: slovenčina.** Cieľovka sú slovenskí žiaci základných a stredných škôl,
-anglické texty tam nesedeli. Okno je dnes celé po slovensky; anglické podoby nižšie sú
-pôvodné znenia zo zadania a slúžia už len ako mapovanie.
+**Predvolená je slovenčina, angličtina je na prepnutie.** Cieľovka sú slovenskí žiaci
+základných a stredných škôl, takže slovenčina zostáva tým, v čom sa okno otvorí. Angličtina
+je pre kohokoľvek mimo — návštevu na dni otvorených dverí, fakultu, keď hru ukazuje
+zahraničnému hosťovi.
 
-| teraz | po slovensky |
+Jazyk sa berie, najkonkrétnejšie prvé: `FRIWORLD_LANGUAGE`, potom zapamätaná voľba
+z prepínača, potom `language` v `launcher.json`, inak slovenčina. Systémová kultúra sa
+nečíta — prečo, je v [architecture.md](architecture.md#jazyk).
+
+**Okno nikdy nehovorí dvomi jazykmi naraz.** To je celý zmysel toho, ako sú texty uložené:
+obidve znenia sú v jednom člene triedy `Texts` na jednom riadku, takže reťazec, ktorý
+existuje v jednom jazyku, existuje v obidvoch — alebo sa to neskompiluje. Patrí k tomu aj
+formát čísla: `1,5 GB` je správne tu a nesprávne v angličtine, takže desatinný oddeľovač
+cestuje so slovami.
+
+Čo sa **neprekladá**: denník a konzolový front end. Tie číta ten, kto niečo opravuje, a sú
+po anglicky všade. Hlásenie výnimky sa preto do okna nikdy nedostane — okno z nej berie
+údaje (čísla, verzie, cesty) a vetu si postaví samo.
+
+Poznámky k verzii píše človek pri vydaní, launcher ich prekladať nevie: manifest má na to
+`notes` a `notesEn`. Keď anglické znenie chýba, okno ukáže slovenské — poznámka v zlom
+jazyku povie viac než prázdne „ČO JE NOVÉ".
+
+| po anglicky | po slovensky |
 |---|---|
 | Checking for updates | Kontrolujem aktualizácie |
 | Not installed | Nenainštalované |
@@ -496,9 +521,10 @@ pôvodné znenia zo zadania a slúžia už len ako mapovanie.
 | Uninstalled | Odinštalované |
 
 Slovenské texty sú **dlhšie než anglické**, typicky o 10–20 %. Tlačidlá musia zniesť
-„Aktualizovať" aj „Skúsiť znova", nielen „Play".
+„Aktualizovať" aj „Skúsiť znova", nielen „Play" — a musia to zniesť bez toho, aby sa akčné
+pásmo pretrhlo, lebo tie isté tlačidlá menia šírku pri prepnutí jazyka.
 
-Desatinná čiarka, nie bodka.
+Desatinná čiarka po slovensky, bodka po anglicky.
 
 ---
 

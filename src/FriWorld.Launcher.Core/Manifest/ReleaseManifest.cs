@@ -1,3 +1,5 @@
+using FriWorld.Launcher.Core.Localization;
+
 namespace FriWorld.Launcher.Core.Manifest;
 
 /// <summary>
@@ -12,8 +14,30 @@ public sealed record ReleaseManifest
 
     public DateTimeOffset? Released { get; init; }
 
-    /// <summary>Short release note shown in the launcher window.</summary>
+    /// <summary>Short release note shown in the launcher window. Written in Slovak, like the window.</summary>
     public string? Notes { get; init; }
+
+    /// <summary>
+    /// The same note in English. Optional, and absent on every manifest written before the window
+    /// spoke English at all.
+    ///
+    /// A second field rather than turning <c>notes</c> into an object keyed by language: a
+    /// manifest where <c>notes</c> stopped being a string would fail to parse in every launcher
+    /// already on a school computer, and a launcher that cannot read the manifest cannot update
+    /// itself out of the problem either. An added field is ignored by those launchers, which is
+    /// exactly the right outcome — they only ever showed Slovak.
+    /// </summary>
+    public string? NotesEn { get; init; }
+
+    /// <summary>
+    /// The note to show, falling back to Slovak when the release carries no English one.
+    ///
+    /// Falling back is deliberate. The note is the one place a human writes prose into the
+    /// manifest, and an English window with an empty "What's new" says less than an English
+    /// window with a Slovak sentence in it.
+    /// </summary>
+    public string? NotesFor(Language language) =>
+        language == Language.English ? NotesEn ?? Notes : Notes;
 
     public IReadOnlyDictionary<string, PlatformPackage> Platforms { get; init; } =
         new Dictionary<string, PlatformPackage>(StringComparer.OrdinalIgnoreCase);

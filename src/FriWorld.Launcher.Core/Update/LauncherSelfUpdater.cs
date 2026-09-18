@@ -41,23 +41,35 @@ public sealed class LauncherSelfUpdater(
     public bool IsSelfContainedSingleFile =>
         _deployment.IsSingleFile && ExecutablePath is { } path && File.Exists(path);
 
-    /// <summary>Why a self-update is not on offer, or null when it is.</summary>
-    public string? BlockedReason()
+    /// <summary>What stands in the way of a self-update, or null when nothing does.</summary>
+    public LauncherUpdateProblem? BlockedProblem()
     {
         if (ExecutablePath is null)
         {
-            return "The launcher cannot tell which file it is running from.";
+            return LauncherUpdateProblem.Other;
         }
 
         if (!IsSelfContainedSingleFile)
         {
-            return "This launcher is not a single-file build, so it cannot replace itself safely.";
+            return LauncherUpdateProblem.NotASingleFileBuild;
         }
 
-        return CanWriteBeside(ExecutablePath)
-            ? null
-            : $"The launcher cannot write to {Path.GetDirectoryName(ExecutablePath)}.";
+        return CanWriteBeside(ExecutablePath) ? null : LauncherUpdateProblem.DirectoryNotWritable;
     }
+
+    /// <summary>
+    /// The same answer as <see cref="BlockedProblem"/> in English, for the log and the console.
+    /// Built from the problem rather than beside it, so the two cannot come to disagree.
+    /// </summary>
+    public string? BlockedReason() => BlockedProblem() switch
+    {
+        null => null,
+        LauncherUpdateProblem.NotASingleFileBuild =>
+            "This launcher is not a single-file build, so it cannot replace itself safely.",
+        LauncherUpdateProblem.DirectoryNotWritable =>
+            $"The launcher cannot write to {Path.GetDirectoryName(ExecutablePath)}.",
+        _ => "The launcher cannot tell which file it is running from.",
+    };
 
     /// <summary>
     /// Removes the executable left behind by a previous update. Call once at startup, before
@@ -102,11 +114,13 @@ public sealed class LauncherSelfUpdater(
         if (!binary.IsUsable)
         {
             throw new LauncherUpdateException(
+                LauncherUpdateProblem.BinaryNotOffered,
                 "The manifest's launcher binary is not usable. It needs an https url, a 64 character sha256 and a size.");
         }
 
         var path = ExecutablePath
-            ?? throw new LauncherUpdateException("The launcher cannot tell which file it is running from.");
+            ?? throw new LauncherUpdateException(
+                LauncherUpdateProblem.Other, "The launcher cannot tell which file it is running from.");
 
         var staged = path + ".incoming";
 
@@ -130,9 +144,10 @@ public sealed class LauncherSelfUpdater(
     /// </summary>
     public void Apply(string stagedPath, bool restart = true)
     {
-        if (BlockedReason() is { } reason)
+        if (BlockedProblem() is { } blocked)
         {
-            throw new LauncherUpdateException(reason);
+            throw new LauncherUpdateException(
+                blocked, BlockedReason()!, Path.GetDirectoryName(ExecutablePath));
         }
 
         var path = ExecutablePath!;
@@ -140,7 +155,8 @@ public sealed class LauncherSelfUpdater(
 
         if (!File.Exists(stagedPath))
         {
-            throw new LauncherUpdateException($"The staged launcher is missing: {stagedPath}");
+            throw new LauncherUpdateException(
+                LauncherUpdateProblem.Other, $"The staged launcher is missing: {stagedPath}");
         }
 
         // A leftover from an earlier attempt would block the rename below.
@@ -171,11 +187,14 @@ public sealed class LauncherSelfUpdater(
                 _log.Error($"Could not restore the launcher. It is at {superseded}.", restoreFailure);
 
                 throw new LauncherUpdateException(
+                    LauncherUpdateProblem.NotRestored,
                     $"The update failed and the launcher could not be put back. " +
-                    $"Rename '{superseded}' to '{Path.GetFileName(path)}' to recover.");
+                    $"Rename '{superseded}' to '{Path.GetFileName(path)}' to recover.",
+                    superseded);
             }
 
-            throw new LauncherUpdateException($"Installing the new launcher failed: {ex.Message}");
+            throw new LauncherUpdateException(
+                LauncherUpdateProblem.Other, $"Installing the new launcher failed: {ex.Message}");
         }
 
         _log.Info("The launcher has been replaced.");
@@ -233,4 +252,27 @@ public sealed class LauncherSelfUpdater(
     }
 }
 
-public sealed class LauncherUpdateException(string message) : Exception(message);
+/// <summary>Why the launcher could not replace itself. The window turns it into a sentence.</summary>
+public enum LauncherUpdateProblem
+{
+    Other,
+    BinaryNotOffered,
+    NotASingleFileBuild,
+    DirectoryNotWritable,
+    NotRestored,
+}
+
+/// <summary>
+/// The launcher could not update itself. The message is English, for the log; the window builds
+/// what a player reads from <see cref="Problem"/> and <see cref="Path"/>.
+/// </summary>
+public sealed class LauncherUpdateException(
+    LauncherUpdateProblem problem,
+    string message,
+    string? path = null) : Exception(message)
+{
+    public LauncherUpdateProblem Problem { get; } = problem;
+
+    /// <summary>The folder or file the failure is about, when naming it would help.</summary>
+    public string? Path { get; } = path;
+}

@@ -17,6 +17,7 @@ kód**, takže sa nemôžu rozísť — to je celý dôvod, prečo balenie nerob
   "version": "0.1.2-alpha",
   "released": "2026-08-26T10:00:00Z",
   "notes": "Krátky text do okna launchera.",
+  "notesEn": "The same text in English.",
   "minLauncherVersion": "0.3.0",
 
   "platforms": {
@@ -63,7 +64,8 @@ Povinné je len `version` a aspoň jedna platforma. Všetko ostatné je voliteľ
 |---|---|---|
 | `version` | áno | tag hry, obvykle `bundleVersion` |
 | `released` | nie | kedy, len na informáciu |
-| `notes` | nie | jedna až tri vety do okna |
+| `notes` | nie | jedna až tri vety do okna, **po slovensky** |
+| `notesEn` | nie | to isté po anglicky; bez neho anglické okno ukáže slovenský text |
 | `minLauncherVersion` | nie | najnižší launcher, ktorý s týmto manifestom smie pracovať |
 | `platforms` | áno | aspoň jedna |
 | `launcher` | nie | novšia verzia launchera |
@@ -87,7 +89,8 @@ ich číta priamo z názvov priečinkov Unity výstupu.
 |---|---|---|
 | `version` | áno | tag launchera |
 | `downloadUrl` | áno | **stránka pre človeka**, nie súbor; http alebo https |
-| `notes` | nie | jedna veta |
+| `notes` | nie | jedna veta, po slovensky |
+| `notesEn` | nie | to isté po anglicky |
 | `launcher.platforms.<kľúč>` | nie | binárka: `url` (iba **https**), `sha256`, `size` |
 
 Bez `platforms` je aktualizácia launchera len odkaz. S ňou sa launcher vymení sám.
@@ -134,7 +137,8 @@ by vypla hru, ktorá by inak fungovala.
 ## Ako vzniká
 
 ```bash
-launcher pack --input Build/0.1.2-alpha --version 0.1.2-alpha --notes "Čo je nové."
+launcher pack --input Build/0.1.2-alpha --version 0.1.2-alpha \
+  --notes "Čo je nové." --notes-en "What is new."
 ```
 
 S binárkou launchera a stropom:
