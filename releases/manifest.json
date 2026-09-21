@@ -13,14 +13,15 @@
     }
   },
   "launcher": {
-    "version": "0.1.8-alpha",
+    "version": "0.2.0-alpha",
     "downloadUrl": "https://github.com/Robindhuil/FriWorld-Launcher/releases/latest",
-    "notes": "Otazky na zavretie a odinstalovanie su skutocny modal.",
+    "notes": "Okno vie po slovensky aj po anglicky. Prepina sa vlajkou vpravo hore.",
+    "notesEn": "The window speaks Slovak and English. Switch it with the flag in the top right.",
     "platforms": {
       "win-x64": {
-        "url": "https://github.com/Robindhuil/FriWorld-Launcher/releases/download/v0.1.8-alpha/FriWorldLauncher.exe",
-        "sha256": "8937f32b5c501ea1e2be0f338639c03d602bb2517e23bf5dbc2124edffa9c630",
-        "size": 52773660
+        "url": "https://github.com/Robindhuil/FriWorld-Launcher/releases/download/v0.2.0-alpha/FriWorldLauncher.exe",
+        "sha256": "960251342bb782dacbada5bb1ae5cb842d0d1533f5ef1f37a4b5382425998a7e",
+        "size": 52802146
       }
     }
   }
