@@ -13,6 +13,11 @@ na to číslo.
 _Nazbierané od poslednej verzie. Aktuálna verzia: **0.2.0-alpha** — čo sa chystá, je
 v [docs/roadmap.md](docs/roadmap.md)._
 
+### Changed
+- Vlajky v prepínači jazyka majú v lište aj v zozname rovnakú veľkosť a rovnakú vlásočnicu.
+  Tá v lište bola o dva pixely menšia a neniesla pomer strán obrázka; tie v zozname boli bez
+  obrysu, takže biely pruh oboch vlajok splýval s tmavým podkladom ponuky.
+
 ### Fixed
 - **Runbook pýtal od `check` riadok o novšom launcheri, ktorý tam nemôže byť.** `check`
   porovnáva manifest s verziou toho CLI, ktorým sa kontroluje, a po zdvihnutí verzie je to tá

@@ -328,7 +328,7 @@
                                      bleeding into the dark chrome behind it. -->
                                 <Border BorderThickness="1" CornerRadius="2"
                                         BorderBrush="{StaticResource Hairline}">
-                                    <Panel Width="22" Height="15">
+                                    <Panel Width="24" Height="16">
                                         <Image x:Name="FlagSlovak"
                                                Source="/Assets/flag-sk.png"
                                                IsVisible="{Binding IsSlovak}" />
@@ -352,8 +352,12 @@
                                                 CommandParameter="{x:Static loc:Language.Slovak}"
                                                 AutomationProperties.Name="Slovenčina">
                                             <Grid ColumnDefinitions="Auto,*,Auto">
-                                                <Image Grid.Column="0" Width="24" Height="16"
-                                                       Source="/Assets/flag-sk.png" />
+                                                <Border Grid.Column="0" BorderThickness="1"
+                                                        CornerRadius="2"
+                                                        BorderBrush="{StaticResource Hairline}">
+                                                    <Image Width="24" Height="16"
+                                                           Source="/Assets/flag-sk.png" />
+                                                </Border>
                                                 <TextBlock Grid.Column="1" Text="Slovenčina"
                                                            Margin="12,0,0,0"
                                                            VerticalAlignment="Center" />
@@ -369,8 +373,12 @@
                                                 CommandParameter="{x:Static loc:Language.English}"
                                                 AutomationProperties.Name="English">
                                             <Grid ColumnDefinitions="Auto,*,Auto">
-                                                <Image Grid.Column="0" Width="24" Height="16"
-                                                       Source="/Assets/flag-en.png" />
+                                                <Border Grid.Column="0" BorderThickness="1"
+                                                        CornerRadius="2"
+                                                        BorderBrush="{StaticResource Hairline}">
+                                                    <Image Width="24" Height="16"
+                                                           Source="/Assets/flag-en.png" />
+                                                </Border>
                                                 <TextBlock Grid.Column="1" Text="English"
                                                            Margin="12,0,0,0"
                                                            VerticalAlignment="Center" />
