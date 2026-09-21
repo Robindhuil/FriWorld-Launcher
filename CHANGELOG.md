@@ -13,6 +13,12 @@ na to číslo.
 _Nazbierané od poslednej verzie. Aktuálna verzia: **0.2.0-alpha** — čo sa chystá, je
 v [docs/roadmap.md](docs/roadmap.md)._
 
+### Fixed
+- **Runbook pýtal od `check` riadok o novšom launcheri, ktorý tam nemôže byť.** `check`
+  porovnáva manifest s verziou toho CLI, ktorým sa kontroluje, a po zdvihnutí verzie je to tá
+  istá verzia. Pri vydaní 0.2.0-alpha to vyzeralo ako chyba a nebolo; `docs/deploying.md` to
+  teraz hovorí na obidvoch miestach, kde tú kontrolu predpisuje.
+
 ## [0.2.0-alpha] - 2026-09-21
 
 ### Added

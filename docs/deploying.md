@@ -378,7 +378,12 @@ dotnet test                                     # PublishedManifestTests číta 
 dotnet run --project src/FriWorld.Launcher.Cli -- check --manifest releases/manifest.json
 ```
 
-`check` musí vypísať hru bez zmeny a riadok o novšom launcheri.
+`check` musí vypísať hru bez zmeny a obidve znenia poznámok (`notes (sk)`, `notes (en)`).
+
+Riadok o **novšom launcheri sa neobjaví** — a je to správne. `check` porovnáva manifest
+s verziou toho CLI, ktorým kontroluješ, a po kroku 6.1 je to tá istá verzia. Že sekciu
+`launcher` niekto naozaj prečíta, ukáže až skúška self-updatu (6.7) alebo starší launcher
+v obehu.
 
 `--launcher-base-url` **musí byť https**. Launcher sa tým súborom nahradí, takže je tu
 pravidlo prísnejšie než pri archíve hry: manifest zo zneužitého spojenia nesmie vedieť
@@ -453,8 +458,9 @@ dotnet run --project src/FriWorld.Launcher.Cli -- check \
   --manifest https://raw.githubusercontent.com/Robindhuil/FriWorld-Launcher/master/releases/manifest.json
 ```
 
-`check` musí vypísať novú verziu, správnu veľkosť archívu a — keď sa vydával aj launcher —
-riadok o novšom launcheri.
+`check` musí vypísať novú verziu a správnu veľkosť archívu. Riadok o novšom launcheri sa
+objaví len vtedy, keď je CLI, ktorým kontroluješ, **staršie** než manifest; na stroji, kde
+sa launcher práve vydal, teda nie.
 
 Checksum sa oplatí overiť proti **súboru stiahnutému z GitHubu**, nie proti lokálnej kópii.
 Zaujíma nás, čo dostane hráč, nie čo máme na disku.

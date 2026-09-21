@@ -9,6 +9,7 @@
 > | pevných 980 × 720 | návrhová veľkosť; skutočná sa škáluje podľa obrazovky |
 > | otázky v strede okna | modal so zatieneným a zablokovaným pozadím |
 > | akcie na hre pod `⋯` | v akčnom pásme; pod `⋯` sú akcie launchera |
+> | vpravo hore dve tlačidlá | tri — naľavo od nich pribudol prepínač jazyka s vlajkou |
 >
 > **Záväzný popis okna je [`ui-spec.md`](ui-spec.md)**, nie tento súbor.
 

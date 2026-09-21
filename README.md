@@ -100,6 +100,10 @@ dotnet run --project src/FriWorld.Launcher.Cli -- help
 Poradie, najkonkrétnejšie prvé: prepínač → premenná prostredia → `launcher.json` vedľa
 spustiteľného súboru → predvoľba.
 
+Jazyk má o krok viac: **nad `launcher.json` je ešte to, čo si niekto prepol v okne**
+(`language.txt` v inštalačnom koreni). Súbor hovorí, v čom sa má stroj spúšťať; prepínač je
+človek, ktorý práve povedal, čo chce.
+
 ```json
 {
   "manifestUrl": "https://…/manifest.json",

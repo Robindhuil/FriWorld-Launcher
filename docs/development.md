@@ -1,6 +1,6 @@
 # Vývoj
 
-**Verzia:** 0.1.8-alpha · **Dátum:** 2026-08-26
+**Verzia:** 0.2.0-alpha · **Dátum:** 2026-09-21
 
 ---
 
@@ -208,6 +208,9 @@ Kód obidve platformy podporuje a testy execute bitov aj tar.gz prechádzajú. A
 - **Zápis do `docs/decisions/`** len keď sa rozhodovalo medzi možnosťami, narazilo sa na
   pascu, alebo príčina bola inde než prejav. Bežný feature tam nepatrí.
 - **Verzia launchera** je `<Version>` v `Directory.Build.props`, nezávislá od hry.
+- **Vlajky v `Assets/` sa nekreslia ručne.** `python tools/draw-flags.py` ich vyrobí
+  a prepíše, takže ručná úprava PNG sa pri ďalšom behu stratí. Skript potrebuje Pillow;
+  build nie, ten konzumuje hotové PNG.
 
 ---
 
