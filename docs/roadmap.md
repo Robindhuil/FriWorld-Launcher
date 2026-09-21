@@ -9,7 +9,7 @@ už pri stavbe zvyšku.
 | sekcia | čo v nej je |
 |---|---|
 | [Repozitár po anglicky](#repozitár-po-anglicky) | dokumentácia má byť v angličtine |
-| [0.2.0-alpha](#020-alpha) | najbližšie funkcie |
+| [Ďalšia verzia](#ďalšia-verzia) | najbližšie funkcie |
 | [Návrhy](#návrhy-ktoré-čakajú-na-zaradenie) | dáva zmysel, nemá termín |
 | [Bez verzie](#bez-verzie) | čaká na niekoho iného alebo na rozhodnutie mimo kódu |
 
@@ -58,7 +58,7 @@ v okne riešili zvlášť — a už sú hotové, viď
 
 ---
 
-## 0.2.0-alpha
+## Ďalšia verzia
 
 ### Pozadie ako slideshow
 
