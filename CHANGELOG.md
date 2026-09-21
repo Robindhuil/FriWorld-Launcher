@@ -16,6 +16,13 @@ v [docs/roadmap.md](docs/roadmap.md)._
 ## [0.2.0-alpha] - 2026-09-21
 
 ### Added
+- **Jazyk sa prepína vlajkou v hlavičke okna**, naľavo od minimalizácie. Rozbalí sa zoznam
+  s obidvoma jazykmi, každý napísaný sám v sebe, a pri tom zapnutom je `✓`. Je v lište a nie
+  v ponuke `⋯` preto, že je to jediné nastavenie, ktoré musí nájsť aj ten, kto okno prečítať
+  nevie — a vlajka je jediný popis, ktorý funguje skôr, než je okno v jazyku, ktorému
+  rozumieš. Voľba už zapnutého jazyka nespraví nič. Vlajky sú kreslené skriptom
+  (`tools/draw-flags.py`), nie stiahnuté; slovenská má znak, lebo bez neho sú tri pruhy
+  ruská vlajka.
 - **Okno hovorí po slovensky aj po anglicky.** Slovenčina zostáva predvolená — cieľovka sú
   slovenskí žiaci — angličtina je na prepnutie v ponuke `⋯`, pomenovaná jazykom, **do
   ktorého** prepína. Voľba sa pamätá v `language.txt` v inštalačnom koreni, nie
@@ -35,6 +42,11 @@ v [docs/roadmap.md](docs/roadmap.md)._
   To posledné je skopírovaný riadok, nie preklad.
 
 ### Fixed
+- **Riadok verzie zostal po prepnutí v starom jazyku, keď sa nedalo spojiť so serverom.**
+  Vtedy je verzia na disku jediná, ktorú je čím pomenovať, a tú vetu píše `Fail` — raz, mimo
+  uzáveru, ktorý vie chybu povedať znova. Zvyšok hlásenia sa prepol a tento riadok nie, takže
+  anglické okno nieslo slovenskú verziu. Test to nechytil, lebo zlyhanie púšťal nad prázdnym
+  inštalačným koreňom, kde riadok verzie vôbec nevznikne.
 - **Chybové hlásenia ukazovali hráčovi pol prekladu.** Nadpis bol slovenský a za neho sa
   lepilo `e.Message`, teda anglická veta z výnimky: „Nedostatok voľného miesta. Need about
   1,7 GB free on C:\ …". Hlásenie výnimky teraz zostáva anglické a ide **do denníka**;

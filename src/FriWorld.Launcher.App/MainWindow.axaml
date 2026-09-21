@@ -3,6 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:FriWorld.Launcher.App.ViewModels"
+        xmlns:loc="using:FriWorld.Launcher.Core.Localization"
         mc:Ignorable="d"
         x:Class="FriWorld.Launcher.App.MainWindow"
         x:DataType="vm:LauncherViewModel"
@@ -56,6 +57,12 @@
         <Style Selector="Button.close:pointerover /template/ ContentPresenter">
             <Setter Property="Background" Value="#C0392B" />
             <Setter Property="TextElement.Foreground" Value="White" />
+        </Style>
+
+        <!-- The language switch is wider than its neighbours: it carries a flag and the caret
+             that says it opens. Same height, so the row still reads as one. -->
+        <Style Selector="Button.chrome.lang">
+            <Setter Property="Width" Value="52" />
         </Style>
 
         <!-- The one prominent button. Carries the trademark colour; nothing else in the
@@ -271,13 +278,6 @@
                                     <Button Classes="menuitem"
                                             Content="{Binding Texts.OpenTheLog}"
                                             Command="{Binding OpenLogCommand}" />
-                                    <!-- The language, named as the one it switches to. It lives
-                                         here rather than in the action bar because it is asked
-                                         for about as often as the log is, and the action bar is
-                                         already the tightest row in the window. -->
-                                    <Button Classes="menuitem"
-                                            Content="{Binding Texts.SwitchLanguageTo}"
-                                            Command="{Binding SwitchLanguageCommand}" />
                                 </StackPanel>
                             </Flyout>
                         </Button.Flyout>
@@ -313,6 +313,78 @@
 
                     <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="6"
                                 VerticalAlignment="Top">
+
+                        <!-- The language sits in the title bar rather than in the menu on the
+                             left. It is the one setting someone who cannot read the window has
+                             to find without being told where to look, and a flag is the only
+                             label that works before the window is in a language you read. -->
+                        <Button Classes="chrome lang"
+                                ToolTip.Tip="{Binding Texts.LanguageMenu}"
+                                AutomationProperties.Name="{Binding Texts.LanguageMenu}">
+                            <StackPanel Orientation="Horizontal" Spacing="5"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center">
+                                <!-- The hairline keeps the white band of either flag from
+                                     bleeding into the dark chrome behind it. -->
+                                <Border BorderThickness="1" CornerRadius="2"
+                                        BorderBrush="{StaticResource Hairline}">
+                                    <Panel Width="22" Height="15">
+                                        <Image x:Name="FlagSlovak"
+                                               Source="/Assets/flag-sk.png"
+                                               IsVisible="{Binding IsSlovak}" />
+                                        <Image x:Name="FlagEnglish"
+                                               Source="/Assets/flag-en.png"
+                                               IsVisible="{Binding !IsSlovak}" />
+                                    </Panel>
+                                </Border>
+                                <TextBlock Text="&#x25BE;" FontSize="15"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                            <Button.Flyout>
+                                <Flyout Placement="BottomEdgeAlignedRight">
+                                    <StackPanel Width="190" Spacing="2">
+                                        <!-- Each language is written in itself. "Angličtina"
+                                             would be unreadable to the one person who needs
+                                             this list. -->
+                                        <Button Classes="menuitem"
+                                                HorizontalContentAlignment="Stretch"
+                                                Command="{Binding SetLanguageCommand}"
+                                                CommandParameter="{x:Static loc:Language.Slovak}"
+                                                AutomationProperties.Name="Slovenčina">
+                                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                                <Image Grid.Column="0" Width="24" Height="16"
+                                                       Source="/Assets/flag-sk.png" />
+                                                <TextBlock Grid.Column="1" Text="Slovenčina"
+                                                           Margin="12,0,0,0"
+                                                           VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="2" Text="&#x2713;"
+                                                           VerticalAlignment="Center"
+                                                           Foreground="{StaticResource Accent}"
+                                                           IsVisible="{Binding IsSlovak}" />
+                                            </Grid>
+                                        </Button>
+                                        <Button Classes="menuitem"
+                                                HorizontalContentAlignment="Stretch"
+                                                Command="{Binding SetLanguageCommand}"
+                                                CommandParameter="{x:Static loc:Language.English}"
+                                                AutomationProperties.Name="English">
+                                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                                <Image Grid.Column="0" Width="24" Height="16"
+                                                       Source="/Assets/flag-en.png" />
+                                                <TextBlock Grid.Column="1" Text="English"
+                                                           Margin="12,0,0,0"
+                                                           VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="2" Text="&#x2713;"
+                                                           VerticalAlignment="Center"
+                                                           Foreground="{StaticResource Accent}"
+                                                           IsVisible="{Binding !IsSlovak}" />
+                                            </Grid>
+                                        </Button>
+                                    </StackPanel>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
+
                         <Button Classes="chrome"
                                 Content="&#x2014;"
                                 IsVisible="{Binding ShowMinimise}"

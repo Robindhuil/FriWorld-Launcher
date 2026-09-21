@@ -7,6 +7,7 @@ Najnovšia verzia hore.
 
 | dátum | rozhodnutie |
 |---|---|
+| 2026-09-21 | [Jazyk sa prepína vlajkou v lište, nie položkou v ponuke](2026-09-21-vlajky-v-liste.md) |
 | 2026-09-18 | [Obidva jazyky v jednom riadku, a Core prestáva hovoriť vetami](2026-09-18-obidva-jazyky-v-jednom-riadku.md) |
 
 ## 0.1.4-alpha – 0.1.8-alpha

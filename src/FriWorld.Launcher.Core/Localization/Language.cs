@@ -29,10 +29,6 @@ public static class Languages
     public static string NativeName(this Language language) =>
         language == Language.English ? "English" : "Slovenčina";
 
-    /// <summary>The other one. With two languages a switch is a toggle, not a list.</summary>
-    public static Language Other(this Language language) =>
-        language == Language.English ? Language.Slovak : Language.English;
-
     /// <summary>
     /// Reads a language out of configuration. Returns null for anything unrecognised, including
     /// null and blank, so the caller can fall through to the next source rather than guess.

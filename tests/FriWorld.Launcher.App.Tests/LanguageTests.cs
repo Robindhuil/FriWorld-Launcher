@@ -65,11 +65,14 @@ public class LanguageTests
             .OfType<Button>()
             .Single(b => Avalonia.Automation.AutomationProperties.GetName(b) == automationName);
 
-    private static void Switch(LauncherViewModel model)
+    private static void Choose(LauncherViewModel model, Language language)
     {
-        model.SwitchLanguageCommand.Execute(null);
+        model.SetLanguageCommand.Execute(language);
         Dispatcher.UIThread.RunJobs();
     }
+
+    private static Image Flag(MainWindow window, string name) =>
+        window.GetVisualDescendants().OfType<Image>().Single(i => i.Name == name);
 
     [AvaloniaFact]
     public async Task The_window_opens_in_slovak()
@@ -85,7 +88,7 @@ public class LanguageTests
     {
         var (_, model) = await Ready();
 
-        Switch(model);
+        Choose(model, Language.English);
 
         Assert.Equal(Language.English, model.Texts.Language);
         Assert.Equal("Play", model.PrimaryLabel);
@@ -115,7 +118,7 @@ public class LanguageTests
         Assert.Equal("Pripravené", model.Status);
         Assert.StartsWith("Verzia ", model.VersionLine);
 
-        Switch(model);
+        Choose(model, Language.English);
 
         Assert.Equal("Ready", model.Status);
         Assert.StartsWith("Version ", model.VersionLine);
@@ -130,7 +133,7 @@ public class LanguageTests
 
         Assert.NotNull(ButtonNamed(window, "Zavrieť"));
 
-        Switch(model);
+        Choose(model, Language.English);
 
         Assert.NotNull(ButtonNamed(window, "Close"));
     }
@@ -141,7 +144,7 @@ public class LanguageTests
         var (_, model) = await Ready();
         var paths = new LauncherPaths(WindowSandbox.CurrentInstallRoot);
 
-        Switch(model);
+        Choose(model, Language.English);
 
         Assert.Equal(Language.English, LanguagePreference.Read(paths));
     }
@@ -170,7 +173,7 @@ public class LanguageTests
             Assert.True(model.Failed, "the window did not report a failure to re-say");
             var slovak = model.FailureHeadline;
 
-            Switch(model);
+            Choose(model, Language.English);
 
             Assert.NotEqual(slovak, model.FailureHeadline);
             Assert.False(
@@ -185,15 +188,97 @@ public class LanguageTests
     }
 
     [AvaloniaFact]
-    public async Task Switching_twice_comes_back_to_slovak()
+    public async Task Choosing_slovak_again_comes_back_to_slovak()
     {
         var (window, model) = await Ready();
 
-        Switch(model);
-        Switch(model);
+        Choose(model, Language.English);
+        Choose(model, Language.Slovak);
 
         Assert.Equal(Language.Slovak, model.Texts.Language);
         Assert.Equal("Pripravené", model.Status);
         Assert.NotNull(ButtonNamed(window, "Zavrieť"));
+    }
+
+    [AvaloniaFact]
+    public async Task The_title_bar_shows_the_flag_of_the_language_showing()
+    {
+        // Both flags are in the window and one of them is hidden, so this is the binding that
+        // decides which. Getting it backwards would be invisible to every other test here.
+        var (window, model) = await Ready();
+
+        Assert.True(Flag(window, "FlagSlovak").IsVisible);
+        Assert.False(Flag(window, "FlagEnglish").IsVisible);
+
+        Choose(model, Language.English);
+
+        Assert.False(Flag(window, "FlagSlovak").IsVisible);
+        Assert.True(Flag(window, "FlagEnglish").IsVisible);
+    }
+
+    [AvaloniaFact]
+    public async Task The_switch_is_named_in_the_language_showing()
+    {
+        var (window, model) = await Ready();
+
+        Assert.NotNull(ButtonNamed(window, "Jazyk"));
+
+        Choose(model, Language.English);
+
+        Assert.NotNull(ButtonNamed(window, "Language"));
+    }
+
+    [AvaloniaFact]
+    public async Task Choosing_the_language_already_showing_does_nothing()
+    {
+        // The list shows both languages, so the one already in use is a click anyone can make.
+        // It must not rewrite the remembered choice, which is what a fresh install root proves.
+        var (_, model) = await Ready();
+        var paths = new LauncherPaths(WindowSandbox.CurrentInstallRoot);
+
+        Choose(model, Language.Slovak);
+
+        Assert.Equal(Language.Slovak, model.Texts.Language);
+        Assert.Null(LanguagePreference.Read(paths));
+    }
+
+    [AvaloniaFact]
+    public async Task Switching_re_says_the_version_line_under_a_failure()
+    {
+        // The regression this guards: with a game on disk and no manifest to reach, the version
+        // line is written by the failure itself, once. The rest of the failure was said again on
+        // a switch and this line was not, so an English window kept a Slovak version line — the
+        // two languages at once this whole feature exists to prevent.
+        var manifest = Environment.GetEnvironmentVariable(LauncherConfiguration.ManifestUrlVariable);
+
+        try
+        {
+            WindowSandbox.FreshInstallRoot();
+            await LauncherConfiguration
+                .Resolve(WindowSandbox.Manifest, WindowSandbox.CurrentInstallRoot)
+                .CreateOrchestrator()
+                .EnsureLatestAsync();
+
+            Environment.SetEnvironmentVariable(
+                LauncherConfiguration.ManifestUrlVariable,
+                Path.Combine(Path.GetTempPath(), "friworld-no-such-manifest", "manifest.json"));
+
+            var window = new MainWindow();
+            window.Show();
+
+            var model = (LauncherViewModel)window.DataContext!;
+            await Settle(() => model.Failed && !model.Busy, TimeSpan.FromSeconds(20));
+
+            Assert.True(model.Failed, "the window did not report a failure to re-say");
+            Assert.StartsWith("Verzia ", model.VersionLine);
+
+            Choose(model, Language.English);
+
+            Assert.StartsWith("Version ", model.VersionLine);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(LauncherConfiguration.ManifestUrlVariable, manifest);
+        }
     }
 }

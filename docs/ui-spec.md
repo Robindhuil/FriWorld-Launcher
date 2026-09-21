@@ -111,7 +111,7 @@ Preto:
 Tri pásma zhora nadol:
 
 ```
-┌ ⋯ ───────────────────────────────────────────── — ✕ ┐
+┌ ⋯ ────────────────────────────────────────── SK▾ — ✕ ┐
 │                                                      │  hlavička
 │   FriWorld                                           │  logo + verzia
 │   Verzia 0.1.8-alpha                                 │
@@ -126,8 +126,8 @@ Tri pásma zhora nadol:
 └──────────────────────────────────────────────────────┘
 ```
 
-**Hlavička** — vľavo hore ponuka `⋯` s akciami launchera, vpravo hore minimalizácia
-a zatváranie. Pod nimi logo a riadok o verzii.
+**Hlavička** — vľavo hore ponuka `⋯` s akciami launchera, vpravo hore prepínač jazyka,
+minimalizácia a zatváranie. Pod nimi logo a riadok o verzii.
 
 **Stred** — najviac priestoru, väčšinou prázdny. Sem prichádzajú poznámky k verzii, pruh
 priebehu, chybové hlásenie, otázka na odinštalovanie a upozornenie na novší launcher.
@@ -239,12 +239,31 @@ doľava. Je vidieť vždy.
 |---|---|
 | **Skontrolovať znova** | znovu sa opýta manifestu; zakázané, kým launcher pracuje |
 | **Otvoriť denník launchera** | otvorí `launcher.log` v správcovi súborov |
-| **English / Slovenčina** | prepne jazyk okna a zapamätá si to |
 
-Prepínač jazyka je pomenovaný jazykom, **do ktorého prepína**, nie tým, ktorý je vidieť —
-položka, ktorá v slovenskom okne hovorí „Slovenčina", nepovie nikomu nič. Je v ponuke a nie
-v akčnom pásme preto, že sa naň klikne asi tak často ako na denník, a akčné pásmo je
-najtesnejší riadok v okne.
+Jazyk v tejto ponuke **nie je** — má vlastný prepínač v lište, viď nižšie.
+
+### Prepínač jazyka
+
+**Vpravo hore, naľavo od minimalizácie.** Rovnako vysoký ako ostatné tlačidlá hlavičky,
+o niečo širší: nesie vlajku jazyka, ktorým okno **práve hovorí**, a šípku, ktorá hovorí, že
+sa rozbalí. Je vidieť vždy.
+
+Rozbalí sa nadol zarovnaný doprava, dvoma riadkami:
+
+| riadok | |
+|---|---|
+| 🇸🇰 **Slovenčina** | `✓` pri tom, ktorý je práve zapnutý |
+| 🇬🇧 **English** | |
+
+Každý jazyk je napísaný **sám v sebe**, nie preložený. Zoznam ukazuje obidva naraz, takže
+„Angličtina" by bola nečitateľná presne pre toho, komu ten riadok patrí.
+
+Je v lište a nie v ponuke `⋯` preto, že je to jediné nastavenie, ktoré musí nájsť aj ten,
+kto okno **nevie prečítať** — a vlajka je jediný popis, ktorý funguje skôr, než je okno
+v jazyku, ktorému rozumieš. Prečo práve takto, je v
+[rozhodnutí](decisions/2026-09-21-vlajky-v-liste.md).
+
+Voľba jazyka, ktorý je už zapnutý, **nespraví nič**.
 
 Delenie je zámerné a drží sa ho aj to, čo pribudne: **v ponuke sú akcie na launcheri,
 v akčnom pásme akcie na hre.** Ponuka je vľavo hore práve preto, aby nebola po ceste
@@ -480,9 +499,10 @@ základných a stredných škôl, takže slovenčina zostáva tým, v čom sa ok
 je pre kohokoľvek mimo — návštevu na dni otvorených dverí, fakultu, keď hru ukazuje
 zahraničnému hosťovi.
 
-Jazyk sa berie, najkonkrétnejšie prvé: `FRIWORLD_LANGUAGE`, potom zapamätaná voľba
-z prepínača, potom `language` v `launcher.json`, inak slovenčina. Systémová kultúra sa
-nečíta — prečo, je v [architecture.md](architecture.md#jazyk).
+Prepína sa vlajkou v hlavičke, viď [Prepínač jazyka](#prepínač-jazyka). Jazyk sa berie,
+najkonkrétnejšie prvé: `FRIWORLD_LANGUAGE`, potom zapamätaná voľba z prepínača, potom
+`language` v `launcher.json`, inak slovenčina. Systémová kultúra sa nečíta — prečo, je
+v [architecture.md](architecture.md#jazyk).
 
 **Okno nikdy nehovorí dvomi jazykmi naraz.** To je celý zmysel toho, ako sú texty uložené:
 obidve znenia sú v jednom člene triedy `Texts` na jednom riadku, takže reťazec, ktorý

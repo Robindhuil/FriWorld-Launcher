@@ -42,3 +42,28 @@ public sealed class RelayCommand(Action execute, Func<bool>? canExecute = null) 
 
     public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
 }
+
+/// <summary>
+/// The same, for a command the view hands a value to.
+///
+/// A parameter of the wrong type is ignored rather than thrown. The only thing that can pass one
+/// is a <c>CommandParameter</c> in the XAML of this repository, so it is a mistake to be caught by
+/// a test, not a reason for a window in front of a player to fall over.
+/// </summary>
+public sealed class RelayCommand<T>(Action<T> execute, Func<T, bool>? canExecute = null) : ICommand
+{
+    public event EventHandler? CanExecuteChanged;
+
+    public bool CanExecute(object? parameter) =>
+        parameter is T value && (canExecute?.Invoke(value) ?? true);
+
+    public void Execute(object? parameter)
+    {
+        if (parameter is T value)
+        {
+            execute(value);
+        }
+    }
+
+    public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+}

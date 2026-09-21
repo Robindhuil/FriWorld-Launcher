@@ -41,10 +41,9 @@ public class LocalizationTests
     public void The_english_texts_are_actually_english()
     {
         // A Slovak letter in an English string means a translation was skipped and the original
-        // copied over. The language switch is the one deliberate exception: it names the language
-        // it switches to, in that language's own spelling.
+        // copied over. Nothing here is exempt any more: the member that used to carry a language's
+        // own name is gone, and the names come from Languages.NativeName instead.
         var slovakLeftIn = PlainTexts
-            .Where(p => p.Name != nameof(Texts.SwitchLanguageTo))
             .Where(p => ((string)p.GetValue(Texts.English)!).Any(SlovakOnlyLetters.Contains))
             .Select(p => p.Name)
             .ToList();
@@ -260,9 +259,11 @@ public class LocalizationTests
     }
 
     [Fact]
-    public void The_switch_offers_the_language_it_is_not_showing()
+    public void Each_language_is_offered_under_its_own_name()
     {
-        Assert.Equal("English", Texts.Slovak.SwitchLanguageTo);
-        Assert.Equal("Slovenčina", Texts.English.SwitchLanguageTo);
+        // Deliberately not through Texts. The list in the title bar shows both languages at once,
+        // so each has to be readable to the person who reads only that one.
+        Assert.Equal("Slovenčina", Language.Slovak.NativeName());
+        Assert.Equal("English", Language.English.NativeName());
     }
 }

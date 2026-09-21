@@ -111,7 +111,7 @@ public sealed class LauncherViewModel : ObservableObject
         DismissCommand = new RelayCommand(Dismiss);
         ConfirmUninstallCommand = new RelayCommand(Uninstall, () => !Busy);
         CancelQuestionCommand = new RelayCommand(CancelQuestion);
-        SwitchLanguageCommand = new RelayCommand(SwitchLanguage);
+        SetLanguageCommand = new RelayCommand<Language>(SetLanguage);
     }
 
     /// <summary>The one prominent button. What it does depends on <see cref="Action"/>.</summary>
@@ -154,8 +154,14 @@ public sealed class LauncherViewModel : ObservableObject
     /// <summary>The answer that undoes nothing, whichever question is asking.</summary>
     public RelayCommand CancelQuestionCommand { get; }
 
-    /// <summary>Swaps the window between Slovak and English, and remembers which.</summary>
-    public RelayCommand SwitchLanguageCommand { get; }
+    /// <summary>Says the whole window in the language asked for, and remembers the choice.</summary>
+    public RelayCommand<Language> SetLanguageCommand { get; }
+
+    /// <summary>
+    /// Which flag the switch in the title bar shows. The two flags are both in the window and one
+    /// of them is hidden, which is a line of XAML rather than a bitmap loaded by a view model.
+    /// </summary>
+    public bool IsSlovak => _texts.Language == Language.Slovak;
 
     /// <summary>
     /// Everything the window says, in the language it is currently saying it in.
@@ -904,21 +910,27 @@ public sealed class LauncherViewModel : ObservableObject
 
         var message = FailureMessages.Describe(exception, _texts);
 
+        // With no manifest to compare against, what is on disk is the only version there is to
+        // name — so the version line is part of this failure rather than of a finished check.
+        // That makes it one of the sentences the failure has to be able to say again: it is
+        // written inside the closure, or an English window keeps a Slovak version line.
+        var versionIsOurs = string.IsNullOrEmpty(VersionLine) && _orchestrator.State.Read() is not null;
+
         SayFailure(() =>
         {
             var said = FailureMessages.Describe(exception, _texts);
             ShowFailure(said.Headline, said.Advice ?? string.Empty);
             Status = said.Headline;
+
+            if (versionIsOurs && _orchestrator.State.Read() is { } installed)
+            {
+                VersionLine = _texts.VersionInstalled(installed.Version);
+            }
         });
 
         Action = message.Recoverable
             ? LauncherActions.AfterInterruption(_check, _orchestrator.State.Read() is not null)
             : LauncherAction.None;
-
-        if (_orchestrator.State.Read() is { } installed && string.IsNullOrEmpty(VersionLine))
-        {
-            VersionLine = _texts.VersionInstalled(installed.Version);
-        }
     }
 
     /// <summary>Shows a failure, and keeps the means to show the same one in the other language.</summary>
@@ -1089,18 +1101,27 @@ public sealed class LauncherViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Swaps the window to the other language and remembers the choice for next time.
+    /// Says the whole window in the language asked for and remembers the choice for next time.
     ///
     /// The whole window is said again, not merely relabelled. Half of what is on screen is held
     /// as a finished sentence — the status line, a failure, the release notes — and a switch that
     /// only changed the buttons would leave a window speaking both languages at once, which is
     /// the one thing this feature exists to prevent.
+    ///
+    /// Choosing the language already showing does nothing at all. The list in the title bar shows
+    /// both languages, so the one already in use is a click anyone can make, and it should not
+    /// rewrite the remembered choice or put a line in the log.
     /// </summary>
-    private void SwitchLanguage()
+    private void SetLanguage(Language language)
     {
-        _texts = Texts.For(_texts.Language.Other());
-        LanguagePreference.Write(_paths, _texts.Language);
-        _log.Info($"The window switched to {_texts.Language.Code()}.");
+        if (language == _texts.Language)
+        {
+            return;
+        }
+
+        _texts = Texts.For(language);
+        LanguagePreference.Write(_paths, language);
+        _log.Info($"The window switched to {language.Code()}.");
 
         Resay();
     }

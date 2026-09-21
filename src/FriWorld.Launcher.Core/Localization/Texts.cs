@@ -67,6 +67,13 @@ public sealed class Texts
 
     public string OpenTheLog => Pick("Otvoriť denník launchera", "Open the launcher log");
 
+    /// <summary>
+    /// Names the language switch in the title bar. What is inside it is not translated: the two
+    /// languages carry their own names, from <see cref="Languages.NativeName"/>. A list that
+    /// offered "Angličtina" would be unreadable to exactly the person who has to find it.
+    /// </summary>
+    public string LanguageMenu => Pick("Jazyk", "Language");
+
     public string Minimise => Pick("Minimalizovať", "Minimise");
 
     public string Close => Pick("Zavrieť", "Close");
@@ -82,12 +89,6 @@ public sealed class Texts
     public string RepairTheInstallation => Pick("Opraviť inštaláciu", "Repair the installation");
 
     public string OpenTheGameFolder => Pick("Otvoriť priečinok s hrou", "Open the game folder");
-
-    /// <summary>
-    /// The language switch names the language it switches to, not the one showing. A button that
-    /// says "Slovenčina" while the window is already Slovak tells nobody anything.
-    /// </summary>
-    public string SwitchLanguageTo => Language.Other().NativeName();
 
     // ---- Buttons that act on the game ----------------------------------------------------
 

@@ -174,7 +174,7 @@ v [rozhodnutí](docs/decisions/2026-08-26-smart-app-control.md).
 z GitHub Releases a launcher je na stiahnutie
 [na Hube](https://fri-world-hub.vercel.app/download).
 
-Testy bežia na **CI pri každom push**, na Windows aj Linuxe — 264 nad mechanikou a 22 nad
+Testy bežia na **CI pri každom push**, na Windows aj Linuxe — 264 nad mechanikou a 26 nad
 skutočným oknom. Na vývojovom stroji ich Smart App Control už nespustí, viď
 [rozhodnutie](docs/decisions/2026-08-27-testy-bezia-na-ci.md).
 
