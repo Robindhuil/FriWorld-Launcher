@@ -428,6 +428,25 @@ nasadenia. Na stroji, kde sa jednosúborový build spustiť dá:
 Ten tretí bod je ten, na ktorom to raz už padlo: launcher štartoval nástupcu skôr, než
 uvoľnil zámok jednej inštancie.
 
+**Druhý stroj na to netreba.** Predošlé vydanie je na GitHube, takže „stroj so starším
+launcherom" sa dá vyrobiť za minútu — stiahni ho do samostatného priečinka a daj mu vlastný
+`launcher.json`, aby sa skúška nemiešala s tým, čo máš nainštalované inde:
+
+```powershell
+$k = "$env:TEMP\stary-launcher"
+New-Item -ItemType Directory -Force $k | Out-Null
+Invoke-WebRequest "https://github.com/Robindhuil/FriWorld-Launcher/releases/download/v<predosla-verzia>/FriWorldLauncher.exe" -OutFile "$k\FriWorldLauncher.exe"
+```
+
+Vedľa `.exe` polož `launcher.json` s `manifestUrl` na ostrý manifest a spusti ho odtiaľ.
+Oplatí sa overiť, že sha256 stiahnutého súboru sedí s tým, čo o ňom hovoril **predošlý**
+manifest — keď nesedí, skúšaš niečo iné, než čo majú hráči.
+
+**Overené 2026-09-21** takto pri vydaní 0.2.0-alpha: stiahnutý 0.1.8-alpha ohlásil novú
+verziu aj s poznámkou, vymenil sa, nová nabehla sama, `.superseded` zmizol a hra zostala
+nainštalovaná. Je to zároveň jediná kontrola, ktorá naozaj prečíta sekciu `launcher`
+v manifeste — `check` na stroji, kde sa práve vydávalo, ju neprečíta (6.4).
+
 ---
 
 ## 7. Poradie, keď sa vydáva oboje naraz
