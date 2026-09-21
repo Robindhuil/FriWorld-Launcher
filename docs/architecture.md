@@ -1,6 +1,6 @@
 # Architektúra
 
-**Verzia:** 0.1.8-alpha · **Dátum:** 2026-08-26
+**Verzia:** 0.2.0-alpha · **Dátum:** 2026-09-21
 
 Ako je launcher poskladaný a prečo tak. Rozhodnutia, ktoré k tomu viedli, sú
 v [`decisions/`](decisions/README.md).

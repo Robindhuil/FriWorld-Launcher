@@ -1,6 +1,6 @@
 # FriWorld Launcher — zadanie pre návrh UI
 
-**Verzia launchera:** 0.1.8-alpha · **Dátum:** 2026-08-27 · **Stav:** záväzný popis okna
+**Verzia launchera:** 0.2.0-alpha · **Dátum:** 2026-09-21 · **Stav:** záväzný popis okna
 
 Pôvodne zadanie pre návrh, dnes **záväzný popis okna**. Hovorí, čo okno obsahuje, kedy sa
 čo zobrazí a čo sa nesmie zmeniť — bez znalosti kódu.

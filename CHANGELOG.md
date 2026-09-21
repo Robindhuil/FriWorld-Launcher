@@ -10,8 +10,10 @@ na to číslo.
 
 ## [Unreleased]
 
-_Nazbierané od poslednej verzie. Aktuálna verzia: **0.1.8-alpha**; ďalšie funkcie idú
-ako **0.2.0-alpha** — čo sa chystá, je v [docs/roadmap.md](docs/roadmap.md)._
+_Nazbierané od poslednej verzie. Aktuálna verzia: **0.2.0-alpha** — čo sa chystá, je
+v [docs/roadmap.md](docs/roadmap.md)._
+
+## [0.2.0-alpha] - 2026-09-21
 
 ### Added
 - **Okno hovorí po slovensky aj po anglicky.** Slovenčina zostáva predvolená — cieľovka sú

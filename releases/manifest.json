@@ -2,6 +2,7 @@
   "version": "0.1.1-alpha",
   "released": "2026-08-26T20:42:24.7732944+00:00",
   "notes": "Prva alfa verzia virtualnej prehliadky FRI.",
+  "notesEn": "The first alpha of the virtual tour of FRI.",
   "platforms": {
     "win-x64": {
       "url": "https://github.com/Robindhuil/FriWorld/releases/download/v0.1.1-alpha/FriWorld-0.1.1-alpha-win-x64.zip",

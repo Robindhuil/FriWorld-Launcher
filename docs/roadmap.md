@@ -1,6 +1,6 @@
 # Plánované
 
-**Verzia launchera:** 0.1.8-alpha · **Dátum:** 2026-09-18
+**Verzia launchera:** 0.2.0-alpha · **Dátum:** 2026-09-21
 
 Čo sa má spraviť a čo o tom už vieme. Nie zadanie — zadanie vznikne, keď sa na tom začne
 robiť. Účel je, aby sa pri tom nezačínalo od nuly a nenarazilo sa na to, na čo sme prišli
